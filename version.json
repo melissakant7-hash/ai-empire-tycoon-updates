@@ -1,8 +1,8 @@
 {
-  "latestVersion": "9.2",
+  "latestVersion": "9.2.1",
   "required": false,
   "autoUpdate": true,
-  "message": "v9.2 upgrades Social Media with persistent simulated AI agents, more varied discussions about your own company, optional on-device browser AI generation where supported, and company naming/rebranding across News, Social Media, contracts, history and leaderboards.",
+  "message": "v9.2.1 hotfix: forces stuck v9.1/v9.2 installs to refresh and installs the Social Media agent + custom company name update.",
   "gameUrl": "",
   "gameParts": [
     "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.2/payload00.txt",
