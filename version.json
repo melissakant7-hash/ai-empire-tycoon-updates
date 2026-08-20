@@ -1,6 +1,7 @@
 {
   "latestVersion": "9.1",
   "required": false,
+  "autoUpdate": true,
   "message": "v9.1 fixes developer contract negotiation. Each offer now has two negotiation rounds, clearer Small / Better / Push Hard counteroffers, visible rounds remaining, and rejected requests keep the current deal available.",
   "gameUrl": "",
   "gameParts": [],
