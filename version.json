@@ -2,17 +2,11 @@
   "latestVersion": "9.1",
   "required": false,
   "message": "v9.1 fixes developer contract negotiation. Each offer now has two negotiation rounds, clearer Small / Better / Push Hard counteroffers, visible rounds remaining, and rejected requests keep the current deal available.",
-  "gameUrl": "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part00.txt",
-  "gameParts": [
-    "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part00.txt",
-    "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part01.txt",
-    "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part02.txt",
-    "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part03.txt",
-    "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part04.txt",
-    "https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/packages/v9.1-final/part05.txt"
-  ],
+  "gameUrl": "",
+  "gameParts": [],
   "gameSha256": "e7dbae7be2b80efe6b86d93a2469901138495253296aeace22cc3c5cab0733bf",
-  "encoding": "gzip-base64",
+  "encoding": "",
+  "patches": [],
   "launcherUrl": "",
   "launcherSha256": "",
   "downloadUrl": "https://github.com/melissakant7-hash/ai-empire-tycoon-updates"
