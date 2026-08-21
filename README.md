@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v10.0.0**
+- Game: **v10.0.1**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,14 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v10.0.1
+
+UI and protected-distribution hotfix. The new v10 Model Training and Company HQ native select controls now use the game dark theme (including dark popup color-scheme), the Update Center release card correctly describes the installed v10 line instead of the old v9.5.0 polish pass, and Employees & Research Teams receives proper spacing and a fixed number column between the minus/plus controls.
+
+The distributed browser build now stores the main JavaScript as a compressed protected/obfuscated payload rather than readable source text. This raises the barrier against casual source copying while preserving the existing SHA-256 verified updater. As with any offline browser-delivered game, this is not an absolute secrecy boundary because executable client code can ultimately be inspected by a determined reverse engineer.
+
+The v10.0.1 build is verified against SHA-256 `2d3d0c25d6bd7aba96fe3cef61186e91ccdfd790e24c40d560624d6b324ab660`.
 
 ## v10.0.0
 
