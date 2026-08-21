@@ -1,8 +1,8 @@
 {
-  "latestVersion": "10.0.2",
-  "required": false,
+  "latestVersion": "10.0.3",
+  "required": true,
   "autoUpdate": false,
-  "message": "The legacy public Full Game download channel has been retired. AI Training Full is now distributed through the hardware-licensed Windows application.",
+  "message": "Live license revocation enforcement is enabled in the protected Windows client. Active licensed sessions now re-check the publisher revocation list every 15 seconds and are terminated when revoked. A 90-second verification grace period prevents offline bypass. Existing protected-client users must install v10.0.3 once; future revocations are enforced during play.",
   "gameUrl": "",
   "gameParts": [],
   "gameSha256": "",
