@@ -1,0 +1,15 @@
+{
+  "latestVersion": "10.0.2",
+  "required": false,
+  "autoUpdate": false,
+  "message": "The legacy public Full Game download channel has been retired. AI Training Full is now distributed through the hardware-licensed Windows application.",
+  "gameUrl": "",
+  "gameParts": [],
+  "gameSha256": "",
+  "sha256": "",
+  "encoding": "",
+  "patches": [],
+  "launcherUrl": "",
+  "launcherSha256": "",
+  "downloadUrl": ""
+}
