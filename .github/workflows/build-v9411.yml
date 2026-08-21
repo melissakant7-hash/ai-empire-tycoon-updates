@@ -1,0 +1,123 @@
+name: Build and publish AI Empire Tycoon v9.4.11
+
+on:
+  pull_request:
+    paths:
+      - 'build/v9.4.11/**'
+      - '.github/workflows/build-v9411.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v9.4.11/**'
+      - '.github/workflows/build-v9411.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct v9.4.10 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.10/part*.txt > /tmp/v9410.b64
+          base64 -d /tmp/v9410.b64 > /tmp/v9410.html.gz
+          gzip -dc /tmp/v9410.html.gz > /tmp/old
+          echo 'e4c59333b7af77ffb1f4d9c6e5c13a0aa5b887220db90cc5b29911d1294bcf0b  /tmp/old' | sha256sum -c -
+
+      - name: Apply v9.4.11 secret-research and pacing hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v9.4.11/patch*.txt > /tmp/v9411.patch.b64
+          base64 -d /tmp/v9411.patch.b64 > /tmp/v9411.patch.gz
+          gzip -dc /tmp/v9411.patch.gz > /tmp/v9411.patch
+          cd /tmp
+          patch old < v9411.patch
+          echo '7bd4fa0e6dbc474a719798e7e1c1dc17b81cdd182e22ba9cf834adac5d94f80f  /tmp/old' | sha256sum -c -
+
+      - name: Verify v9.4.11 UX, pacing and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'AI Empire Tycoon v9.4.11' /tmp/old
+          grep -q 'const SOCIAL_MIN_REAL_MS_V948=1200' /tmp/old
+          grep -q 'syncSecretSecrecyPreviewV9411' /tmp/old
+          grep -q 'Estimated leak risk over program' /tmp/old
+          grep -q 'The selection changes its real RP/cash cost and leak probability.' /tmp/old
+          grep -q 'SOCIAL_MAX_ACTIVE_THREADS_V949=6' /tmp/old
+          grep -q 'SOCIAL_SOFT_ACTIVE_THREADS_V949=4' /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m: raise SystemExit('No script block found')
+          Path('/tmp/v9411.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/v9411.js
+
+      - name: Package v9.4.11 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v9.4.11
+          mkdir -p packages/v9.4.11
+          gzip -n -9 -c /tmp/old > /tmp/v9411.html.gz
+          base64 -w0 /tmp/v9411.html.gz > /tmp/v9411.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v9411.b64 packages/v9.4.11/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v9.4.11').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='7bd4fa0e6dbc474a719798e7e1c1dc17b81cdd182e22ba9cf834adac5d94f80f'
+          manifest={
+            'latestVersion':'9.4.11','required':False,'autoUpdate':True,
+            'message':'v9.4.11 makes Secret Research secrecy visibly update real RP/cash costs and leak risk, and speeds Local AI Social Media pacing from 1.8s to 1.2s while keeping bounded thread protections unchanged.',
+            'gameUrl':'','gameParts':[base+str(p).replace('\\','/') for p in parts],
+            'gameSha256':sha,'sha256':sha,'encoding':'gzip-base64','patches':[],
+            'launcherUrl':'','launcherSha256':'','downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'
+          }
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('- Game: **v9.4.10**','- Game: **v9.4.11**',1)
+          if '## v9.4.11' not in readme:
+            insert='''## v9.4.11\n\nSecret Research UX + faster Local AI hotfix. The secrecy selector already affected actual project RP/cash cost and daily leak probability, but the UI did not expose those changes, making the control look broken. v9.4.11 updates each project card immediately with the selected real cost and estimated cumulative leak risk. Local AI Social Media pacing is also reduced from 1.8 seconds to 1.2 seconds, about 50% more messages per minute, while v9.4.9 bounded-thread caps and anti-spam protections stay unchanged.\n\nThe v9.4.11 build is verified against SHA-256 `7bd4fa0e6dbc474a719798e7e1c1dc17b81cdd182e22ba9cf834adac5d94f80f`.\n\n'''
+            readme=readme.replace('## v9.4.10\n',insert+'## v9.4.10\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.11/part*.txt > /tmp/v9411-final.b64
+          base64 -d /tmp/v9411-final.b64 > /tmp/v9411-final.gz
+          gzip -dc /tmp/v9411-final.gz > /tmp/v9411-final.html
+          echo '7bd4fa0e6dbc474a719798e7e1c1dc17b81cdd182e22ba9cf834adac5d94f80f  /tmp/v9411-final.html' | sha256sum -c -
+
+      - name: Publish v9.4.11 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Empire Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v9.4.11 version.json README.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to publish.'
+          else
+            git commit -m 'Publish AI Empire Tycoon v9.4.11 secret research UX and faster Local AI'
+            git push
+          fi
