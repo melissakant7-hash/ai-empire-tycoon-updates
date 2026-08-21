@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.2**
+- Game: **v9.4.3**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,12 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.3
+
+Small Model Labs subscription-management update. The paid-tier badges again show their real usage relationship — **Plus: 5× higher than Free**, **Pro x5: 5× higher than Plus**, and **Pro x20: 20× higher than Plus** by default — instead of the generic “subscription” label. Each released language model now also has a second slider per paid tier for managing that model’s usage allowance. Usage choices are saved per model and feed into paid-tier demand and average usage load.
+
+The v9.4.3 build is verified against SHA-256 `728ac8d99ae1ebacf14cd245aba63e510c909f7dde83b8c170c3b1bd00602109`.
 
 ## v9.4.2
 
