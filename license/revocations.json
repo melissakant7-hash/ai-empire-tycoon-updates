@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "sequence": 1000032,
-  "updatedAt": "2026-08-21T23:24:47Z",
+  "sequence": 1000033,
+  "updatedAt": "2026-08-21T23:39:34Z",
   "revoked": [
     {
       "id": "1826c3db2347c464",
@@ -34,12 +34,6 @@
     {
       "id": "d7e2145a9a8482b4",
       "reason": "Deleted"
-    }
-  ],
-  "blockedHardware": [
-    {
-      "hardwareId": "3F99660DD43F5031FFCFD884E37CD1C4",
-      "reason": "Deleted / access blocked"
     }
   ]
 }
