@@ -1,0 +1,130 @@
+name: Build and publish AI Empire Tycoon v9.4.2
+
+on:
+  pull_request:
+    paths:
+      - 'build/v9.4.2/**'
+      - '.github/workflows/build-v942.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v9.4.2/**'
+      - '.github/workflows/build-v942.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct v9.4.1 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.1/part*.txt > /tmp/v941.b64
+          base64 -d /tmp/v941.b64 > /tmp/v941.html.gz
+          gzip -dc /tmp/v941.html.gz > /tmp/old
+          echo '3fe1184281b7c3abfb96057d6af98304e144f87fd2f6233dcd46934362178a96  /tmp/old' | sha256sum -c -
+
+      - name: Apply v9.4.2 Sandbox speed slider update
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v9.4.2/patch*.txt > /tmp/v942.patch.b64
+          base64 -d /tmp/v942.patch.b64 > /tmp/v942.patch.gz
+          gzip -dc /tmp/v942.patch.gz > /tmp/v942.patch
+          cd /tmp
+          patch old < v942.patch
+          echo '904e46f54f63843986c6a0b7289f0e37b206184e21a5402a2dee6aba1f54ce66  /tmp/old' | sha256sum -c -
+
+      - name: Verify speed slider code and JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'AI Empire Tycoon v9.4.2' /tmp/old
+          grep -q 'sbSpeedSlider' /tmp/old
+          grep -q 'max="5" step="0.25"' /tmp/old
+          grep -q 'sandboxSpeedV942' /tmp/old
+          grep -q 'setSandboxSpeedV942' /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m:
+              raise SystemExit('No script block found')
+          Path('/tmp/v942.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/v942.js
+
+      - name: Package v9.4.2 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v9.4.2
+          mkdir -p packages/v9.4.2
+          gzip -n -9 -c /tmp/old > /tmp/v942.html.gz
+          base64 -w0 /tmp/v942.html.gz > /tmp/v942.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v942.b64 packages/v9.4.2/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v9.4.2').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='904e46f54f63843986c6a0b7289f0e37b206184e21a5402a2dee6aba1f54ce66'
+          manifest={
+              'latestVersion':'9.4.2',
+              'required':False,
+              'autoUpdate':True,
+              'message':'v9.4.2 adds a persistent Sandbox simulation-speed slider from 1x to 5x in 0.25x steps. Speed changes apply immediately while running and remain saved with the Sandbox company.',
+              'gameUrl':'',
+              'gameParts':[base+str(p).replace('\\','/') for p in parts],
+              'gameSha256':sha,
+              'sha256':sha,
+              'encoding':'gzip-base64',
+              'patches':[],
+              'launcherUrl':'',
+              'launcherSha256':'',
+              'downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'
+          }
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('- Game: **v9.4.1**','- Game: **v9.4.2**',1)
+          if '## v9.4.2' not in readme:
+              insert='''## v9.4.2\n\nSmall Sandbox quality-of-life update: the Sandbox Control Center now includes a persistent simulation-speed slider from **1× to 5×** in 0.25× steps. Changing it while the game is running immediately changes the tick rate; changing it while paused sets the speed used by Continue. The value is saved with the Sandbox company and Career speed behavior is unchanged.\n\nThe v9.4.2 build is verified against SHA-256 `904e46f54f63843986c6a0b7289f0e37b206184e21a5402a2dee6aba1f54ce66`.\n\n'''
+              readme=readme.replace('## v9.4.1\n',insert+'## v9.4.1\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.2/part*.txt > /tmp/v942-final.b64
+          base64 -d /tmp/v942-final.b64 > /tmp/v942-final.gz
+          gzip -dc /tmp/v942-final.gz > /tmp/v942-final.html
+          echo '904e46f54f63843986c6a0b7289f0e37b206184e21a5402a2dee6aba1f54ce66  /tmp/v942-final.html' | sha256sum -c -
+
+      - name: Publish v9.4.2 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Empire Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v9.4.2 version.json README.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to publish.'
+          else
+            git commit -m 'Publish AI Empire Tycoon v9.4.2 Sandbox speed slider'
+            git push
+          fi
