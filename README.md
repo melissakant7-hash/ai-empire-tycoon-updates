@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.3**
+- Game: **v9.4.4**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,14 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.4
+
+Social Media remake and pacing hotfix. The timeline now behaves more like an interactive X/Twitter feed: the player can post from the company account or publish marked official announcements, like and repost posts, open full reply threads and reply as the company. Latest Posts shows root posts rather than flattening every reply into the main feed. Hot Debate keeps up to four active conversations visible at once instead of replacing the only visible debate whenever the simulation refreshes.
+
+Autonomous posting is rate-limited in both real time and simulation time so 5× Sandbox speed no longer floods the feed. When Live AI Agents are enabled and an on-device LanguageModel session is actually available, Live AI is preferred for new autonomous root posts rather than being added on top of a template post. Both Live AI and simulation fallback use stronger anti-repetition checks; the fallback now varies perspective by persona and role. Subscription price and usage-limit changes can enter the social discussion with concrete judgments about whether a tier is restrictive, generous or worth its price.
+
+The v9.4.4 build is verified against SHA-256 `70a3376f101e211dc65b05db0115497de7ff94e8ae1d551cff75dc04797423c7`.
 
 ## v9.4.3
 
