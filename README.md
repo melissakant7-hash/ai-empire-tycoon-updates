@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.11**
+- Game: **v9.5.0**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,14 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.5.0
+
+Major non-feature polish, clarity, balance and resilience pass. Rival capability is now gated by a time-based world frontier so passive calendar progression cannot rush competitors to 99 in only a few years. Dashboard/history gain a "Why did this change?" ledger, key metrics receive explanatory tooltips, saves keep a silent last-known-good recovery copy, Local AI shows real generation diagnostics and unread company replies, empty/disabled states explain what is missing, old UI receives consistency/responsive polish, major values animate on meaningful changes, the Update Center is clearer, and long-running saves receive bounded social/history maintenance. Existing gameplay systems and saves remain compatible.
+
+Not included by request: additional confirmation-dialog behavior, keyboard shortcuts, or new accessibility modes/options.
+
+The v9.5.0 build is verified against SHA-256 `d78b38c33aef1fd61cf5a6fafd8769d2fa01f49952d23a7fb097d76da8d29624`.
 
 ## v9.4.11
 
