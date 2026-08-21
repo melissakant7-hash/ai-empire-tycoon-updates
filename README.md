@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.8**
+- Game: **v9.4.9**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,12 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.9
+
+Bounded Local-AI thread scheduler hotfix. v9.4.8 could create 2–4 queued replies for every new autonomous root post while only consuming roughly one reply every other Social Media slot, so the queue could grow indefinitely. v9.4.9 only turns discussion-worthy autonomous posts into debates, caps the active conversation pool, trims legacy v9.4.8 backlog on migration, and gives replies more scheduler slots whenever several conversations are active. Player-company posts and announcements remain prioritized for real replies.
+
+The v9.4.9 build is verified against SHA-256 `9ea7e933e7b3e4127895533e35e1ddc764f99b5ffb0e6143cadcf1535712f77a`.
 
 ## v9.4.8
 
