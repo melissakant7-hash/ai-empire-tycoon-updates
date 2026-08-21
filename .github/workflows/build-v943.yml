@@ -48,9 +48,9 @@ jobs:
         run: |
           set -euo pipefail
           grep -q 'AI Empire Tycoon v9.4.3' /tmp/old
-          grep -q '5× higher than Free' /tmp/old
-          grep -q '5× higher than Plus' /tmp/old
-          grep -q '20× higher than Plus' /tmp/old
+          grep -q 'higher than Free' /tmp/old
+          grep -q 'higher than Plus' /tmp/old
+          grep -q 'defaultModelUsageLimitsV943(){return {plus:5,pro5:5,pro20:20}}' /tmp/old
           grep -q 'usageLimitDefinitionsV943' /tmp/old
           grep -q 'data-usage-key' /tmp/old
           grep -q 'setUsageLimitV943' /tmp/old
