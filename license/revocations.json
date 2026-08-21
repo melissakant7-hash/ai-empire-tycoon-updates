@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "sequence": 1000014,
-  "updatedAt": "2026-08-21T21:38:18Z",
+  "sequence": 1000015,
+  "updatedAt": "2026-08-21T21:38:23Z",
   "revoked": [
     {
       "id": "1826c3db2347c464"
@@ -11,7 +11,8 @@
       "reason": "Deleted"
     },
     {
-      "id": "c78445df17b430f0"
+      "id": "c78445df17b430f0",
+      "reason": "Deleted"
     }
   ]
 }
