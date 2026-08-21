@@ -1,0 +1,164 @@
+name: Build and publish AI Training v10.0.2
+
+on:
+  pull_request:
+    paths:
+      - 'build/v10.0.2/**'
+      - '.github/workflows/build-v1002.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v10.0.2/**'
+      - '.github/workflows/build-v1002.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and decode v10.0.1 protected base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v10.0.1/part*.txt > /tmp/v1001.b64
+          base64 -d /tmp/v1001.b64 > /tmp/v1001.html.gz
+          gzip -dc /tmp/v1001.html.gz > /tmp/v1001-protected.html
+          echo '2d3d0c25d6bd7aba96fe3cef61186e91ccdfd790e24c40d560624d6b324ab660  /tmp/v1001-protected.html' | sha256sum -c -
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, ast, gzip
+          s=Path('/tmp/v1001-protected.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>([\s\S]*?)</script>',s)
+          if not m: raise SystemExit('No protected script found')
+          loader=m.group(1)
+          pm=re.search(r"const _p=\[(.*?)\]\.join\(''\)",loader,re.S)
+          if not pm: raise SystemExit('Protected payload list missing')
+          vals=ast.literal_eval('['+pm.group(1)+']')
+          import base64
+          enc=base64.b64decode(''.join(vals))
+          key=bytes([0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3])
+          raw=bytes(b^key[i%32] for i,b in enumerate(enc))
+          js=gzip.decompress(raw).decode('utf-8')
+          out=s[:m.start(1)]+js+s[m.end(1):]
+          Path('/tmp/old').write_text(out,encoding='utf-8')
+          PY
+          echo '6e0c0ae6a37243080d9f610dc22fd193eedfb116273e172adfcf6698b66d98b2  /tmp/old' | sha256sum -c -
+
+      - name: Apply AI Training v10.0.2 rename and Local AI responsiveness patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v10.0.2/patch*.txt > /tmp/v1002.patch.b64
+          base64 -d /tmp/v1002.patch.b64 > /tmp/v1002.patch.gz
+          gzip -dc /tmp/v1002.patch.gz > /tmp/v1002.patch
+          cd /tmp
+          patch old < v1002.patch
+          echo 'dbca3ebae988d647442efdf7fa9f2a9ab166a332484e97872fdbf75bbeb213bb  /tmp/old' | sha256sum -c -
+
+      - name: Verify rename, responsive Local AI and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '<title>AI Training v10.0.2</title>' /tmp/old
+          grep -q 'AI <span>TRAINING</span>' /tmp/old
+          ! grep -q 'AI Empire Tycoon' /tmp/old
+          grep -q 'v1002StartSocialWallScheduler' /tmp/old
+          grep -q 'responsive wall-clock queue' /tmp/old
+          grep -q 'setInterval(()=>{try{if(S?.socialAIEnabled)socialDailyPulse()}catch(e){}},200)' /tmp/old
+          grep -q 'slice(-3)' /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>([\s\S]*?)</script>',s)
+          if not m: raise SystemExit('No script block')
+          Path('/tmp/v1002.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/v1002.js
+
+      - name: Generate deterministic protected distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, gzip, base64
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>([\s\S]*?)</script>',s); js=m.group(1); jsb=js.encode()
+          fnv=2166136261
+          for b in jsb:
+              fnv ^= b; fnv=(fnv*16777619)&0xffffffff
+          comp=gzip.compress(jsb,compresslevel=9,mtime=0)
+          key=bytes([0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3])
+          enc=bytes(b^key[i%32] for i,b in enumerate(comp)); b64=base64.b64encode(enc).decode(); chunks=[b64[i:i+12000] for i in range(0,len(b64),12000)]
+          loader="""
+          (async()=>{const _p=[__CHUNKS__].join(''),_k=[0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3],_b=atob(_p),_e=new Uint8Array(_b.length);for(let i=0;i<_b.length;i++)_e[i]=_b.charCodeAt(i)^_k[i&31];try{if(typeof DecompressionStream==='undefined')throw new Error('Protected build requires a modern Chromium browser.');const _r=new Blob([_e]).stream().pipeThrough(new DecompressionStream('gzip')).getReader(),_c=[];let _n=0;for(;;){const _q=await _r.read();if(_q.done)break;_c.push(_q.value);_n+=_q.value.length}const _u=new Uint8Array(_n);let _o=0;for(const _q of _c){_u.set(_q,_o);_o+=_q.length}const _code=new TextDecoder().decode(_u);let _h=2166136261>>>0;for(const _v of new TextEncoder().encode(_code)){_h^=_v;_h=Math.imul(_h,16777619)>>>0}if(_h!==__FNV__)throw new Error('Game code integrity check failed.');const _s=document.createElement('script');_s.textContent=_code;document.documentElement.appendChild(_s);_s.remove()}catch(_err){console.error(_err);const _d=document.createElement('div');_d.style='position:fixed;inset:0;z-index:999999;background:#080c14;color:#e8eef8;padding:40px;font:16px Segoe UI,Arial';_d.innerHTML='<h2>AI Training could not start</h2><p>The protected game package failed its integrity or browser compatibility check.</p>';document.body.appendChild(_d)}})();
+          """.replace('__CHUNKS__',',\n'.join(repr(c) for c in chunks)).replace('__FNV__',f'0x{fnv:08x}')
+          out=s[:m.start(1)]+loader+s[m.end(1):]
+          Path('/tmp/protected').write_text(out,encoding='utf-8')
+          PY
+          echo 'bf436bc1d95c6416e4b95780ba56f381af62399b9f17cdb5923120e9e678e2f9  /tmp/protected' | sha256sum -c -
+          ! grep -q 'function v1002StartSocialWallScheduler' /tmp/protected
+
+      - name: Package v10.0.2 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v10.0.2
+          mkdir -p packages/v10.0.2
+          gzip -n -9 -c /tmp/protected > /tmp/v1002.html.gz
+          base64 -w0 /tmp/v1002.html.gz > /tmp/v1002.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v1002.b64 packages/v10.0.2/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v10.0.2').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='bf436bc1d95c6416e4b95780ba56f381af62399b9f17cdb5923120e9e678e2f9'
+          manifest={'latestVersion':'10.0.2','required':False,'autoUpdate':True,
+            'message':'v10.0.2 renames the full game to AI Training and makes Local AI social agents more responsive with a wall-clock scheduler and smaller prompts.',
+            'gameUrl':'','gameParts':[base+str(p).replace('\\','/') for p in parts],
+            'gameSha256':sha,'sha256':sha,'encoding':'gzip-base64','patches':[],
+            'launcherUrl':'','launcherSha256':'','downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'}
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('# AI Empire Tycoon Updates','# AI Training Updates',1)
+          readme=readme.replace('Public update channel for AI Empire Tycoon.','Public update channel for AI Training.',1)
+          readme=readme.replace('- Game: **v10.0.1**','- Game: **v10.0.2**',1)
+          if '## v10.0.2' not in readme:
+            insert='''## v10.0.2\n\nBrand and Local AI responsiveness update. The full game is now named **AI Training** throughout the game UI. Local AI social generation is no longer dependent on every second simulation day: a wall-clock scheduler checks queued work independently while the game is paused or running at any speed. Local-AI prompts are also substantially smaller while preserving persona, opinion, compact memory and company context, reducing avoidable generation latency. The protected browser distribution and existing saves remain compatible.\n\nThe v10.0.2 build is verified against SHA-256 `bf436bc1d95c6416e4b95780ba56f381af62399b9f17cdb5923120e9e678e2f9`.\n\n'''
+            readme=readme.replace('## v10.0.1\n',insert+'## v10.0.1\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v10.0.2/part*.txt > /tmp/final.b64
+          base64 -d /tmp/final.b64 > /tmp/final.gz
+          gzip -dc /tmp/final.gz > /tmp/final.html
+          echo 'bf436bc1d95c6416e4b95780ba56f381af62399b9f17cdb5923120e9e678e2f9  /tmp/final.html' | sha256sum -c -
+
+      - name: Publish v10.0.2 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Training Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v10.0.2 version.json README.md
+          if git diff --cached --quiet; then echo 'Nothing to publish.'; else
+            git commit -m 'Publish AI Training v10.0.2 rename and Local AI responsiveness update'
+            git push
+          fi
