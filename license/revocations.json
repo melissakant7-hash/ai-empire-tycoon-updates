@@ -1,6 +1,6 @@
 {
-  "schema": 1,
-  "sequence": 1,
-  "updatedAt": "2026-08-21T17:15:46Z",
+  "schema": 2,
+  "sequence": 1000000,
+  "updatedAt": "2026-08-21T18:46:38Z",
   "revoked": []
 }
