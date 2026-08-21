@@ -1,6 +1,11 @@
 {
   "schema": 2,
-  "sequence": 1000000,
-  "updatedAt": "2026-08-21T18:46:38Z",
-  "revoked": []
+  "sequence": 1000001,
+  "updatedAt": "2026-08-21T18:52:51Z",
+  "revoked": [
+    {
+      "id": "1826c3db2347c464",
+      "reason": "Refund"
+    }
+  ]
 }
