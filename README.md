@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.4**
+- Game: **v9.4.5**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,14 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.5
+
+Social consequences and usage-economics update. Posts written from the player company account are now interpreted by their content and can move reputation, brand strength, active users, consumer demand and — after an IPO — investor/share-price sentiment. Product and research announcements, transparency/safety communication, customer-friendly pricing or usage changes, margin-first cuts, layoffs, apologies, overhype and hostile communication produce different consequences. Official announcements have stronger effects, while replies have smaller effects. Each player-authored post displays its resulting company impact in the social timeline.
+
+Language-model subscription usage limits now have a direct serving-cost trade-off. Higher allowances increase inference/accelerator cost and lower allowances reduce it. Efficiency research, newer hardware and custom silicon reduce marginal serving cost. Finance now includes an **Inference & Usage** operating-cost line, and each released language model shows its estimated serving cost per day beside ARPU, paid mix and average usage load.
+
+The v9.4.5 build is verified against SHA-256 `026b7a9162e86b12f74d82979fac90f733a9f681bcd76e5bba4c2f08b4192ac8`.
 
 ## v9.4.4
 
