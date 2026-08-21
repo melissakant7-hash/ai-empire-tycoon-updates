@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.1**
+- Game: **v9.4.2**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,12 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.2
+
+Small Sandbox quality-of-life update: the Sandbox Control Center now includes a persistent simulation-speed slider from **1× to 5×** in 0.25× steps. Changing it while the game is running immediately changes the tick rate; changing it while paused sets the speed used by Continue. The value is saved with the Sandbox company and Career speed behavior is unchanged.
+
+The v9.4.2 build is verified against SHA-256 `904e46f54f63843986c6a0b7289f0e37b206184e21a5402a2dee6aba1f54ce66`.
 
 ## v9.4.1
 
