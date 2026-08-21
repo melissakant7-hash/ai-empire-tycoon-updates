@@ -1,10 +1,11 @@
 {
   "schema": 2,
-  "sequence": 1000015,
-  "updatedAt": "2026-08-21T21:38:23Z",
+  "sequence": 1000016,
+  "updatedAt": "2026-08-21T21:38:27Z",
   "revoked": [
     {
-      "id": "1826c3db2347c464"
+      "id": "1826c3db2347c464",
+      "reason": "Deleted"
     },
     {
       "id": "74f18f617348d9dd",
