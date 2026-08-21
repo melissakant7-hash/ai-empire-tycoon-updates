@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.5.0**
+- Game: **v10.0.0**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,14 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v10.0.0
+
+Major company-and-world gameplay expansion. The new Company HQ connects workforce allocation and morale, executive hiring, crisis management, startup acquisitions, government/regulatory posture, developer ecosystem and API reliability, press interviews, board/investor pressure, and the late-game frontier AI race. Model Lab gains real training-program decisions for compute budget, data program and safety gates; release safety policy now changes cost/risk; rival CEOs have persistent personalities and periodic strategic behavior. Startups evolve and can be acquired by the player or rivals, developer adoption responds to uptime/support, outages can escalate into crises, and frontier moonshots provide a costly endgame path to permanent capability breakthroughs.
+
+Also included from the requested numbered ideas: AI Safety/Alignment Decisions (#7), Government & Regulation (#8), API Reliability/Outages (#14), Scandals & Crisis Management (#17), Press Conferences/Interviews (#18), Board/Investor Pressure (#19), and Endgame/AI Race (#20). Model Training Projects (#4) is integrated into Model Lab rather than duplicated.
+
+The v10.0.0 build is verified against SHA-256 `1c725b57574a89c1fca6b475038b1d9b9ef96d81b0b8ef7568f6b3d7027e6333`.
 
 ## v9.5.0
 
