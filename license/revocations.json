@@ -1,9 +1,17 @@
 {
   "schema": 2,
-  "sequence": 1000012,
-  "updatedAt": "2026-08-21T20:47:01Z",
+  "sequence": 1000013,
+  "updatedAt": "2026-08-21T21:18:02Z",
   "revoked": [
-    {"id": "c78445df17b430f0"},
-    {"id": "1826c3db2347c464"}
+    {
+      "id": "1826c3db2347c464"
+    },
+    {
+      "id": "74f18f617348d9dd",
+      "reason": "refund / chargeback / manual revoke"
+    },
+    {
+      "id": "c78445df17b430f0"
+    }
   ]
 }
