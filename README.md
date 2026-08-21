@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4**
+- Game: **v9.4.1**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,12 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.1
+
+Hotfix for interaction controls that were being replaced by the simulation render loop while open. Native dropdowns and active inputs are now protected during interaction, deferred renders resume immediately after focus leaves the control, and the Custom AI Silicon focus plus Secret Research secrecy choices persist across refreshes. Existing v9.4 saves and gameplay systems remain compatible.
+
+The v9.4.1 build is verified against SHA-256 `3fe1184281b7c3abfb96057d6af98304e144f87fd2f6233dcd46934362178a96`.
 
 ## v9.4
 
