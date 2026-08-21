@@ -1,0 +1,147 @@
+name: Build and publish AI Empire Tycoon v9.4.6
+
+on:
+  pull_request:
+    paths:
+      - 'build/v9.4.6/**'
+      - '.github/workflows/build-v946.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v9.4.6/**'
+      - '.github/workflows/build-v946.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct v9.4.5 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.5/part*.txt > /tmp/v945.b64
+          base64 -d /tmp/v945.b64 > /tmp/v945.html.gz
+          gzip -dc /tmp/v945.html.gz > /tmp/old
+          echo '026b7a9162e86b12f74d82979fac90f733a9f681bcd76e5bba4c2f08b4192ac8  /tmp/old' | sha256sum -c -
+
+      - name: Apply v9.4.6 reputation and local-AI-only patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v9.4.6/patch*.txt > /tmp/v946.patch.b64
+          base64 -d /tmp/v946.patch.b64 > /tmp/v946.patch.gz
+          gzip -dc /tmp/v946.patch.gz > /tmp/v946.patch
+          cd /tmp
+          patch old < v946.patch
+          echo 'de832eab0e401e5570832b2a7fd8e2b4954f409938271027b4c4ba2961301809  /tmp/old' | sha256sum -c -
+
+      - name: Verify v9.4.6 social behavior and JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'AI Empire Tycoon v9.4.6' /tmp/old
+          grep -q 'seedPlayerEngagementV946' /tmp/old
+          grep -q 'playerPostReplyTargetV946' /tmp/old
+          grep -q 'generateLocalAIConversationV946' /tmp/old
+          grep -q 'localAIOnlyActiveV946' /tmp/old
+          grep -q 'AI-only mode: every NEW autonomous post, reply and Hot Debate message' /tmp/old
+          grep -q "if(localAIOnlyActiveV946()&&!localAIReadyV946())return" /tmp/old
+          grep -q 'No simulated fallback posts will be created' /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m:
+              raise SystemExit('No script block found')
+          js=m.group(1)
+          Path('/tmp/v946.js').write_text(js,encoding='utf-8')
+          # Final v9.4.6 override must gate AI-only mode before fallback creation.
+          start=js.rfind('socialDailyPulse=function(){')
+          end=js.find('// ================== end v9.4.6',start)
+          block=js[start:end]
+          gate=block.find('if(localAIOnlyActiveV946()&&!localAIReadyV946())return')
+          ai=block.find('if(localAIOnlyActiveV946()){')
+          fallback=block.find('const root=createSocialPost(n)')
+          if min(gate,ai,fallback) < 0 or not (gate < ai < fallback):
+              raise SystemExit('AI-only gate/fallback ordering is invalid')
+          # Event/release paths must queue instead of template-writing while AI-only is enabled.
+          for needle in ['generateSocialForRelease=function(n,count=null,more=false){','createCompanySocialEventV92=function(topic,context,score=55,forcedTone=null,count=3){']:
+              if needle not in js:
+                  raise SystemExit('Missing AI-only event override: '+needle)
+          PY
+          node --check /tmp/v946.js
+
+      - name: Package v9.4.6 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v9.4.6
+          mkdir -p packages/v9.4.6
+          gzip -n -9 -c /tmp/old > /tmp/v946.html.gz
+          base64 -w0 /tmp/v946.html.gz > /tmp/v946.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v946.b64 packages/v9.4.6/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v9.4.6').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='de832eab0e401e5570832b2a7fd8e2b4954f409938271027b4c4ba2961301809'
+          manifest={
+              'latestVersion':'9.4.6',
+              'required':False,
+              'autoUpdate':True,
+              'message':'v9.4.6 makes player-post engagement scale strongly with company reputation/brand and switches Social Media to true local-AI-only generation whenever Live AI is enabled, without changing the paced posting cadence.',
+              'gameUrl':'',
+              'gameParts':[base+str(p).replace('\\','/') for p in parts],
+              'gameSha256':sha,
+              'sha256':sha,
+              'encoding':'gzip-base64',
+              'patches':[],
+              'launcherUrl':'',
+              'launcherSha256':'',
+              'downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'
+          }
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('- Game: **v9.4.5**','- Game: **v9.4.6**',1)
+          if '## v9.4.6' not in readme:
+              insert='''## v9.4.6\n\nReputation-powered social reach and strict Local-AI-only generation. Posts from the player company account now derive reach, initial likes, repost velocity and real reply depth from company reputation, brand and audience size. At high reputation, new company posts are deliberately positioned above ordinary recent network posts in engagement, while lower-reputation companies receive more modest reach. Reply totals are backed by actual thread messages rather than cosmetic counters.\n\nWhen Live AI Agents are enabled and the browser-managed local LanguageModel session is ready, every **new agent-written** root post, reply and Hot Debate message is generated by that local model. Model-release reactions, company events, pricing/usage reactions and rumors are queued into the same paced social scheduler instead of producing template fallback text. The existing real-time and in-game pacing limits remain in force, and enabling Local AI no longer creates an immediate burst of posts. If Local AI is enabled but its session is still preparing, agent generation waits rather than silently falling back to templates. Existing historical posts in saves are preserved.\n\nThe v9.4.6 build is verified against SHA-256 `de832eab0e401e5570832b2a7fd8e2b4954f409938271027b4c4ba2961301809`.\n\n'''
+              readme=readme.replace('## v9.4.5\n',insert+'## v9.4.5\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.6/part*.txt > /tmp/v946-final.b64
+          base64 -d /tmp/v946-final.b64 > /tmp/v946-final.gz
+          gzip -dc /tmp/v946-final.gz > /tmp/v946-final.html
+          echo 'de832eab0e401e5570832b2a7fd8e2b4954f409938271027b4c4ba2961301809  /tmp/v946-final.html' | sha256sum -c -
+
+      - name: Publish v9.4.6 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Empire Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v9.4.6 version.json README.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to publish.'
+          else
+            git commit -m 'Publish AI Empire Tycoon v9.4.6 reputation and local-AI-only social'
+            git push
+          fi
