@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.10**
+- Game: **v9.4.11**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,12 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.11
+
+Secret Research UX + faster Local AI hotfix. The secrecy selector already affected actual project RP/cash cost and daily leak probability, but the UI did not expose those changes, making the control look broken. v9.4.11 updates each project card immediately with the selected real cost and estimated cumulative leak risk. Local AI Social Media pacing is also reduced from 1.8 seconds to 1.2 seconds, about 50% more messages per minute, while v9.4.9 bounded-thread caps and anti-spam protections stay unchanged.
+
+The v9.4.11 build is verified against SHA-256 `7bd4fa0e6dbc474a719798e7e1c1dc17b81cdd182e22ba9cf834adac5d94f80f`.
 
 ## v9.4.10
 
