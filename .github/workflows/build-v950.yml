@@ -1,0 +1,125 @@
+name: Build and publish AI Empire Tycoon v9.5.0
+
+on:
+  pull_request:
+    paths:
+      - 'build/v9.5.0/**'
+      - '.github/workflows/build-v950.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v9.5.0/**'
+      - '.github/workflows/build-v950.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct v9.4.11 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.11/part*.txt > /tmp/v9411.b64
+          base64 -d /tmp/v9411.b64 > /tmp/v9411.html.gz
+          gzip -dc /tmp/v9411.html.gz > /tmp/old
+          echo '7bd4fa0e6dbc474a719798e7e1c1dc17b81cdd182e22ba9cf834adac5d94f80f  /tmp/old' | sha256sum -c -
+
+      - name: Apply v9.5.0 polish and balance pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v9.5.0/patch*.txt > /tmp/v950.patch.b64
+          base64 -d /tmp/v950.patch.b64 > /tmp/v950.patch.gz
+          gzip -dc /tmp/v950.patch.gz > /tmp/v950.patch
+          cd /tmp
+          patch old < v950.patch
+          echo 'd78b38c33aef1fd61cf5a6fafd8769d2fa01f49952d23a7fb097d76da8d29624  /tmp/old' | sha256sum -c -
+
+      - name: Verify v9.5.0 systems and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'AI Empire Tycoon v9.5.0' /tmp/old
+          grep -q 'rivalWorldCapV950' /tmp/old
+          grep -q 'World AI pace recalibrated' /tmp/old
+          grep -q 'Why did this change?' /tmp/old
+          grep -q 'Save hardening' /tmp/old
+          grep -q 'v950AIDiagnostics' /tmp/old
+          grep -q 'v950BackupKey' /tmp/old
+          grep -q 'V950_SOCIAL_KEEP=1500' /tmp/old
+          grep -q 'Intentionally NOT included: new confirmation dialogs, keyboard shortcuts, or accessibility modes/options.' /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m: raise SystemExit('No script block found')
+          Path('/tmp/v950.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/v950.js
+
+      - name: Package v9.5.0 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v9.5.0
+          mkdir -p packages/v9.5.0
+          gzip -n -9 -c /tmp/old > /tmp/v950.html.gz
+          base64 -w0 /tmp/v950.html.gz > /tmp/v950.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v950.b64 packages/v9.5.0/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v9.5.0').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='d78b38c33aef1fd61cf5a6fafd8769d2fa01f49952d23a7fb097d76da8d29624'
+          manifest={
+            'latestVersion':'9.5.0','required':False,'autoUpdate':True,
+            'message':'v9.5.0 is a major polish, clarity and balance pass: time-gated rival progression, explainable metric changes, save recovery backups, Local AI diagnostics, improved empty/disabled states, responsive UI, subtle feedback, performance maintenance and a clearer Update Center.',
+            'gameUrl':'','gameParts':[base+str(p).replace('\\','/') for p in parts],
+            'gameSha256':sha,'sha256':sha,'encoding':'gzip-base64','patches':[],
+            'launcherUrl':'','launcherSha256':'','downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'
+          }
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('- Game: **v9.4.11**','- Game: **v9.5.0**',1)
+          if '## v9.5.0' not in readme:
+            insert='''## v9.5.0\n\nMajor non-feature polish, clarity, balance and resilience pass. Rival capability is now gated by a time-based world frontier so passive calendar progression cannot rush competitors to 99 in only a few years. Dashboard/history gain a "Why did this change?" ledger, key metrics receive explanatory tooltips, saves keep a silent last-known-good recovery copy, Local AI shows real generation diagnostics and unread company replies, empty/disabled states explain what is missing, old UI receives consistency/responsive polish, major values animate on meaningful changes, the Update Center is clearer, and long-running saves receive bounded social/history maintenance. Existing gameplay systems and saves remain compatible.\n\nNot included by request: additional confirmation-dialog behavior, keyboard shortcuts, or new accessibility modes/options.\n\nThe v9.5.0 build is verified against SHA-256 `d78b38c33aef1fd61cf5a6fafd8769d2fa01f49952d23a7fb097d76da8d29624`.\n\n'''
+            readme=readme.replace('## v9.4.11\n',insert+'## v9.4.11\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.5.0/part*.txt > /tmp/v950-final.b64
+          base64 -d /tmp/v950-final.b64 > /tmp/v950-final.gz
+          gzip -dc /tmp/v950-final.gz > /tmp/v950-final.html
+          echo 'd78b38c33aef1fd61cf5a6fafd8769d2fa01f49952d23a7fb097d76da8d29624  /tmp/v950-final.html' | sha256sum -c -
+
+      - name: Publish v9.5.0 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Empire Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v9.5.0 version.json README.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to publish.'
+          else
+            git commit -m 'Publish AI Empire Tycoon v9.5.0 polish and balance pass'
+            git push
+          fi
