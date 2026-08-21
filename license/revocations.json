@@ -1,19 +1,27 @@
 {
   "schema": 2,
-  "sequence": 1000026,
-  "updatedAt": "2026-08-21T22:15:52Z",
+  "sequence": 1000027,
+  "updatedAt": "2026-08-21T22:59:20Z",
   "revoked": [
     {
       "id": "1826c3db2347c464",
       "reason": "Deleted"
     },
     {
+      "id": "2335ce8bbce2230f",
+      "reason": "Deleted"
+    },
+    {
       "id": "2e1014e7988bb1e4",
-      "reason": "refund / chargeback / manual revoke"
+      "reason": "Deleted"
     },
     {
       "id": "359cb481479265a9",
-      "reason": "refund / chargeback / manual revoke"
+      "reason": "Deleted"
+    },
+    {
+      "id": "4a7acdd3113d8a1f",
+      "reason": "Deleted"
     },
     {
       "id": "74f18f617348d9dd",
