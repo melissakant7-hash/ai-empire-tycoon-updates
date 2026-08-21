@@ -1,0 +1,134 @@
+name: Build and publish AI Empire Tycoon v9.4.8
+
+on:
+  pull_request:
+    paths:
+      - 'build/v9.4.8/**'
+      - '.github/workflows/build-v948.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v9.4.8/**'
+      - '.github/workflows/build-v948.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct v9.4.7 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.7/part*.txt > /tmp/v947.b64
+          base64 -d /tmp/v947.b64 > /tmp/v947.html.gz
+          gzip -dc /tmp/v947.html.gz > /tmp/old
+          echo '40c371352964e80f70a8f1a94e92bfd9cd5e9dfd41499f8fd0ed757125a6a42b  /tmp/old' | sha256sum -c -
+
+      - name: Apply v9.4.8 multi-thread Local AI hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v9.4.8/patch*.txt > /tmp/v948.patch.b64
+          base64 -d /tmp/v948.patch.b64 > /tmp/v948.patch.gz
+          gzip -dc /tmp/v948.patch.gz > /tmp/v948.patch
+          cd /tmp
+          patch old < v948.patch
+          echo 'f5e06e0e483c98e491595869604b929c741307010fd3426dd7d78f06477a3135  /tmp/old' | sha256sum -c -
+
+      - name: Verify v9.4.8 social scheduler and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'AI Empire Tycoon v9.4.8' /tmp/old
+          grep -q 'SOCIAL_MIN_REAL_MS_V948=2400' /tmp/old
+          grep -q 'nextFairReplyJobV948' /tmp/old
+          grep -q 'processFairReplyV948' /tmp/old
+          grep -q 'debateCandidatesV948' /tmp/old
+          grep -q 'slice(0,6)' /tmp/old
+          grep -q 'Hard AI-only guard' /tmp/old
+          grep -q 'LOCAL AI ONLY' /tmp/old
+          grep -q 'AI-ONLY WAITING • NO SIMULATION' /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m:
+              raise SystemExit('No script block found')
+          Path('/tmp/v948.js').write_text(m.group(1),encoding='utf-8')
+          guard=s.index('// Hard AI-only guard')
+          events=s.index('// Events')
+          if not guard < events:
+              raise SystemExit('AI-only guard ordering invalid')
+          if 'createSocialPost=function(n,tone=null,day=null)' not in s[guard:events]:
+              raise SystemExit('createSocialPost hard guard missing')
+          if 'createReplyV93=function(n,parent' not in s[guard:events]:
+              raise SystemExit('createReplyV93 hard guard missing')
+          PY
+          node --check /tmp/v948.js
+
+      - name: Package v9.4.8 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v9.4.8
+          mkdir -p packages/v9.4.8
+          gzip -n -9 -c /tmp/old > /tmp/v948.html.gz
+          base64 -w0 /tmp/v948.html.gz > /tmp/v948.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v948.b64 packages/v9.4.8/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v9.4.8').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='f5e06e0e483c98e491595869604b929c741307010fd3426dd7d78f06477a3135'
+          manifest={
+              'latestVersion':'9.4.8','required':False,'autoUpdate':True,
+              'message':'v9.4.8 fixes Social Media pacing and thread starvation: company announcements get prompt real replies, Local AI rotates fairly across multiple conversations, Hot Debate shows up to six active threads, and simulation text is hard-blocked whenever Local AI is enabled.',
+              'gameUrl':'','gameParts':[base+str(p).replace('\\','/') for p in parts],
+              'gameSha256':sha,'sha256':sha,'encoding':'gzip-base64','patches':[],
+              'launcherUrl':'','launcherSha256':'','downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'
+          }
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('- Game: **v9.4.7**','- Game: **v9.4.8**',1)
+          if '## v9.4.8' not in readme:
+              insert='''## v9.4.8\n\nSocial Media pacing and multi-thread reliability hotfix. The Local AI scheduler now targets roughly one new agent post or reply every 2.4 seconds of real time, including at high Sandbox speed, while rotating fairly between the player company conversation, other reply chains and new root posts. Company announcements receive their first replies with priority, then stop monopolizing the queue so several conversations can develop in parallel.\n\nHot Debate now shows up to six active or developing threads at the same time instead of waiting for only fully-developed reply chains. Local-AI thread jobs are round-robin/fairly scheduled, failed anti-repetition drafts no longer block the whole network, and Local AI root generation retries from different perspectives before re-queuing a topic. When Local AI is enabled, hard guards block legacy simulation post/reply/rumor paths; if the local model is unavailable the network waits rather than creating fallback simulation text.\n\nThe v9.4.8 build is verified against SHA-256 `f5e06e0e483c98e491595869604b929c741307010fd3426dd7d78f06477a3135`.\n\n'''
+              readme=readme.replace('## v9.4.7\n',insert+'## v9.4.7\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v9.4.8/part*.txt > /tmp/v948-final.b64
+          base64 -d /tmp/v948-final.b64 > /tmp/v948-final.gz
+          gzip -dc /tmp/v948-final.gz > /tmp/v948-final.html
+          echo 'f5e06e0e483c98e491595869604b929c741307010fd3426dd7d78f06477a3135  /tmp/v948-final.html' | sha256sum -c -
+
+      - name: Publish v9.4.8 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Empire Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v9.4.8 version.json README.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to publish.'
+          else
+            git commit -m 'Publish AI Empire Tycoon v9.4.8 multi-thread Local AI hotfix'
+            git push
+          fi
