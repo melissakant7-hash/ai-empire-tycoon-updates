@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "sequence": 1000033,
-  "updatedAt": "2026-08-21T23:39:34Z",
+  "sequence": 1000034,
+  "updatedAt": "2026-08-21T23:57:21Z",
   "revoked": [
     {
       "id": "1826c3db2347c464",
@@ -22,6 +22,10 @@
     {
       "id": "4a7acdd3113d8a1f",
       "reason": "Deleted"
+    },
+    {
+      "id": "4c91e893fb205033",
+      "reason": "refund / chargeback / manual revoke"
     },
     {
       "id": "74f18f617348d9dd",
