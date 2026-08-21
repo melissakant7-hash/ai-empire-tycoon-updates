@@ -4,7 +4,7 @@ Public update channel for AI Empire Tycoon.
 
 ## Current release
 
-- Game: **v9.4.6**
+- Game: **v9.4.7**
 - Update channel: `version.json`
 - Transport: GitHub Raw (Vercel is no longer used)
 - Auto-update: enabled
@@ -12,6 +12,14 @@ Public update channel for AI Empire Tycoon.
 The permanent Windows launcher keeps the game itself at the stable local path `%LOCALAPPDATA%\AI Empire Tycoon\AI_Empire_Tycoon_v4.html` and keeps the browser profile in `%LOCALAPPDATA%\AI Empire Tycoon\Profile`, so updates do not move or reset saves.
 
 The launcher contains v9.1 as its recovery/bundled build. Current and future gameplay releases are delivered through `version.json` as verified replacement packages or patches. Every downloaded game build is checked against its SHA-256 before it replaces the installed game.
+
+## v9.4.7
+
+Local-AI thread reliability hotfix. Reputation-based company posts now put their expected replies into a persistent save-backed queue instead of attempting a fragile immediate burst. Each queued reply consumes a normal paced social publishing slot, so a target conversation such as 7 replies visibly progresses 0/7 → 1/7 → … → 7/7. Existing v9.4.6 player posts with an unfulfilled reply target are migrated into this queue automatically. Autonomous Local-AI threads also grow through the same paced queue so Hot Debate remains active without instant reply spam.
+
+The Local AI Enabled choice is now sticky across browser/model initialization problems. If the local LanguageModel is unavailable or still preparing, Social Media enters **AI-ONLY WAITING** and creates no simulated fallback text; queued work resumes automatically when the model becomes ready. Every agent message now exposes its actual provenance with a **LOCAL AI** or **SIMULATION** badge, including historical posts already present in saves. News seeding and secret-project leaks also respect AI-only mode.
+
+The v9.4.7 build is verified against SHA-256 `40c371352964e80f70a8f1a94e92bfd9cd5e9dfd41499f8fd0ed757125a6a42b`.
 
 ## v9.4.6
 
