@@ -1,0 +1,195 @@
+name: Build and publish AI Empire Tycoon v10.0.1
+
+on:
+  pull_request:
+    paths:
+      - 'build/v10.0.1/**'
+      - '.github/workflows/build-v1001.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'build/v10.0.1/**'
+      - '.github/workflows/build-v1001.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct v10.0.0 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v10.0.0/part*.txt > /tmp/v1000.b64
+          base64 -d /tmp/v1000.b64 > /tmp/v1000.html.gz
+          gzip -dc /tmp/v1000.html.gz > /tmp/old
+          echo '1c725b57574a89c1fca6b475038b1d9b9ef96d81b0b8ef7568f6b3d7027e6333  /tmp/old' | sha256sum -c -
+
+      - name: Apply v10.0.1 UI hotfix to readable build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat build/v10.0.1/patch*.txt > /tmp/v1001.patch.b64
+          base64 -d /tmp/v1001.patch.b64 > /tmp/v1001.patch.gz
+          gzip -dc /tmp/v1001.patch.gz > /tmp/v1001.patch
+          cd /tmp
+          patch old < v1001.patch
+          echo '6e0c0ae6a37243080d9f610dc22fd193eedfb116273e172adfcf6698b66d98b2  /tmp/old' | sha256sum -c -
+
+      - name: Verify UI fixes and readable JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'AI Empire Tycoon v10.0.1' /tmp/old
+          grep -q 'Installed game content</span><b>v10.0.1' /tmp/old
+          grep -q 'v10.0.1 UI + protected distribution hotfix' /tmp/old
+          grep -q 'color-scheme:dark' /tmp/old
+          grep -q 'gap:10px;min-width:116px' /tmp/old
+          grep -q "const V100_VERSION='10.0.1'" /tmp/old
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/old').read_text(encoding='utf-8')
+          m=re.search(r'<script>([\s\S]*?)</script>',s)
+          if not m: raise SystemExit('No script block found')
+          Path('/tmp/v1001-readable.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/v1001-readable.js
+
+      - name: Create protected distribution build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, base64, hashlib
+          p=Path('/tmp/old')
+          out=Path('/tmp/protected')
+          text=p.read_text(encoding='utf-8')
+          m=re.search(r'<script>([\s\S]*?)</script>',text)
+          if not m: raise SystemExit('script missing')
+          js=m.group(1)
+          js_bytes=js.encode('utf-8')
+          fnv=2166136261
+          for b in js_bytes:
+              fnv ^= b
+              fnv = (fnv * 16777619) & 0xffffffff
+          compressed=subprocess.run(['gzip','-n','-9','-c'],input=js_bytes,stdout=subprocess.PIPE,check=True).stdout
+          key=bytes([0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3])
+          enc=bytearray(b ^ key[i % len(key)] for i,b in enumerate(compressed))
+          b64=base64.b64encode(enc).decode('ascii')
+          chunks=[b64[i:i+12000] for i in range(0,len(b64),12000)]
+          chunk_js=',\n'.join(repr(c) for c in chunks)
+          loader = """
+          (async()=>{
+          const _p=[__CHUNKS__].join('');
+          const _k=[0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3],_b=atob(_p),_e=new Uint8Array(_b.length);
+          for(let i=0;i<_b.length;i++){_e[i]=_b.charCodeAt(i)^_k[i&31]}
+          try{
+           if(typeof DecompressionStream==='undefined')throw new Error('Protected build requires a modern Chromium browser.');
+           const _r=new Blob([_e]).stream().pipeThrough(new DecompressionStream('gzip')).getReader(),_c=[];let _n=0;for(;;){const _q=await _r.read();if(_q.done)break;_c.push(_q.value);_n+=_q.value.length}const _u=new Uint8Array(_n);let _o=0;for(const _q of _c){_u.set(_q,_o);_o+=_q.length}const _code=new TextDecoder().decode(_u);
+           let _h=2166136261>>>0;for(const _v of new TextEncoder().encode(_code)){_h^=_v;_h=Math.imul(_h,16777619)>>>0}
+           if(_h!==__FNV__)throw new Error('Game code integrity check failed.');
+           const _s=document.createElement('script');_s.textContent=_code;document.documentElement.appendChild(_s);_s.remove();
+          }catch(_err){console.error(_err);const _d=document.createElement('div');_d.style='position:fixed;inset:0;z-index:999999;background:#080c14;color:#e8eef8;padding:40px;font:16px Segoe UI,Arial';_d.innerHTML='<h2>AI Empire Tycoon could not start</h2><p>The protected game package failed its integrity or browser compatibility check.</p>';document.body.appendChild(_d)}
+          })();
+          """.replace('__CHUNKS__',chunk_js).replace('__FNV__',f'0x{fnv:08x}')
+          import textwrap
+          loader=textwrap.dedent(loader)
+          prot=text[:m.start(1)]+loader+text[m.end(1):]
+          out.write_text(prot,encoding='utf-8')
+          sha=hashlib.sha256(prot.encode()).hexdigest()
+          print('Protected SHA:',sha)
+          if sha!='2d3d0c25d6bd7aba96fe3cef61186e91ccdfd790e24c40d560624d6b324ab660':
+              raise SystemExit('Protected build SHA mismatch')
+          PY
+
+      - name: Verify protected payload can be recovered and executed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q 'function renderPeopleV100' /tmp/protected; then
+            echo 'Readable game source unexpectedly present in distributed HTML.' >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, ast, base64, gzip
+          s=Path('/tmp/protected').read_text(encoding='utf-8')
+          m=re.search(r"const _p=\[(.*?)\]\.join\(''\);",s,re.S)
+          if not m: raise SystemExit('Protected payload missing')
+          parts=ast.literal_eval('['+m.group(1)+']')
+          enc=base64.b64decode(''.join(parts))
+          key=bytes([0x91,0x27,0xD4,0x5A,0xC3,0x18,0x6F,0xB2,0x44,0xE9,0x73,0x0D,0xA6,0x35,0xF1,0x8C,0x5E,0x20,0xBD,0x67,0x12,0xFA,0x49,0x84,0xD0,0x3B,0x76,0x9D,0x01,0xCE,0x58,0xA3])
+          comp=bytes(b ^ key[i % len(key)] for i,b in enumerate(enc))
+          js=gzip.decompress(comp).decode('utf-8')
+          for marker in ["const V100_VERSION='10.0.1'",'Employees & Research Teams','Model Training Project','Government & Regulation','Developer Ecosystem & API Reliability','Endgame AI Race','renderPeopleV100','renderTrainingV100']:
+              if marker not in js: raise SystemExit('Missing decoded marker: '+marker)
+          Path('/tmp/v1001-protected-decoded.js').write_text(js,encoding='utf-8')
+          PY
+          node --check /tmp/v1001-protected-decoded.js
+
+      - name: Package v10.0.1 and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf packages/v10.0.1
+          mkdir -p packages/v10.0.1
+          gzip -n -9 -c /tmp/protected > /tmp/v1001.html.gz
+          base64 -w0 /tmp/v1001.html.gz > /tmp/v1001.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/v1001.b64 packages/v10.0.1/part
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          parts=sorted(Path('packages/v10.0.1').glob('part*.txt'))
+          base='https://raw.githubusercontent.com/melissakant7-hash/ai-empire-tycoon-updates/main/'
+          sha='2d3d0c25d6bd7aba96fe3cef61186e91ccdfd790e24c40d560624d6b324ab660'
+          manifest={
+            'latestVersion':'10.0.1','required':False,'autoUpdate':True,
+            'message':'v10.0.1 fixes white native dropdowns in Model Training and Company HQ, corrects the Update Center release card, improves team +/- spacing, and ships the browser game as a compressed protected/obfuscated JavaScript payload.',
+            'gameUrl':'','gameParts':[base+str(p).replace('\\','/') for p in parts],
+            'gameSha256':sha,'sha256':sha,'encoding':'gzip-base64','patches':[],
+            'launcherUrl':'','launcherSha256':'','downloadUrl':'https://github.com/melissakant7-hash/ai-empire-tycoon-updates'
+          }
+          Path('version.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          readme=Path('README.md').read_text(encoding='utf-8')
+          readme=readme.replace('- Game: **v10.0.0**','- Game: **v10.0.1**',1)
+          if '## v10.0.1' not in readme:
+            insert='''## v10.0.1\n\nUI and protected-distribution hotfix. The new v10 Model Training and Company HQ native select controls now use the game dark theme (including dark popup color-scheme), the Update Center release card correctly describes the installed v10 line instead of the old v9.5.0 polish pass, and Employees & Research Teams receives proper spacing and a fixed number column between the minus/plus controls.\n\nThe distributed browser build now stores the main JavaScript as a compressed protected/obfuscated payload rather than readable source text. This raises the barrier against casual source copying while preserving the existing SHA-256 verified updater. As with any offline browser-delivered game, this is not an absolute secrecy boundary because executable client code can ultimately be inspected by a determined reverse engineer.\n\nThe v10.0.1 build is verified against SHA-256 `2d3d0c25d6bd7aba96fe3cef61186e91ccdfd790e24c40d560624d6b324ab660`.\n\n'''
+            readme=readme.replace('## v10.0.0\n',insert+'## v10.0.0\n',1)
+          Path('README.md').write_text(readme,encoding='utf-8')
+          print('Generated',len(parts),'parts')
+          PY
+
+      - name: Reconstruct published package one final time
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat packages/v10.0.1/part*.txt > /tmp/v1001-final.b64
+          base64 -d /tmp/v1001-final.b64 > /tmp/v1001-final.gz
+          gzip -dc /tmp/v1001-final.gz > /tmp/v1001-final.html
+          echo '2d3d0c25d6bd7aba96fe3cef61186e91ccdfd790e24c40d560624d6b324ab660  /tmp/v1001-final.html' | sha256sum -c -
+
+      - name: Publish v10.0.1 update channel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'AI Empire Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- packages/v10.0.1 version.json README.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to publish.'
+          else
+            git commit -m 'Publish AI Empire Tycoon v10.0.1 UI and protected distribution hotfix'
+            git push
+          fi
