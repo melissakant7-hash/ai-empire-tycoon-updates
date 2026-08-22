@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "latestVersion": "10.0.20",
+  "required": true,
+  "autoUpdate": true,
+  "message": "AI Training licensed updater channel is active. v10.0.20 adds live model-training progress in Model Lab.",
+  "patches": []
+}
