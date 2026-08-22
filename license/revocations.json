@@ -1,11 +1,11 @@
 {
   "schema": 2,
-  "sequence": 1000049,
-  "updatedAt": "2026-08-22T01:31:11Z",
+  "sequence": 1000050,
+  "updatedAt": "2026-08-22T01:32:03Z",
   "revoked": [
     {
       "id": "013203c35e15a7d0",
-      "reason": "refund / chargeback / manual revoke",
+      "reason": "Deleted",
       "hardwareId": "3F99660DD43F5031FFCFD884E37CD1C4"
     },
     {
@@ -70,7 +70,7 @@
   "blockedHardware": [
     {
       "hardwareId": "3F99660DD43F5031FFCFD884E37CD1C4",
-      "reason": "refund / chargeback / manual revoke"
+      "reason": "Deleted"
     }
   ]
 }
