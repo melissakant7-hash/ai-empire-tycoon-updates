@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "sequence": 1000036,
-  "updatedAt": "2026-08-22T00:19:07Z",
+  "sequence": 1000037,
+  "updatedAt": "2026-08-22T00:19:12Z",
   "revoked": [
     {
       "id": "1826c3db2347c464",
@@ -31,6 +31,11 @@
     {
       "id": "74f18f617348d9dd",
       "reason": "Deleted"
+    },
+    {
+      "id": "9b871661cee4b58f",
+      "reason": "Deleted",
+      "hardwareId": "3F99660DD43F5031FFCFD884E37CD1C4"
     },
     {
       "id": "c78445df17b430f0",
