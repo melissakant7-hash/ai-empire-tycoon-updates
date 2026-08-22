@@ -1,0 +1,8 @@
+{
+  "schema": 2,
+  "latestVersion": "10.0.21",
+  "required": true,
+  "autoUpdate": true,
+  "message": "v10.0.21 hard-nerfs debt financing and keeps live model-training progress. Permanent updater v2 supports verified base64 patch delivery for future releases.",
+  "patches": []
+}
