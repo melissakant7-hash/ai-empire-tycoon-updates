@@ -1,7 +1,12 @@
-# AI Training Licensing Endpoint
+# AI Training Licensing & Release Endpoint
 
-Public endpoint for AI Training license revocation data and the retired legacy updater manifest.
+Current Full Game version: **v10.1.0**.
 
-The paid Full Game package is **not distributed from this public repository**.
+## v10.1.0
 
-Public files here contain no private signing seed, no content master key, and no playable Full Game package.
+- Negotiations 2.0: real counteroffers, deadlines, leverage, walk-away points, competing offers, bluffing, relationship history, and deals that can collapse.
+- Language selection: English and German.
+
+This public repository provides AI Training release metadata and live license revocation data. The paid Full Game package is **not distributed from this public repository**.
+
+Public files contain no private signing seed, no content master key, and no playable Full Game package.
