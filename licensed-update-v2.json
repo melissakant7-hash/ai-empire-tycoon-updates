@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.0.21",
-  "required": true,
-  "autoUpdate": true,
-  "message": "v10.0.21 hard-nerfs debt financing and keeps live model-training progress. Permanent updater v2 supports verified base64 patch delivery for future releases.",
+  "latestVersion": "10.1.0",
+  "required": false,
+  "autoUpdate": false,
+  "message": "v10.1.0: Negotiations 2.0 adds real counteroffers, deadlines, leverage, walk-away points, competing offers, bluffing, relationship history and deal collapse. German and English UI language selection is also included.",
   "patches": []
 }
