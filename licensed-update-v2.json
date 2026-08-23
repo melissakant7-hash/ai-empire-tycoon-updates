@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.1.0",
+  "latestVersion": "10.1.1",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.1.0: Negotiations 2.0 adds real counteroffers, deadlines, leverage, walk-away points, competing offers, bluffing, relationship history and deal collapse. German and English UI language selection is also included.",
+  "message": "v10.1.1: Negotiations 2.0 plus selectable English/German game localization. Deutsch switches the interface and dynamic game UI to German, and player-facing AI gameplay text is generated directly in German.",
   "patches": []
 }
