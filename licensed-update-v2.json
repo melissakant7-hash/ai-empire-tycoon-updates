@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.4",
+  "latestVersion": "10.7.5",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.4 upgrades tutorial narration to the most natural available Neural/Natural/Online voice for the selected language and prefers Microsoft Edge to improve access to Windows Natural voices. All v10.7.3 AITL2 licensing and live revocation protections remain in place.",
+  "message": "v10.7.5 fixes replacement licenses on the same PC after an older license was deleted. Existing human-voice tutorial narration and v10.7.4 features remain included.",
   "patches": []
 }
