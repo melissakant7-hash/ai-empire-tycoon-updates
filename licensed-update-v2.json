@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.2",
+  "latestVersion": "10.7.3",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.2: sharp no-blur gameplay tutorial, larger readable tutorial text, full German tutorial, broader German localization for static and dynamic UI, and one-time automatic tutorial launch after the first game start. The tutorial remains available from the top bar and Settings.",
+  "message": "v10.7.3 restores the AITL2 hardware-bound Full Game license gate and signed live revocation checks, preserves Windows-protected activation and the 24-hour offline grace period, and adds optional German/English tutorial voice narration. Revoked licenses are removed from gameplay while the game is running.",
   "patches": []
 }
