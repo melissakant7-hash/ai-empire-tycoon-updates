@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.3",
+  "latestVersion": "10.7.4",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.3 restores the hardware-bound AITL2 Full Game license gate before game content is served, verifies the signed publisher revocation list at startup and while the game is running, keeps the existing Windows-protected license storage and 24-hour offline grace period, and adds optional German/English tutorial voice narration. Existing v10.7.2 tutorial clarity and localization improvements remain included.",
+  "message": "v10.7.4 upgrades tutorial narration to a human-voice mode that automatically prefers the most natural available neural/natural/online speech voice for the selected language. Microsoft Edge is preferred at launch to maximize access to Windows Natural voices, with Chrome and Brave as fallbacks. German prioritizes high-quality German Natural/Neural voices and English prioritizes modern English Natural/Neural voices. The complete v10.7.3 AITL2 license gate, signed live revocation checks, Windows-protected activation and 24-hour offline grace remain unchanged.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "dac8da4cd4594d7e22f86ed24059966c0e0cf559242046d5b37e46a55bc5427d",
-  "sha256": "dac8da4cd4594d7e22f86ed24059966c0e0cf559242046d5b37e46a55bc5427d",
+  "gameSha256": "fd67c57cfaa96d8376d50ee4e13768d56f2866027e4a6202f997b67b15ce5135",
+  "sha256": "fd67c57cfaa96d8376d50ee4e13768d56f2866027e4a6202f997b67b15ce5135",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "1d05a8f2f1b35f43c653e2755eebb7fa58ef272bc93802c679b8be65a7398c81",
+  "launcherSha256": "002d0b1db68d2bf899ab7b80ecb40580e9eeb000e5db13be705789dc1d593558",
   "downloadUrl": ""
 }
