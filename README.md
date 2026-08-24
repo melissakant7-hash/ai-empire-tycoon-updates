@@ -1,14 +1,16 @@
 # AI Training Licensing & Release Endpoint
 
-Current Full Game version: **v10.7.2**.
+Current Full Game version: **v10.7.3**.
 
-## v10.7.2
+## v10.7.3
 
-- Interactive gameplay tutorial with a sharp spotlight and no blur over the highlighted game area.
-- Larger, clearer tutorial text and improved tutorial panel positioning.
-- The tutorial automatically opens only once after the first game start, then stays available from the top bar and Settings.
-- Complete German tutorial text plus a broader German localization pass for static and dynamically rendered interface content.
-- Existing gameplay systems from earlier releases remain included, including dedicated Cybersecurity AI, Cyber Ops, Exploit Discovery, company systems, commercialization, research, infrastructure, social simulation and Negotiations 2.0.
+- Restores the Generation 2 hardware-bound **AITL2** license gate before paid Full Game content is served.
+- Existing AITL2 licenses remain compatible on the same Windows device identity.
+- Activation and license state are stored with Windows Protected Data (DPAPI).
+- The signed publisher revocation list is checked at startup and repeatedly while the game is running; a revoked license loses gameplay access.
+- Offline play remains available for up to 24 hours after the last successful online license validation.
+- Adds optional tutorial voice narration. German UI uses a German voice and English UI uses an English voice when a compatible Chromium/Windows speech voice is available.
+- Keeps the v10.7.2 sharp no-blur tutorial, one-time automatic tutorial start, complete German tutorial and broader German localization.
 
 This public repository provides AI Training release metadata and live license revocation data. The paid Full Game package is **not distributed from this public repository**.
 
