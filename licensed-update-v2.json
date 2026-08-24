@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.1.1",
+  "latestVersion": "10.7.2",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.1.1: Negotiations 2.0 plus selectable English/German game localization. Deutsch switches the interface and dynamic game UI to German, and player-facing AI gameplay text is generated directly in German.",
+  "message": "v10.7.2: sharp no-blur gameplay tutorial, larger readable tutorial text, full German tutorial, broader German localization for static and dynamic UI, and one-time automatic tutorial launch after the first game start. The tutorial remains available from the top bar and Settings.",
   "patches": []
 }
