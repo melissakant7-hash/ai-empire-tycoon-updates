@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.2",
+  "latestVersion": "10.7.3",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.2 completes the interactive gameplay tutorial and German clarity pass: tutorial highlights are sharp with no backdrop blur over the target, instructions are larger and easier to read, the tutorial is fully available in German, and additional static and dynamically rendered game UI is localized. The tutorial opens automatically only once after the first game start and can always be reopened from the top bar or Settings.",
+  "message": "v10.7.3 restores the hardware-bound AITL2 Full Game license gate before game content is served, verifies the signed publisher revocation list at startup and while the game is running, keeps the existing Windows-protected license storage and 24-hour offline grace period, and adds optional German/English tutorial voice narration. Existing v10.7.2 tutorial clarity and localization improvements remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "6d82e2ecedb1cea0d153b03ec612f652b36567aeebdce8df5e491a8c4f477d0c",
-  "sha256": "6d82e2ecedb1cea0d153b03ec612f652b36567aeebdce8df5e491a8c4f477d0c",
+  "gameSha256": "dac8da4cd4594d7e22f86ed24059966c0e0cf559242046d5b37e46a55bc5427d",
+  "sha256": "dac8da4cd4594d7e22f86ed24059966c0e0cf559242046d5b37e46a55bc5427d",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "",
+  "launcherSha256": "b5f31adb572def93597f9f79a3f216ec729a09bf60c061da8aaaf23ca6ded969",
   "downloadUrl": ""
 }
