@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.4",
+  "latestVersion": "10.7.5",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.4 upgrades tutorial narration to a human-voice mode that automatically prefers the most natural available neural/natural/online speech voice for the selected language. Microsoft Edge is preferred at launch to maximize access to Windows Natural voices, with Chrome and Brave as fallbacks. German prioritizes high-quality German Natural/Neural voices and English prioritizes modern English Natural/Neural voices. The complete v10.7.3 AITL2 license gate, signed live revocation checks, Windows-protected activation and 24-hour offline grace remain unchanged.",
+  "message": "v10.7.5 fixes license replacement behavior after an older license is deleted. A newly issued valid license for the same PC is now recognized correctly. Existing tutorial voice, localization, shared-profile and licensing features remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "fd67c57cfaa96d8376d50ee4e13768d56f2866027e4a6202f997b67b15ce5135",
-  "sha256": "fd67c57cfaa96d8376d50ee4e13768d56f2866027e4a6202f997b67b15ce5135",
+  "gameSha256": "6e311a5c5ddb4b90ec34980e72608dd2df2edf51b2939e754ce348b6f7a4ae31",
+  "sha256": "6e311a5c5ddb4b90ec34980e72608dd2df2edf51b2939e754ce348b6f7a4ae31",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "002d0b1db68d2bf899ab7b80ecb40580e9eeb000e5db13be705789dc1d593558",
+  "launcherSha256": "e81663403418645f4e923a2dec6bf7cde55a1b22873dee344ba8bd42735ab64d",
   "downloadUrl": ""
 }
