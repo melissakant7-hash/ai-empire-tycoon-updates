@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "sequence": 1000057,
-  "updatedAt": "2026-08-24T20:06:45Z",
+  "sequence": 1000058,
+  "updatedAt": "2026-08-24T20:06:58Z",
   "revoked": [
     {
       "id": "166afc30f068b974",
@@ -70,9 +70,18 @@
     {
       "id": "d7e2145a9a8482b4",
       "reason": "Deleted"
+    },
+    {
+      "id": "e4808766ce19edba",
+      "reason": "Deleted",
+      "hardwareId": "0D65012E142A552759B2AB80E24F3F2B"
     }
   ],
   "blockedHardware": [
+    {
+      "hardwareId": "0D65012E142A552759B2AB80E24F3F2B",
+      "reason": "Deleted"
+    },
     {
       "hardwareId": "3F99660DD43F5031FFCFD884E37CD1C4",
       "reason": "Deleted"
