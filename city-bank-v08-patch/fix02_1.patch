@@ -1,0 +1,23 @@
+, "Roof")
+-            if kind == "office" or kind == "retail" or kind == "mixed":
+-                _add_building_window_band(body, bw, height, bd, h1)
+-            if kind == "industrial":
+-                _add_industrial_detail(body, bw, height, bd, i)
++            body.material_override = _facade_material(kind, i % 3)
++            _decorate_building(body, kind, bw, height, bd, i, district_index)
+             buildings.append({"node":body, "district":district_index, "kind":kind, "occupied":0.78 + h2 * 0.22, "base_height":height})
+ 
+     _add_bank_headquarters()
++    _add_landmarks()
++
++func _decorate_building(body: MeshInstance3D, kind: String, bw: float, height: float, bd: float, index: int, district_index: int) -> void:
++    var roof_color = _building_color(kind, district_index, 0.55).lightened(0.09)
++    if kind == "residential" and height < 9.5:
++        var left_roof = _box(body, Vector3(bw * 0.58, 0.42, bd * 1.02), Vector3(-bw * 0.24, height * 0.5 + 0.38, 0), Color("51463f"), "PitchedRoofL", 0.94)
++        left_roof.rotation_degrees.z = -18.0
++        var right_roof = _box(body, Vector3(bw * 0.58, 0.42, bd * 1.02), Vector3(bw * 0.24, height * 0.5 + 0.38, 0), Color("51463f"), "PitchedRoofR", 0.94)
++        right_roof.rotation_degrees.z = 18.0
++        _add_balconies(body, bw, height, bd, index)
++    else:
++        var roof_h = 0.42 if height < 11.0 else 0.75
++        _box(body, Vector3(bw * 0.46, roof_h, bd * 0.44), Vector3(0, height * 0.5 + roof_h * 0.5, 0), roof_colo

@@ -1,0 +1,31 @@
+ water_mat = _emissive_material(Color("5f9db7"), 0.12)
++    var water = _cylinder(fountain_base, min(park_w, park_d) * 0.045, 0.08, Vector3(0,0.18,0), Color("5f9db7"), "FountainWater", 0.12, 0.02)
++    water.material_override = water_mat
+ 
+ func _add_tree(pos: Vector3, scale_factor: float) -> void:
+     var root = Node3D.new()
+     root.position = pos
++    root.rotation_degrees.y = rng.randf_range(0.0, 180.0)
+     detail_root.add_child(root)
+     var trunk_mesh = CylinderMesh.new()
+-    trunk_mesh.top_radius = 0.18 * scale_factor
++    trunk_mesh.top_radius = 0.16 * scale_factor
+     trunk_mesh.bottom_radius = 0.25 * scale_factor
+-    trunk_mesh.height = 2.0 * scale_factor
++    trunk_mesh.height = 2.4 * scale_factor
+     var trunk = MeshInstance3D.new()
+     trunk.mesh = trunk_mesh
+-    trunk.position.y = 1.0 * scale_factor
+-    trunk.material_override = _material(Color("70563e"))
++    trunk.position.y = 1.2 * scale_factor
++    trunk.material_override = _material(Color("6a5038").lightened(rng.randf_range(-0.04,0.04)), 0.94)
+     root.add_child(trunk)
+-    var crown_mesh = SphereMesh.new()
+-    crown_mesh.radius = 1.15 * scale_factor
+-    crown_mesh.height = 2.3 * scale_factor
+-    var crown = MeshInstance3D.new()
+-    crown.mesh = crown_mesh
+-    crown.position.y = 2.65 * scale_factor
+-    crown.material_override = _material(Color("3e7046").lightened(rng.randf_range(-0.05, 0.08)))
+-    root.add_child(crown)
++    var leaf_base = Color("397043").lightened(rng.randf_range(-0.08, 

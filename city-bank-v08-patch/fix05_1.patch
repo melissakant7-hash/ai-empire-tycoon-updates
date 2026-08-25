@@ -1,0 +1,24 @@
+othing.size()], i)
++        var citizen_scale = 0.90 + float((i * 17) % 21) / 100.0
++        node.scale = Vector3.ONE * citizen_scale
+         pedestrian_root.add_child(node)
+-        pedestrians.append({"node":node, "ix":ix, "iy":iy, "nx":next.x, "ny":next.y, "tx":target.x, "ty":target.y, "progress":rng.randf(), "speed":0.055 + rng.randf_range(0.0,0.055), "side":-1.0 if i%2==0 else 1.0, "purpose":["work","shopping","home","leisure"][i%4]})
++        pedestrians.append({"node":node, "left_arm":node.get_node("LeftArm"), "right_arm":node.get_node("RightArm"), "left_leg":node.get_node("LeftLeg"), "right_leg":node.get_node("RightLeg"), "ix":ix, "iy":iy, "nx":next.x, "ny":next.y, "tx":target.x, "ty":target.y, "progress":rng.randf(), "speed":0.055 + rng.randf_range(0.0,0.055), "side":-1.0 if i%2==0 else 1.0, "purpose":["work","shopping","home","leisure"][i%4], "phase":rng.randf()*TAU})
+ 
+ func _create_citizen(color: Color, index: int) -> Node3D:
+     var root = Node3D.new()
+     root.name = "Citizen3D_%03d" % index
+     var body_mesh = CapsuleMesh.new()
+-    body_mesh.radius = 0.24
+-    body_mesh.height = 1.35
++    body_mesh.radius = 0.22
++    body_mesh.height = 1.18
+     var body = MeshInstance3D.new()
++    body.name = "Torso"
+     body.mesh = body_mesh
+-    body.position.y = 0.78
+-    body.material_override = _material(color, 0.9)
++    body.position.y = 1.02
++    body.material_override = _material(color, 0.90)
+     root.add_child(body)
++    var skin = Color("c89773").lightened(flo

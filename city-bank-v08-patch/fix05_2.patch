@@ -1,0 +1,35 @@
+at(index % 5) * 0.025 - 0.05)
+     var head_mesh = SphereMesh.new()
+-    head_mesh.radius = 0.21
+-    head_mesh.height = 0.42
++    head_mesh.radius = 0.20
++    head_mesh.height = 0.40
+     var head = MeshInstance3D.new()
++    head.name = "Head"
+     head.mesh = head_mesh
+-    head.position.y = 1.58
+-    head.material_override = _material(Color("c89773").lightened(float(index % 5) * 0.025 - 0.05), 0.9)
++    head.position.y = 1.72
++    head.material_override = _material(skin, 0.92)
+     root.add_child(head)
++    var hair = _box(root, Vector3(0.34,0.12,0.34), Vector3(0,1.89,-0.01), [Color("40332d"),Color("6b513f"),Color("2c3034"),Color("9b7651")][index%4], "Hair", 0.95)
++    hair.rotation_degrees.y = float(index % 4) * 13.0
++    var limb_color = color.darkened(0.08)
++    for side in [-1.0, 1.0]:
++        var arm_mesh = CapsuleMesh.new()
++        arm_mesh.radius = 0.075
++        arm_mesh.height = 0.70
++        var arm = MeshInstance3D.new()
++        arm.name = "LeftArm" if side < 0.0 else "RightArm"
++        arm.mesh = arm_mesh
++        arm.position = Vector3(side * 0.31, 1.05, 0)
++        arm.rotation_degrees.z = side * 8.0
++        arm.material_override = _material(limb_color, 0.92)
++        root.add_child(arm)
++        var leg_mesh = CapsuleMesh.new()
++        leg_mesh.radius = 0.085
++        leg_mesh.height = 0.78
++        var leg = MeshInstance3D.new()
++        leg.name = "LeftLeg" if side < 0.0 else "RightLeg"
++        leg.mesh = leg_mesh
++        leg.position = Vector3(sid

@@ -1,0 +1,26 @@
+olor("f7e7b0"), 0.55)
++    var tail_mat = _emissive_material(Color("d84943"), 0.42)
++    for side in [-0.32, 0.32]:
++        var head = _box(root, Vector3(width*0.22,0.14,0.07), Vector3(side*width,0.62,-length*0.505), Color("f7e7b0"), "HeadLamp", 0.25)
++        head.material_override = head_mat
++        var tail = _box(root, Vector3(width*0.18,0.13,0.07), Vector3(side*width,0.58,length*0.505), Color("d84943"), "TailLamp", 0.25)
++        tail.material_override = tail_mat
++    if service:
++        var beacon_mat = _emissive_material(Color("e4a43b"), 0.75)
++        var beacon = _box(root, Vector3(0.48,0.16,0.22), Vector3(0,1.36,0), Color("e4a43b"), "ServiceBeacon", 0.25)
++        beacon.material_override = beacon_mat
++    if bus:
++        for j in range(4):
++            _box(root, Vector3(width*0.72,0.24,0.08), Vector3(0,1.03,-length*0.22 + float(j)*length*0.15), glass, "BusWindow", 0.12, 0.12)
+     return root
+ 
+ func _seed_pedestrians() -> void:
+     pedestrians.clear()
+     var clothing = [Color("557aa2"), Color("ab5e54"), Color("617d5c"), Color("8e6c9c"), Color("c49a4d"), Color("4e5965")]
+-    for i in range(460):
++    for i in range(680):
+         var ix = rng.randi_range(0, road_xs.size() - 1)
+         var iy = rng.randi_range(0, road_ys.size() - 1)
+         var target = Vector2i(rng.randi_range(0, road_xs.size() - 1), rng.randi_range(0, road_ys.size() - 1))
+         var next = _pedestrian_next(ix, iy, target.x, target.y)
+         var node = _create_citizen(clothing[i % cl

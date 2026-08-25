@@ -1,0 +1,21 @@
+es = Vector3.ZERO
++
++func _add_retail_front(body: MeshInstance3D, bw: float, height: float, bd: float, index: int) -> void:
++    var accent_colors = [Color("b6604e"), Color("4e809b"), Color("6b965f"), Color("c28a45")]
++    var accent: Color = accent_colors[index % accent_colors.size()]
++    var awning = _box(body, Vector3(bw * 0.72, 0.22, 0.75), Vector3(0, -height * 0.5 + 2.0, -bd * 0.55), accent, "ShopAwning", 0.74)
++    awning.rotation_degrees.x = -8.0
++    var sign = _box(body, Vector3(bw * 0.48, 0.7, 0.10), Vector3(0, -height * 0.5 + 3.05, -bd * 0.515), accent.lightened(0.14), "ShopSign", 0.52, 0.06)
++    sign.material_override = _emissive_material(accent.lightened(0.16), 0.38)
++
++func _add_public_facade_detail(body: MeshInstance3D, bw: float, height: float, bd: float, kind: String) -> void:
++    var stone = Color("c3b9a3") if kind == "civic" else Color("bba596")
++    for i in range(4):
++        var x = -bw * 0.31 + float(i) * bw * 0.205
++        _cylinder(body, 0.18, min(4.4, height * 0.45), Vector3(x, -height * 0.5 + 2.25, -bd * 0.53), stone, "FacadeColumn", 0.92)
++    _box(body, Vector3(bw * 0.88, 0.34, 0.50), Vector3(0, -height * 0.5 + 4.55, -bd * 0.52), stone, "FacadeLintel", 0.92)
++
++func _add_landmarks() -> void:
++    var civic = _box(building_root, Vector3(12.0, 14.0, 9.0), Vector3(_world_x(0.355), 7.2, _world_z(0.585)), Color("6f777c"), "CityHall", 0.82, 0.03)
++    civic.material_override = _facade_material("civic", 1)
++    _add_public_facade_detail(civic, 12.0, 

@@ -1,0 +1,26 @@
+(Rect2(0.53, 0.27, 0.11, 0.11), 24)
+@@ -346,36 +504,54 @@
+     _add_bus_stops()
+     _add_parking_lots()
+     _add_construction_sites()
++    _add_street_trees()
++    _add_street_lights()
++    _add_street_furniture()
++    _add_riverfront_details()
+ 
+ func _add_park(rect: Rect2, tree_count: int) -> void:
+     var center = _norm_to_world(rect.get_center(), 0.14)
+-    _box(detail_root, Vector3(rect.size.x * WORLD_WIDTH, 0.12, rect.size.y * WORLD_DEPTH), center, Color("4e784f"), "CityPark")
++    var park_w = rect.size.x * WORLD_WIDTH
++    var park_d = rect.size.y * WORLD_DEPTH
++    _box(detail_root, Vector3(park_w, 0.12, park_d), center, Color("4e784f"), "CityPark")
++    _box(detail_root, Vector3(park_w * 0.82, 0.04, 0.70), center + Vector3(0,0.09,0), Color("a59a7f"), "ParkPath")
++    _box(detail_root, Vector3(0.70, 0.04, park_d * 0.82), center + Vector3(0,0.10,0), Color("a59a7f"), "ParkPath")
+     for i in range(tree_count):
+         var u = rect.position.x + 0.02 * rect.size.x + rng.randf() * rect.size.x * 0.96
+         var v = rect.position.y + 0.02 * rect.size.y + rng.randf() * rect.size.y * 0.96
++        if abs(u - rect.get_center().x) < rect.size.x * 0.07 or abs(v - rect.get_center().y) < rect.size.y * 0.08:
++            continue
+         _add_tree(Vector3(_world_x(u), 0.2, _world_z(v)), 0.75 + rng.randf() * 0.55)
++    var fountain_base = _cylinder(detail_root, min(park_w, park_d) * 0.06, 0.30, center + Vector3(0,0.18,0), Color("7b8a8f"), "ParkFountain", 0.55, 0.08)
++    var

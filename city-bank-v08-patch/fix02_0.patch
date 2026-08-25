@@ -1,0 +1,17 @@
+r bd = max(3.5, cell_v * WORLD_DEPTH * (0.50 + h2 * 0.12))
++            var u = rect.position.x + float(col) * cell_u + cell_u * (0.14 + h2 * 0.04)
++            var v = rect.position.y + float(row) * cell_v + cell_v * (0.14 + h1 * 0.04)
++            var bw = max(3.2, cell_u * WORLD_WIDTH * (0.56 + h1 * 0.13))
++            var bd = max(3.2, cell_v * WORLD_DEPTH * (0.54 + h2 * 0.13))
+             var kind = _building_kind_for_district(String(d.name), i)
+             var height_factor = _building_height_for_district(String(d.name), h2)
+             var height = _height_for_kind(kind) * height_factor
+-            var pos = Vector3(_world_x(u + cell_u * 0.34), height * 0.5 + 0.22, _world_z(v + cell_v * 0.34))
++            var world_x = _world_x(u + cell_u * 0.38)
++            var world_z = _world_z(v + cell_v * 0.38)
+             var base_color = _building_color(kind, district_index, h1)
++            _box(building_root, Vector3(bw + 0.9, 0.16, bd + 0.9), Vector3(world_x, 0.18, world_z), Color("6e706d").lerp(Color(d.color), 0.10), "BuildingLot", 0.96)
++            var pos = Vector3(world_x, height * 0.5 + 0.26, world_z)
+             var body = _box(building_root, Vector3(bw, height, bd), pos, base_color, "%s_%03d" % [String(d.name).replace(" ", "_"), i], 0.76, 0.04 if kind == "office" else 0.0)
+-            var roof_h = 0.45 if height < 11.0 else 0.8
+-            _box(body, Vector3(bw * 0.42, roof_h, bd * 0.45), Vector3(0, height * 0.5 + roof_h * 0.5, 0), base_color.lightened(0.08)

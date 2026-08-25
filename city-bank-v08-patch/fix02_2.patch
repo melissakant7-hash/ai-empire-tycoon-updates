@@ -1,0 +1,25 @@
+r, "RoofPlant", 0.82, 0.08)
++    if kind == "office":
++        _add_rooftop_office_detail(body, bw, height, bd, index)
++    elif kind == "retail":
++        _add_retail_front(body, bw, height, bd, index)
++    elif kind == "industrial":
++        _add_industrial_detail(body, bw, height, bd, index)
++    elif kind == "civic" or kind == "university":
++        _add_public_facade_detail(body, bw, height, bd, kind)
++    elif kind == "mixed":
++        _add_retail_front(body, bw, height, bd, index)
++
++func _add_balconies(body: MeshInstance3D, bw: float, height: float, bd: float, index: int) -> void:
++    var count = min(3, max(1, int(height / 3.0) - 1))
++    for floor in range(count):
++        var y = -height * 0.27 + float(floor) * 2.2
++        var side = -1.0 if (floor + index) % 2 == 0 else 1.0
++        var balcony = _box(body, Vector3(bw * 0.34, 0.12, 0.72), Vector3(side * bw * 0.22, y, -bd * 0.54), Color("888b88"), "Balcony", 0.9, 0.05)
++        _box(balcony, Vector3(bw * 0.34, 0.42, 0.06), Vector3(0, 0.24, -0.34), Color("444c50"), "BalconyRail", 0.65, 0.18)
++
++func _add_rooftop_office_detail(body: MeshInstance3D, bw: float, height: float, bd: float, index: int) -> void:
++    _box(body, Vector3(bw * 0.28, 0.65, bd * 0.24), Vector3(bw * 0.12, height * 0.5 + 0.75, 0), Color("58636a"), "HVAC", 0.75, 0.22)
++    if index % 3 == 0:
++        var mast = _cylinder(body, 0.08, 3.2, Vector3(-bw * 0.22, height * 0.5 + 1.6, 0), Color("8c969b"), "Antenna", 0.5, 0.65)
++        mast.rotation_degre
