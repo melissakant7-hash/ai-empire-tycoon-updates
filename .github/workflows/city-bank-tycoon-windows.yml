@@ -32,6 +32,11 @@ jobs:
           test -f city_bank_tycoon/project.godot
           test -f city_bank_tycoon/export_presets.cfg
 
+      - name: Apply Godot 4.7 compatibility fix
+        shell: bash
+        run: |
+          sed -i 's/:=/=/g' city_bank_tycoon/scripts/main.gd city_bank_tycoon/scripts/city_map.gd
+
       - name: Prepare Godot export templates
         shell: bash
         run: |
@@ -44,35 +49,36 @@ jobs:
       - name: Import and validate game
         shell: bash
         run: |
-          godot --headless --path city_bank_tycoon --editor --quit
+          set +e
+          godot --headless --path city_bank_tycoon --editor --quit 2>&1 | tee import.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          if grep -qE 'SCRIPT ERROR: Parse Error|Failed to load script.*Parse error' import.log; then
+            echo 'GDScript validation failed.'
+            exit 1
+          fi
 
       - name: Export native Windows executable
         shell: bash
         run: |
           mkdir -p "$GITHUB_WORKSPACE/build/windows"
-          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
+          set +e
+          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe" 2>&1 | tee export.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          if grep -qE 'SCRIPT ERROR: Parse Error|Failed to load script.*Parse error' export.log; then
+            echo 'Export contained GDScript parse errors.'
+            exit 1
+          fi
           test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
-          ls -lah "$GITHUB_WORKSPACE/build/windows"
-
-      - name: Package Windows build
-        shell: bash
-        run: |
-          cd "$GITHUB_WORKSPACE/build/windows"
-          python3 - <<'PY'
-          import zipfile
-          from pathlib import Path
-          exe = Path("CityBankTycoon.exe")
-          assert exe.exists(), "CityBankTycoon.exe was not produced"
-          with zipfile.ZipFile("CityBankTycoon-Windows-x64.zip", "w", zipfile.ZIP_DEFLATED) as archive:
-              archive.write(exe, exe.name)
-          PY
+          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
 
       - name: Upload playable Windows build
         uses: actions/upload-artifact@v4
         with:
           name: CityBankTycoon-Windows-x64
-          path: |
-            build/windows/CityBankTycoon.exe
-            build/windows/CityBankTycoon-Windows-x64.zip
+          path: build/windows/CityBankTycoon.exe
           if-no-files-found: error
           retention-days: 30
