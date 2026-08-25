@@ -1,0 +1,126 @@
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
++    var v = VBoxContainer.new()
++    v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    v.add_theme_constant_override("separation", 12)
++    scroll.add_child(v)
++    v.add_child(_title("Notifications", "Counter-offer replies, credit events and other items that need your attention."))
++    _mark_all_notifications_read()
++    if game_notifications.is_empty():
++        var empty = _panel_container()
++        var label = Label.new()
++        label.text = "No notifications yet. Counter-offer replies and important credit events will appear here."
++        label.add_theme_color_override("font_color", C_MUTED)
++        empty.add_child(label)
++        v.add_child(empty)
++        return scroll
++    for i in range(game_notifications.size() - 1, -1, -1):
++        var item = game_notifications[i]
++        var p = _panel_container()
++        var row = VBoxContainer.new()
++        row.add_theme_constant_override("separation", 6)
++        p.add_child(row)
++        var title = Label.new()
++        title.text = "%s  •  %s" % [String(item.get("title", "Notification")), String(item.get("date", ""))]
++        title.add_theme_font_size_override("font_size", 17)
++        var severity = String(item.get("severity", "info"))
++        title.add_theme_color_override("font_color", C_GREEN if severity == "success" else (C_RED if severity == "danger" else (C_ACCENT if severity == "warning" else C_BLUE)))
++        row.add_child(title)
++        var body = Label.new()
++        body.text = String(item.get("body", ""))
++        body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++        body.add_theme_color_override("font_color", C_TEXT)
++        row.add_child(body)
++        var app_id = int(item.get("application_id", -1))
++        if app_id >= 0:
++            var actions = HBoxContainer.new()
++            row.add_child(actions)
++            var mail = _button("Open related mail", 150)
++            mail.pressed.connect(func(): _open_application_mail(app_id))
++            actions.add_child(mail)
++            if _active_application_index_by_id(app_id) >= 0:
++                var loan_desk = _button("Open Loan Desk", 140)
++                loan_desk.pressed.connect(func(): selected_application = _active_application_index_by_id(app_id); _show_view("Loan Desk"))
++                actions.add_child(loan_desk)
++        v.add_child(p)
++    return scroll
++
++func _unread_notification_count() -> int:
++    var count = 0
++    for item in game_notifications:
++        if bool(item.get("unread", false)):
++            count += 1
++    return count
++
++func _mark_all_notifications_read() -> void:
++    for i in range(game_notifications.size()):
++        game_notifications[i]["unread"] = false
++    _refresh_topbar()
++
++func _push_notification(title_text: String, body_text: String, severity: String = "info", application_id: int = -1) -> void:
++    notification_sequence += 1
++    game_notifications.append({
++        "id": notification_sequence,
++        "title": title_text,
++        "body": body_text,
++        "severity": severity,
++        "application_id": application_id,
++        "date": _date_string(),
++        "unread": true
++    })
++    if game_notifications.size() > 100:
++        game_notifications.pop_front()
++    _show_notification_toast(title_text, body_text, severity)
++    _refresh_topbar()
++
++func _show_notification_toast(title_text: String, body_text: String, severity: String) -> void:
++    var toast = PanelContainer.new()
++    toast.set_anchors_preset(Control.PRESET_TOP_RIGHT)
++    toast.offset_left = -430
++    toast.offset_right = -315
++    toast.offset_top = 84
++    toast.offset_bottom = 178
++    toast.z_index = 200
++    var border = C_GREEN if severity == "success" else (C_RED if severity == "danger" else (C_ACCENT if severity == "warning" else C_BLUE))
++    toast.add_theme_stylebox_override("panel", _panel_style(Color(0.035,0.065,0.09,0.98), 10, border))
++    var box = VBoxContainer.new()
++    box.add_theme_constant_override("separation", 5)
++    toast.add_child(box)
++    var title = Label.new()
++    title.text = title_text
++    title.add_theme_font_size_override("font_size", 15)
++    title.add_theme_color_override("font_color", border)
++    box.add_child(title)
++    var body = Label.new()
++    body.text = body_text
++    body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++    body.add_theme_font_size_override("font_size", 11)
++    body.add_theme_color_override("font_color", C_TEXT)
++    box.add_child(body)
++    add_child(toast)
++    get_tree().create_timer(5.5).timeout.connect(func():
++        if is_instance_valid(toast):
++            toast.queue_free()
++    )
++
+ func _view_portfolio() -> Control:
+     var scroll = ScrollContainer.new()
+     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+@@ -1567,7 +1679,7 @@ func _view_portfolio() -> Control:
+     v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     v.add_theme_constant_override("separation", 14)
+     scroll.add_child(v)
+-    v.add_child(_title("Loan Portfolio", "Track every approved loan through payment, delinquency, restructuring, collections and default."))
++    v.add_child(_title("Current Loans", "All loans currently carried by your bank, with balances, payments, status, collateral and collection actions in one place."))
+ 
+     var summary = HBoxContainer.new()
+     summary.add_theme_constant_override("separation", 12)
+@@ -1580,7 +1692,7 @@ func _view_portfolio() -> Control:
+     if loans.is_empty():
+         var empty = _panel_container()
+         var l = Label.new()
+-        l.text = "No active loans yet. Approve applications from the Loan Desk to build a portfolio."
++        l.text = "No player-originated current loans yet. Approve applications from the Loan Desk and they will appear here immediately."
+         l.add_theme_color_override("font_color", C_MUTED)
+         empty.add_child(l)
+         v.add_child(empty)
+@@ -1954,7 +2066,7 @@ func _view_city() -> Control:
