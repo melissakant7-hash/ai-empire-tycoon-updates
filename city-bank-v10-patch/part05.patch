@@ -1,0 +1,146 @@
+35.0 - migration_rate * 30.0 + rng.randf_range(-0.08, 0.08), 0.5, 18.0)
+     city.foreclosures = max(0.0, city.foreclosures * 0.82 + _count_mortgage_delinquencies() * rng.randf_range(2.0, 8.0))
+ 
+-    city.happiness = clamp(city.happiness + city.gdp_growth * 0.06 - max(0.0, city.unemployment - 5.0) * 0.12 - fee_pressure * 0.16 - max(0.0, policy.income_tax - 22.0) * 0.06 - max(0.0, city.inflation - 4.0) * 0.10, 5.0, 95.0)
+-    city.poverty = clamp(city.poverty + max(0.0, city.unemployment - 6.0) * 0.05 + max(0.0, city.inflation - 4.0) * 0.025 - max(0.0, city.gdp_growth) * 0.025, 2.0, 45.0)
+-    city.inequality = clamp(city.inequality + max(0.0, 15.0 - policy.income_tax) * 0.018 - max(0.0, policy.income_tax - 25.0) * 0.012, 18.0, 75.0)
+-    city.crime = clamp(city.crime + (city.poverty - 10.0) * 0.015 - city.happiness * 0.002, 5.0, 90.0)
+-
+-    var taxable_income = city.gdp * 0.43
+-    var tax_revenue = taxable_income * policy.income_tax / 100.0 / 12.0 + city.gdp * 0.11 * policy.corporate_tax / 100.0 / 12.0 + city.gdp * 0.46 * policy.sales_tax / 100.0 / 12.0
+-    tax_revenue += city.gdp * 0.05 * policy.capital_gains_tax / 100.0 / 12.0 + city.gdp * 0.02 * policy.luxury_tax / 100.0 / 12.0
+-    var city_spend = city.population * 960.0 / 12.0
+-    city.city_budget += tax_revenue - city_spend
++    var health_target = clamp(48.0 + float(government.healthcare_budget) * 0.22 + float(government.healthcare_subsidy) * 0.07 + float(government.sanitation_budget) * 0.06 - city.poverty * 0.35, 15.0, 98.0)
++    var education_target = clamp(43.0 + float(government.education_budget) * 0.30 + float(government.social_services_budget) * 0.05 - city.poverty * 0.18, 15.0, 98.0)
++    var fire_target = clamp(48.0 + float(government.fire_budget) * 0.30 + float(government.roads_budget) * 0.10, 15.0, 99.0)
++    var cleanliness_target = clamp(42.0 + float(government.sanitation_budget) * 0.28 + float(government.parks_budget) * 0.12, 15.0, 99.0)
++    var traffic_target = clamp(43.0 + max(0.0, city.population - 400000.0) / 50000.0 * 2.0 + max(0.0, city.gdp_growth) * 1.1 - (float(government.transit_budget) - 100.0) * 0.12 - (float(government.roads_budget) - 100.0) * 0.08 - float(government.transit_subsidy) * 0.05, 8.0, 95.0)
++    var transit_target = clamp(40.0 + float(government.transit_budget) * 0.30 + float(government.transit_subsidy) * 0.10 - traffic_target * 0.08, 10.0, 98.0)
++    var infra_target = clamp(48.0 + float(government.roads_budget) * 0.28 + float(government.fire_budget) * 0.03 - city.traffic * 0.04, 10.0, 98.0)
++    city.health += (health_target - city.health) * 0.12
++    city.education += (education_target - city.education) * 0.10
++    city.fire_safety += (fire_target - city.fire_safety) * 0.10
++    city.cleanliness += (cleanliness_target - city.cleanliness) * 0.12
++    city.traffic += (traffic_target - city.traffic) * 0.16
++    city.transit_quality += (transit_target - city.transit_quality) * 0.14
++    city.infrastructure += (infra_target - city.infrastructure) * 0.10
++    city.healthcare_cost_monthly = max(0.0, 245.0 * (1.0 - float(government.healthcare_subsidy) / 100.0))
++
++    var service_happiness = (city.health - 70.0) * 0.018 + (city.education - 70.0) * 0.010 + (city.cleanliness - 70.0) * 0.015 + (city.transit_quality - 65.0) * 0.010 + (float(government.parks_budget) - 100.0) * 0.008 + float(government.healthcare_subsidy) * 0.006
++    city.happiness = clamp(city.happiness + city.gdp_growth * 0.05 - max(0.0, city.unemployment - 5.0) * 0.12 - fee_pressure * 0.16 - max(0.0, policy.income_tax - 22.0) * 0.06 - max(0.0, city.inflation - 4.0) * 0.10 + service_happiness - city.crime * 0.005, 5.0, 97.0)
++    city.poverty = clamp(city.poverty + max(0.0, city.unemployment - 6.0) * 0.05 + max(0.0, city.inflation - 4.0) * 0.025 - max(0.0, city.gdp_growth) * 0.025 - (float(government.social_services_budget) - 100.0) * 0.006 - (float(government.housing_support_budget) - 100.0) * 0.004, 1.0, 45.0)
++    city.inequality = clamp(city.inequality + max(0.0, 15.0 - policy.income_tax) * 0.018 - max(0.0, policy.income_tax - 25.0) * 0.012 - max(0.0, float(government.social_services_budget) - 100.0) * 0.004, 16.0, 75.0)
++    city.crime = clamp(city.crime + (city.poverty - 10.0) * 0.018 - city.happiness * 0.002 - (float(government.police_budget) - 100.0) * 0.045 - (float(government.social_services_budget) - 100.0) * 0.014 - max(0.0, city.education - 70.0) * 0.012, 2.0, 90.0)
++    var housing_stress = max(0.0, city.avg_rent / max(1.0, city.median_salary / 12.0) - 0.34)
++    city.homelessness = clamp(city.homelessness + housing_stress * 0.12 + max(0.0, city.poverty - 12.0) * 0.012 - float(government.housing_support_budget) * 0.0008 - float(government.social_services_budget) * 0.00035, 0.1, 18.0)
++
++    var tax_revenue = _monthly_tax_revenue_estimate()
++    var city_spend = _monthly_city_service_spending_estimate()
++    government.monthly_revenue = tax_revenue
++    government.monthly_spending = city_spend
++    government.monthly_balance = tax_revenue - city_spend
++    city.city_budget += government.monthly_balance
+     if city.city_budget < 0:
+         city.city_debt += abs(city.city_budget)
+         city.city_budget = 0.0
++    elif government.monthly_balance > 0.0 and city.city_debt > 0.0:
++        var debt_payment = min(city.city_debt, government.monthly_balance * 0.12)
++        city.city_debt -= debt_payment
++        city.city_budget = max(0.0, city.city_budget - debt_payment)
+ 
+     bank.default_rate = clamp(0.7 + float(_count_overdue_loans()) / max(1.0, float(loans.size())) * 18.0 + city.unemployment * 0.12 + max(0.0, policy.personal_rate - 7.0) * 0.12, 0.4, 28.0)
+     bank.reputation = clamp(bank.reputation - fee_pressure * 0.20 + max(0.0, 6.0 - policy.personal_rate) * 0.05 + max(0.0, policy.savings_rate - 2.0) * 0.07 - losses / 100000000.0, 0.0, 100.0)
+@@ -2769,7 +2977,6 @@ func _simulate_month() -> void:
+     bank.equity += last_month_profit
+     bank.liquidity_ratio = bank.cash / max(bank.deposits, 1.0) * 100.0
+ 
+-    _update_competitors()
+     _generate_monthly_news(last_month_profit, customer_change)
+     while applications.size() < 5:
+         _generate_application()
+@@ -2781,9 +2988,10 @@ func _simulate_businesses() -> void:
+     for b in businesses:
+         if not b.active:
+             continue
+-        var tax_drag = max(0.0, policy.corporate_tax - 20.0) * 0.012 + max(0.0, policy.sales_tax - 8.0) * 0.006
++        var tax_drag = max(0.0, policy.corporate_tax - 20.0) * 0.012 + max(0.0, policy.sales_tax - 8.0) * 0.006 + max(0.0, policy.payroll_tax - 1.5) * 0.010
+         var rate_drag = max(0.0, policy.business_rate - 6.0) * 0.018
+-        var demand = city.gdp_growth * 0.18 - tax_drag - rate_drag + rng.randf_range(-1.2, 1.2)
++        var city_productivity = (city.infrastructure - 70.0) * 0.018 + (city.education - 70.0) * 0.012 + (city.transit_quality - 65.0) * 0.010 - max(0.0, city.traffic - 45.0) * 0.010
++        var demand = city.gdp_growth * 0.18 + city_productivity - tax_drag - rate_drag + rng.randf_range(-1.2, 1.2)
+         b.growth = clamp(b.growth * 0.55 + demand, -28.0, 35.0)
+         b.annual_revenue = max(10000.0, b.annual_revenue * (1.0 + b.growth / 100.0 / 12.0))
+         var margin = clamp(b.annual_profit / max(b.annual_revenue, 1.0) + b.growth / 1000.0 - city.inflation / 1500.0, -0.22, 0.28)
+@@ -3146,29 +3354,6 @@ func _generate_monthly_news(monthly_profit: float, customer_change: int) -> void
+     if bank.liquidity_ratio < 8.0:
+         _push_news("LIQUIDITY ALERT: Bank cash has fallen below 8%% of customer deposits.")
+ 
+-func _competitor_pressure() -> float:
+-    var pressure = 0.0
+-    for c in competitors:
+-        pressure += max(0.0, policy.mortgage_rate - c.mortgage) * 0.15
+-        pressure += max(0.0, c.savings - policy.savings_rate) * 0.25
+-        pressure += max(0.0, policy.monthly_account_fee - c.fee) * 0.04
+-    return pressure / max(1, competitors.size())
+-
+-func _seed_competitors() -> void:
+-    competitors = [
+-        {"name": "NovaDirect", "mortgage": 4.8, "business": 6.6, "savings": 2.8, "fee": 0.0, "share": 17.0},
+-        {"name": "Heritage Bank", "mortgage": 5.4, "business": 5.9, "savings": 1.8, "fee": 6.0, "share": 21.0},
+-        {"name": "Union Commerce", "mortgage": 5.0, "business": 5.6, "savings": 2.0, "fee": 4.0, "share": 14.0},
+-        {"name": "Lumen Private", "mortgage": 4.6, "business": 5.4, "savings": 3.1, "fee": 14.0, "share": 8.0}
+-    ]
+-
+-func _update_competitors() -> void:
+-    for c in competitors:
+-        c.mortgage = clamp(c.mortgage + rng.randf_range(-0.18, 0.18), 2.0, 12.0)
+-        c.business = clamp(c.business + rng.randf_range(-0.20, 0.20), 2.5, 15.0)
+-        c.savings = clamp(c.savings + rng.randf_range(-0.15, 0.15), 0.0, 8.0)
+-        c.fee = clamp(c.fee + rng.randf_range(-0.5, 0.5), 0.0, 25.0)
+-
+ func _city_analysis() -> String:
+     var factors: Array[String] = []
+     if policy.income_tax > 28: factors.append("High personal income taxation is reducing disposable income and migration appeal.")
+@@ -3178,7 +3363,13 @@ func _city_analysis() -> String:
+     if city.unemployment > 8: factors.append("Elevated unemployment is increasing household default risk.")
+     if city.inflation > 5: factors.append("Inflation is reducing real purchasing power.")
+     if policy.monthly_account_fee > 12: factors.append("Bank fees are contributing to public dissatisfaction and account churn.")
+-    if factors.is_empty(): factors.append("No severe imbalance is dominant. The city is responding mostly to normal economic-cycle noise.")
++    if government.police_budget < 75.0: factors.append("Police funding is low and crime pressure is rising.")
++    if government.healthcare_budget < 75.0: factors.append("Healthcare is underfunded, reducing city health and increasing household risk.")
++    if government.education_budget < 75.0: factors.append("Education cuts are weakening skills and long-term productivity.")
++    if government.transit_budget < 70.0 or government.roads_budget < 70.0: factors.append("Transport or road maintenance cuts are increasing traffic and reducing productivity.")
++    if government.housing_support_budget < 70.0 and city.avg_rent > 1200.0: factors.append("Housing assistance is low while rents are elevated, increasing homelessness pressure.")
++    if _monthly_tax_revenue_estimate() < _monthly_city_service_spending_estimate(): factors.append("The city government is spending more than it collects in taxes this month.")
++    if factors.is_empty(): factors.append("No severe imbalance is dominant. Bank policy and city services are both operating near sustainable levels.")
+     return "\n".join(factors)
+ 
+ func _set_speed(new_speed: int) -> void:
+@@ -3248,6 +3439,7 @@ func _save_payload() -> Dictionary:
+         "bank": bank,
+         "city": city,
+         "policy": policy,
++        "government": government,
+         "applications": applications,
+         "loans": loans,
+         "customers": customers,
+@@ -3256,7 +3448,6 @@ func _save_payload() -> Dictionary:
+         "news": news,
+         "game_notifications": game_notifications,
+         "notification_sequence": notification_sequence,
+-        "competitors": competitors,
+         "mail_messages": mail_messages,
+         "closed_applications": closed_applications,
+         "mail_sequence": mail_sequence
+@@ -3272,8 +3463,18 @@ func _apply_save_payload(parsed: Dictionary) -> void:
+     bank = parsed.get("bank", bank)
+     city = parsed.get("city", city)
+     policy = parsed.get("policy", policy)
++    government = parsed.get("government", government)
+     if not policy.has("auto_loans_enabled"):
+         policy["auto_loans_enabled"] = false
++    var policy_defaults = {"payroll_tax":1.5, "fuel_tax":6.0, "hotel_tax":7.0, "utility_tax":3.0, "vacant_property_tax":0.5, "land_value_tax":0.3}
++    for key in policy_defaults.keys():
++        if not policy.has(key): policy[key] = policy_defaults[key]
++    var city_defaults = {"health":72.0, "education":70.0, "fire_safety":78.0, "transit_quality":66.0,
