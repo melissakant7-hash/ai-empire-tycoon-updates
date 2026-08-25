@@ -1,0 +1,116 @@
+ve_application_index_by_id(int(app.id)); _show_view("Loan Desk")); actions.add_child(terms)
++    var archive = Button.new(); archive.text = "Archive"; var current_mid = int(message.id); archive.pressed.connect(func(): _archive_mail(current_mid)); actions.add_child(archive)
++    return v
++
++func _set_mail_search(value: String) -> void:
++    mail_search_query = value.strip_edges()
++    selected_mail_id = -1
++    _show_view("Mail")
+ 
+ func _mail_ids_for_folder(folder_name: String) -> Array:
+     var result: Array = []
+@@ -2022,7 +2112,7 @@ func _view_bank_policies() -> Control:
+         ["Savings interest", "savings_rate", 0.0, 15.0, 0.1, "%"], ["Monthly account fee", "monthly_account_fee", 0.0, 40.0, 0.5, " €"], ["ATM fee", "atm_fee", 0.0, 15.0, 0.25, " €"], ["Transfer fee", "transfer_fee", 0.0, 10.0, 0.25, " €"], ["Overdraft fee", "overdraft_fee", 0.0, 80.0, 1.0, " €"], ["Loan origination fee", "origination_fee", 0.0, 8.0, 0.1, "%"]
+     ]:
+         v.add_child(_policy_row(item[0], item[1], item[2], item[3], item[4], item[5]))
+-    var hint = Label.new(); hint.text = "Policy effects are evaluated continuously. Extreme loan rates increase default risk and reduce demand; excessive fees reduce customer satisfaction and can move deposits to competitors."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; hint.add_theme_color_override("font_color", C_MUTED); v.add_child(hint)
++    var hint = Label.new(); hint.text = "Policy effects are evaluated continuously. Extreme loan rates increase default risk and reduce demand; excessive fees reduce customer satisfaction and can trigger withdrawals, complaints and lower trust."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; hint.add_theme_color_override("font_color", C_MUTED); v.add_child(hint)
+     return scroll
+ 
+ 
+@@ -2035,14 +2125,112 @@ func _set_auto_loans_enabled(enabled: bool) -> void:
+     _show_view("Bank Policies")
+     _refresh_city_hud()
+ 
++func _view_city_hall() -> Control:
++    var scroll = ScrollContainer.new()
++    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
++    var v = VBoxContainer.new()
++    v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    v.add_theme_constant_override("separation", 16)
++    scroll.add_child(v)
++    v.add_child(_title("City Hall", "You control the bank and the city government. Tax revenue funds services, subsidies and infrastructure; bad policy creates real economic and social consequences."))
++    var revenue = _monthly_tax_revenue_estimate()
++    var spending = _monthly_city_service_spending_estimate()
++    var grid = GridContainer.new(); grid.columns = 4; grid.add_theme_constant_override("h_separation", 10); grid.add_theme_constant_override("v_separation", 10); v.add_child(grid)
++    for card in [
++        ["City treasury", _money(city.city_budget), C_GREEN if city.city_budget >= 0 else C_RED],
++        ["City debt", _money(city.city_debt), C_RED],
++        ["Monthly tax revenue", _money(revenue), C_ACCENT],
++        ["Monthly service spending", _money(spending), C_BLUE],
++        ["Budget balance", _money(revenue - spending), C_GREEN if revenue >= spending else C_RED],
++        ["Health", "%.0f / 100" % city.health, _score_color(city.health)],
++        ["Crime", "%.1f / 100" % city.crime, C_GREEN if city.crime < 30 else C_RED],
++        ["Education", "%.0f / 100" % city.education, _score_color(city.education)],
++        ["Fire safety", "%.0f / 100" % city.fire_safety, _score_color(city.fire_safety)],
++        ["Transit", "%.0f / 100" % city.transit_quality, _score_color(city.transit_quality)],
++        ["Infrastructure", "%.0f / 100" % city.infrastructure, _score_color(city.infrastructure)],
++        ["Cleanliness", "%.0f / 100" % city.cleanliness, _score_color(city.cleanliness)]
++    ]:
++        grid.add_child(_metric_card(card[0], card[1], card[2]))
++    v.add_child(_section("City administration"))
++    var intro = Label.new()
++    intro.text = "Use Taxes & Budget to decide who pays. Use City Services to decide where the money goes. A 100% department budget is the normal service level; cutting it saves cash but degrades the city, while overfunding can improve outcomes at a real cost."
++    intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++    intro.add_theme_color_override("font_color", C_MUTED)
++    v.add_child(intro)
++    var actions = GridContainer.new(); actions.columns = 3; actions.add_theme_constant_override("h_separation", 10); actions.add_theme_constant_override("v_separation", 10); v.add_child(actions)
++    for item in [["€", "Taxes & Budget", "Taxes & Budget"], ["✚", "City Services", "City Services"], ["▥", "Economic Data", "City Economy"], ["⌂", "Housing", "Housing"], ["◎", "City View", "City Map"], ["≡", "Reports", "Reports"]]:
++        var b = _button("%s  %s" % [item[0], item[1]], 200)
++        b.custom_minimum_size.y = 48
++        var dest = String(item[2])
++        b.pressed.connect(func(): _show_view(dest))
++        actions.add_child(b)
++    v.add_child(_section("Current policy pressure"))
++    var analysis = Label.new(); analysis.text = _city_government_analysis(); analysis.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; analysis.add_theme_color_override("font_color", C_MUTED); v.add_child(analysis)
++    return scroll
++
++func _city_government_analysis() -> String:
++    var factors: Array[String] = []
++    if _monthly_tax_revenue_estimate() < _monthly_city_service_spending_estimate(): factors.append("The city is running a monthly operating deficit. Continued deficits add to public debt.")
++    if government.healthcare_subsidy >= 99.5: factors.append("Healthcare is free at the point of use. Residents pay almost nothing directly, but the city carries the cost.")
++    elif government.healthcare_subsidy < 30.0: factors.append("Residents pay a large share of healthcare costs, hurting low-income households and health outcomes.")
++    if government.police_budget < 75.0: factors.append("Police funding is low enough to increase response times and crime pressure.")
++    if government.education_budget > 120.0: factors.append("Education is heavily funded, improving skills and long-term productivity.")
++    if government.transit_budget < 70.0: factors.append("Public transport is underfunded, increasing congestion and reducing worker mobility.")
++    if government.housing_support_budget < 70.0 and city.avg_rent > 1200.0: factors.append("Housing support is weak while rents are high, increasing homelessness risk.")
++    if factors.is_empty(): factors.append("No city service is currently in a severe policy state. Adjust taxes and departmental budgets to shape the city.")
++    return "\n".join(factors)
++
++func _government_row(title: String, key: String, min_v: float = 0.0, max_v: float = 160.0, step_v: float = 1.0, suffix: String = "%") -> Control:
++    var p = _panel_container()
++    var h = HBoxContainer.new(); h.add_theme_constant_override("separation", 14); p.add_child(h)
++    var l = Label.new(); l.text = title; l.custom_minimum_size.x = 255; l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; l.add_theme_color_override("font_color", C_TEXT); h.add_child(l)
++    var slider = HSlider.new(); slider.min_value = min_v; slider.max_value = max_v; slider.step = step_v; slider.value = float(government[key]); slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; slider.custom_minimum_size.x = 320; h.add_child(slider)
++    var value = Label.new(); value.text = "%.0f%s" % [float(government[key]), suffix] if step_v >= 1.0 else "%.1f%s" % [float(government[key]), suffix]; value.custom_minimum_size.x = 90; value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; value.add_theme_color_override("font_color", C_ACCENT); h.add_child(value)
++    slider.value_changed.connect(func(new_value): government[key] = new_value; value.text = "%.0f%s" % [new_value, suffix] if step_v >= 1.0 else "%.1f%s" % [new_value, suffix]; _refresh_city_hud())
++    return p
++
++func _view_city_services() -> Control:
++    var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
++    var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 14); scroll.add_child(v)
++    v.add_child(_title("City Services", "Set departmental budgets like a city-management game. Higher funding improves service quality but is paid from the public treasury."))
++    var summary = GridContainer.new(); summary.columns = 4; summary.add_theme_constant_override("h_separation", 10); summary.add_theme_constant_override("v_separation", 10); v.add_child(summary)
++    for card in [["Health", "%.0f" % city.health, _score_color(city.health)], ["Crime", "%.1f" % city.crime, C_GREEN if city.crime < 30 else C_RED], ["Education", "%.0f" % city.education, _score_color(city.education)], ["Traffic", "%.0f" % city.traffic, C_GREEN if city.traffic < 45 else C_RED]]:
++        summary.add_child(_metric_card(card[0], card[1], card[2]))
++    v.add_child(_section("Essential services — funding level"))
++    for item in [["Healthcare department", "healthcare_budget"], ["Police department", "police_budget"], ["Fire & emergency services", "fire_budget"], ["Public education", "education_budget"], ["Public transport", "transit_budget"], ["Road maintenance", "roads_budget"], ["Sanitation & waste", "sanitation_budget"], ["Parks & recreation", "parks_budget"], ["Social services", "social_services_budget"], ["Housing assistance", "housing_support_budget"]]:
++        v.add_child(_government_row(item[0], item[1]))
++    v.add_child(_section("Resident cost policies"))
++    v.add_child(_government_row("Healthcare subsidy", "healthcare_subsidy", 0.0, 100.0, 1.0, "%"))
++    var health_label = Label.new()
++    health_label.text = "At 100%, public healthcare is effectively FREE for residents. Current estimated out-of-pocket healthcare cost: %s/month per resident." % _money(city.healthcare_cost_monthly)
++    health_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; health_label.add_theme_color_override("font_color", C_GREEN if government.healthcare_subsidy >= 99.5 else C_MUTED); v.add_child(health_label)
++    v.add_child(_government_row("Public transport subsidy", "transit_subsidy", 0.0, 100.0, 1.0, "%"))
++    var cost = Label.new(); cost.text = "Estimated monthly city service bill: %s" % _money(_monthly_city_service_spending_estimate()); cost.add_theme_font_size_override("font_size", 16); cost.add_theme_color_override("font_color", C_ACCENT); v.add_child(cost)
++    return scroll
++
+ func _view_taxes() -> Control:
+-    var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 14); scroll.add_child(v)
+-    v.add_child(_title("City Tax Authority", "Raise revenue carefully. Citizens and businesses can cut spending, stop investing or leave."))
+-    for item in [
+-        ["Personal income tax", "income_tax", 0.0, 60.0, 0.5], ["Corporate tax", "corporate_tax", 0.0, 50.0, 0.5], ["Sales tax", "sales_tax", 0.0, 30.0, 0.25], ["Property tax", "property_tax", 0.0, 8.0, 0.1], ["Capital gains tax", "capital_gains_tax", 0.0, 50.0, 0.5], ["Luxury goods tax", "luxury_tax", 0.0, 40.0, 0.5], ["Vehicle tax", "vehicle_tax", 0.0, 20.0, 0.25], ["Tourism tax", "tourism_tax", 0.0, 25.0, 0.25], ["Business license tax", "business_license_tax", 0.0, 15.0, 0.1], ["Financial transaction t
