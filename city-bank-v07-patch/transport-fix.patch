@@ -1,0 +1,40 @@
+diff --git a/v07.patch b/v07.patch
+index c50d32a..9d17ba8 100644
+--- a/v07.patch
++++ b/v07.patch
+@@ -28,7 +28,7 @@ diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/project.godot cbt_v07/city_ban
+  run/main_scene="res://main.tscn"
+  config/features=PackedStringArray("4.7")
+  
+- diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/scripts/city_map.gd cbt_v07/city_bank_tycoon/scripts/city_map.gd
++diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/scripts/city_map.gd cbt_v07/city_bank_tycoon/scripts/city_map.gd
+ --- cbt_v06_base_for_patch/city_bank_tycoon/scripts/city_map.gd	2026-08-25 18:50:56.000000000 +0000
+ +++ cbt_v07/city_bank_tycoon/scripts/city_map.gd	2026-08-25 19:35:03.921002928 +0000
+ @@ -1,4 +1,4 @@
+@@ -127,7 +127,7 @@ diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/project.godot cbt_v07/city_ban
+ +    world_root.add_child(city_root)
+ +    building_root = Node3D.new()
+ +    building_root.name = "Buildings"
+-+   world_root.add_child(building_root)
+++    world_root.add_child(building_root)
+ +    detail_root = Node3D.new()
+ +    detail_root.name = "CityDetails"
+ +    world_root.add_child(detail_root)
+@@ -425,7 +425,7 @@ diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/project.godot cbt_v07/city_ban
+ +    for stop in stops:
+ +        var p = _road_point(stop.x, stop.y) + Vector3(ROAD_WIDTH * 0.65, 0, ROAD_WIDTH * 0.65)
+ +        _box(detail_root, Vector3(2.7, 0.12, 1.2), p + Vector3(0,0.13,0), Color("65737b"), "BusStopPad")
+-+         _box(detail_root, Vector3(0.12, 2.0, 0.12), p + Vector3(-1.0,1.0,0), Color("38444c"), "BusStopPole")
+++        _box(detail_root, Vector3(0.12, 2.0, 0.12), p + Vector3(-1.0,1.0,0), Color("38444c"), "BusStopPole")
+ +        _box(detail_root, Vector3(0.8, 0.55, 0.12), p + Vector3(-1.0,1.9,0), Color("4c9b70"), "BusStopSign")
+ +
+ +func _add_parking_lots() -> void:
+@@ -1034,7 +1034,7 @@ diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/project.godot cbt_v07/city_ban
+ -        var x = s.x * float(road_xs[ix])
+ -        for j in range(10):
+ -            var y = s.y * (0.23 + float(j) * 0.068)
+--             _draw_tree(Vector2(x - 27, y), 4.6)
++-            _draw_tree(Vector2(x - 27, y), 4.6)
+ -            _draw_tree(Vector2(x + 27, y + 13), 4.1)
+ -    for iy in [2, 4, 5]:
+ -        var y = s.y * float(road_ys[iy])
