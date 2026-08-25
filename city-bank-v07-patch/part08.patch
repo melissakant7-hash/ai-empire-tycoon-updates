@@ -1,0 +1,85 @@
+raw_buildings(s: Vector2) -> void:
+-    var growth = float(economy.get("gdp_growth", 2.0))
+-    var unemployment = float(economy.get("unemployment", 5.0))
+-    var health = clamp(0.84 + growth * 0.025 - max(0.0, unemployment - 5.0) * 0.025, 0.40, 1.05)
+-    for building in buildings:
+-        var d = districts[int(building.district)]
+-        var dr: Rect2 = d.rect
+-        var district_pos = Vector2(dr.position.x * s.x, dr.position.y * s.y)
+-        var district_size = Vector2(dr.size.x * s.x, dr.size.y * s.y)
+-        var rect = Rect2(
+-            district_pos + Vector2(float(building.u) * district_size.x, float(building.v) * district_size.y),
+-            Vector2(float(building.w) * district_size.x, float(building.h) * district_size.y)
+-        )
+-        var occupied = float(building.occupied) * health
+-        _draw_building_object(rect, d.color, String(building.kind), float(building.seed), float(building.height), occupied)
+-
+-func _draw_building_object(rect: Rect2, base: Color, kind: String, seed_value: float, height_factor: float, occupancy: float) -> void:
+-    if kind == "industrial":
+-        _draw_warehouse(rect, base, seed_value, occupancy)
+-        return
+-    if kind == "residential" and height_factor < 1.0:
+-        _draw_house(rect, base, seed_value, occupancy)
++        if String(d.name) != selected_district: continue
++        var rect: Rect2 = d.rect
++        var center = _norm_to_world(rect.get_center(), 0.32)
++        var w = rect.size.x * WORLD_WIDTH
++        var dep = rect.size.y * WORLD_DEPTH
++        var c = Color("66b4ee")
++        _box(district_highlight_root, Vector3(w,0.12,0.32), center + Vector3(0,0,-dep*0.5), c, "DistrictBorder")
++        _box(district_highlight_root, Vector3(w,0.12,0.32), center + Vector3(0,0,dep*0.5), c, "DistrictBorder")
++        _box(district_highlight_root, Vector3(0.32,0.12,dep), center + Vector3(-w*0.5,0,0), c, "DistrictBorder")
++        _box(district_highlight_root, Vector3(0.32,0.12,dep), center + Vector3(w*0.5,0,0), c, "DistrictBorder")
+         return
+-    if kind == "retail":
+-        _draw_retail(rect, base, seed_value, occupancy)
+-        return
+-    var lift = (5.0 + seed_value * 15.0) * height_factor
+-    draw_rect(Rect2(rect.position + Vector2(7, 8), rect.size), Color(Color("0b1116"), 0.34), true)
+-    var facade = base.lightened(0.05 + seed_value * 0.12)
+-    if occupancy < 0.58 and seed_value < 0.45:
+-        facade = facade.darkened(0.22)
+-    if kind == "office": facade = facade.lightened(0.05)
+-    if kind == "civic": facade = Color("777d7d")
+-    if kind == "university": facade = Color("815f50")
+-    draw_rect(rect, facade, true)
+-    draw_rect(rect, facade.lightened(0.25), false, 1.0)
+-    var roof = PackedVector2Array([
+-        rect.position,
+-        rect.position + Vector2(lift, -lift * 0.46),
+-        rect.position + Vector2(rect.size.x + lift, -lift * 0.46),
+-        rect.position + Vector2(rect.size.x, 0)
+-    ])
+-    draw_colored_polygon(roof, facade.lightened(0.20))
+-    var side = PackedVector2Array([
+-        rect.position + Vector2(rect.size.x, 0),
+-        rect.position + Vector2(rect.size.x + lift, -lift * 0.46),
+-        rect.position + Vector2(rect.size.x + lift, rect.size.y - lift * 0.46),
+-        rect.position + Vector2(rect.size.x, rect.size.y)
+-    ])
+-    draw_colored_polygon(side, facade.darkened(0.20))
+-    var window_alpha = 0.70 if occupancy > 0.65 else 0.25
+-    var rows = 2 if rect.size.y < 32 else 3
+-    var cols = 2 if rect.size.x < 35 else 3
+-    for wx in range(cols):
+-        for wy in range(rows):
+-            var wpos = rect.position + Vector2(6 + wx * max(8.0, rect.size.x / float(cols)), 6 + wy * max(7.0, rect.size.y / float(rows)))
+-            var lit = fmod(seed_value * 11.0 + float(wx * 3 + wy), 1.0) > 0.35
+-            draw_rect(Rect2(wpos, Vector2(4.5, 3.2)), Color(Color("f1d98a") if lit else Color("86a8b7"), window_alpha), true)
+-    if kind == "civic":
+-        for c in range(3):
+-            var x = rect.position.x + rect.size.x * (0.25 + float(c) * 0.25)
+-            draw_line(Vector2(x, rect.position.y + 3), Vector2(x, rect.end.y - 3), Color("c1c4bd"), 2.0)
+-
+-func _draw_house(rect: Rect2, base: Color, seed_value: float, occupancy: float) -> void:
+-    var body = Rect2(rect.position + Vector2(0, rect.size.y * 0.20), Vector2(rect.size.x, rect.size.y * 0.80))
+-    draw_rect(body, base.lightened(0.18), true)
+-    var roof = PackedVector2Array([
+-        Vector2(rect.position.x - 2, body.position.y),
+-        Vector2(rect.get_center().x, rect.position.y - 5),
+-        Vector2(rect.end.x + 2, body.position.y)
+-    ])
+-    draw_colored_polygon(roof, Color("704d43") if seed_value < 0.5 else Color("555e62"))
+-    draw_rect(Rect2(body.position + Vector2(5, 6), Vector2(4, 4)), Color("d8cb8d") if occupancy > 0.55 else Color("52636a"), true)
+-    draw_rect(Rect2(Vector2(body.end.x - 9, body.position.y + 6), Vector2(4, 4)), Color("d8cb8d") if occupancy > 0.70 else Color("52636a"), true)
+-    draw_rect(Re
