@@ -87,13 +87,12 @@ jobs:
           echo "919aae99055f7cd6601e2c025f5b6081b3507d91ad8600ec84608a33a6feda95  city-bank-v12/plain-patch/part06.patch" | sha256sum -c -
           cat city-bank-v12/plain-patch/part00.patch city-bank-v12/plain-patch/part01.patch city-bank-v12/plain-patch/part02.patch city-bank-v12/plain-patch/part03.patch city-bank-v12/plain-patch/part04.patch city-bank-v12/plain-patch/part05.patch city-bank-v12/plain-patch/part06.patch > v12.patch
           echo "5214cc24eb54e923ae09e401bf445dcd3a6596afcd0b8c56621dd03b4c9570a0  v12.patch" | sha256sum -c -
-          cd city_bank_tycoon
-          patch --dry-run -p2 < "$GITHUB_WORKSPACE/v12.patch"
-          patch -p2 < "$GITHUB_WORKSPACE/v12.patch"
-          grep -q 'config/version="1.2.0"' project.godot
-          grep -q 'window/stretch/aspect="expand"' project.godot
-          grep -q 'Create acceleration notice' scripts/main.gd
-          grep -q 'Loan servicing actions' scripts/main.gd
+          git apply --check -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v12.patch"
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v12.patch"
+          grep -q 'config/version="1.2.0"' city_bank_tycoon/project.godot
+          grep -q 'window/stretch/aspect="expand"' city_bank_tycoon/project.godot
+          grep -q 'Create acceleration notice' city_bank_tycoon/scripts/main.gd
+          grep -q 'Loan servicing actions' city_bank_tycoon/scripts/main.gd
 
       - name: Prepare Godot export templates
         shell: bash
