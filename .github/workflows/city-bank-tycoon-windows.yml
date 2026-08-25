@@ -5,7 +5,7 @@ on:
     branches:
       - city-bank-tycoon-build
     paths:
-      - "city-bank-v02-source/**"
+      - "city-bank-v03b-source/**"
       - ".github/workflows/city-bank-tycoon-windows.yml"
   workflow_dispatch:
 
@@ -23,17 +23,19 @@ jobs:
       - name: Checkout build branch
         uses: actions/checkout@v4
 
-      - name: Reassemble City Bank Tycoon v0.2 source
+      - name: Reassemble City Bank Tycoon v0.3 source
         shell: bash
         run: |
-          cat city-bank-v02-source/part*.b64 | base64 -d > city-bank-tycoon-v02-source.zip
-          echo "04000a9ac317701f2b0c299175da4bb54b446c792b515a3b54c2b6fdd4510bc7  city-bank-tycoon-v02-source.zip" | sha256sum -c -
-          unzip -q city-bank-tycoon-v02-source.zip
+          cat city-bank-v03b-source/part*.b64 | base64 -d > city-bank-tycoon-v03-source.zip
+          echo "e4a8719c6842d2d45dc03862aed1d2f325311c8319c0ad43ef5fbdeef6e11cef  city-bank-tycoon-v03-source.zip" | sha256sum -c -
+          unzip -q city-bank-tycoon-v03-source.zip
           test -f city_bank_tycoon/project.godot
           test -f city_bank_tycoon/export_presets.cfg
           test -f city_bank_tycoon/scripts/main.gd
+          test -f city_bank_tycoon/scripts/city_map.gd
           test -f city_bank_tycoon/scripts/core/save_manager.gd
           test -f city_bank_tycoon/scripts/line_chart.gd
+          grep -q 'config/version="0.3.0"' city_bank_tycoon/project.godot
           if grep -R -n ':=' city_bank_tycoon/scripts; then
             echo 'Build-time compatibility syntax still exists in source.'
             exit 1
@@ -61,7 +63,7 @@ jobs:
             exit 1
           fi
 
-      - name: Run gameplay smoke test
+      - name: Run city gameplay smoke test
         shell: bash
         run: |
           cat > city_bank_tycoon/ci_smoke.gd <<'GDSCRIPT'
@@ -79,15 +81,26 @@ jobs:
               var game = packed.instantiate()
               root.add_child(game)
               await process_frame
+              await process_frame
+              if game.city_world == null:
+                  push_error("Persistent city world was not created")
+                  quit(1)
+                  return
               var views = ["Dashboard", "Loan Desk", "Loan Portfolio", "Customers", "Businesses", "Bank Policies", "Taxes", "City Economy", "Housing", "City Map", "Competitors", "Reports", "News", "Settings"]
               for view_name in views:
                   game._show_view(view_name)
                   await process_frame
+              game._on_district_selected("Financial District")
+              await process_frame
+              game._on_district_selected("Riverside District")
+              await process_frame
               for i in range(35):
                   game._advance_day()
               game._show_view("Dashboard")
               await process_frame
-              print("CI_SMOKE_TEST_OK")
+              game._refresh_city_hud()
+              await process_frame
+              print("CI_CITY_SMOKE_TEST_OK")
               quit(0)
           GDSCRIPT
           set +e
@@ -95,7 +108,7 @@ jobs:
           status=${PIPESTATUS[0]}
           set -e
           test "$status" -eq 0
-          grep -q 'CI_SMOKE_TEST_OK' smoke.log
+          grep -q 'CI_CITY_SMOKE_TEST_OK' smoke.log
           if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke.log; then
             echo 'Gameplay smoke test found a script/runtime error.'
             exit 1
@@ -107,7 +120,7 @@ jobs:
         run: |
           mkdir -p "$GITHUB_WORKSPACE/build/windows"
           set +e
-          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.2.exe" 2>&1 | tee export.log
+          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.3.exe" 2>&1 | tee export.log
           status=${PIPESTATUS[0]}
           set -e
           test "$status" -eq 0
@@ -115,13 +128,13 @@ jobs:
             echo 'Export contained GDScript parse errors.'
             exit 1
           fi
-          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.2.exe"
-          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.2.exe"
+          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.3.exe"
+          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.3.exe"
 
       - name: Upload playable Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: CityBankTycoon-v0.2-Windows-x64
-          path: build/windows/CityBankTycoon-v0.2.exe
+          name: CityBankTycoon-v0.3-Windows-x64
+          path: build/windows/CityBankTycoon-v0.3.exe
           if-no-files-found: error
           retention-days: 30
