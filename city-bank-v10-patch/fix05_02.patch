@@ -1,0 +1,26 @@
+15.0 - policy.income_tax) * 0.018 - max(0.0, policy.income_tax - 25.0) * 0.012 - max(0.0, float(government.social_services_budget) - 100.0) * 0.004, 16.0, 75.0)
++    city.crime = clamp(city.crime + (city.poverty - 10.0) * 0.018 - city.happiness * 0.002 - (float(government.police_budget) - 100.0) * 0.045 - (float(government.social_services_budget) - 100.0) * 0.014 - max(0.0, city.education - 70.0) * 0.012, 2.0, 90.0)
++    var housing_stress = max(0.0, city.avg_rent / max(1.0, city.median_salary / 12.0) - 0.34)
++    city.homelessness = clamp(city.homelessness + housing_stress * 0.12 + max(0.0, city.poverty - 12.0) * 0.012 - float(government.housing_support_budget) * 0.0008 - float(government.social_services_budget) * 0.00035, 0.1, 18.0)
++
++    var tax_revenue = _monthly_tax_revenue_estimate()
++    var city_spend = _monthly_city_service_spending_estimate()
++    government.monthly_revenue = tax_revenue
++    government.monthly_spending = city_spend
++    government.monthly_balance = tax_revenue - city_spend
++    city.city_budget += government.monthly_balance
+     if city.city_budget < 0:
+         city.city_debt += abs(city.city_budget)
+         city.city_budget = 0.0
++    elif government.monthly_balance > 0.0 and city.city_debt > 0.0:
++        var debt_payment = min(city.city_debt, government.monthly_balance * 0.12)
++        city.city_debt -= debt_payment
++        city.city_budget = max(0.0, city.city_budget - debt_payment)
+ 
+     bank.default_rate = clamp(0.7 + float(_count_overdue_loans()) / max(1.0, float(loans.size())) * 18.0 + city.unemployment * 0.12 + max(0.0, policy.personal_rate - 7.0) * 0.12, 0.4, 28.0)
+     bank.reputation = clamp(bank.reputation - fee_pressure * 0.20 + max(0.0, 6.0 - policy.personal_rate) * 0.05 + max(0.0, policy.savings_rate - 2.0) * 0.07 - losses / 100000000.0, 0.0, 100.0)
+@@ -2769,7 +2977,6 @@ func _simulate_month() -> void:
+     bank.equity += last_month_profit
+     bank.liquidity_ratio = bank.cash / max(bank.deposits, 1.0) * 100.0
+ 
+-    
