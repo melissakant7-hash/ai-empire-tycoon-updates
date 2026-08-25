@@ -1,0 +1,113 @@
+     for lamp in night_lights:
+         if is_instance_valid(lamp):
+             lamp.light_energy = night * 2.2
+diff --git a/scripts/main.gd b/scripts/main.gd
+index e4eef37..7a173f9 100644
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -28,6 +28,8 @@ var tick_accum = 0.0
+ var selected_application = -1
+ var selected_loan = -1
+ var news: Array[String] = []
++var game_notifications: Array[Dictionary] = []
++var notification_sequence = 0
+ var applications: Array[Dictionary] = []
+ var loans: Array[Dictionary] = []
+ var competitors: Array[Dictionary] = []
+@@ -37,7 +39,7 @@ var history: Array[Dictionary] = []
+ var last_month_profit = 0.0
+ var verification_spend = 0.0
+ var months_simulated = 0
+-const SAVE_VERSION = 4
++const SAVE_VERSION = 5
+ 
+ var bank = {
+     "name": "Sterling City Bank",
+@@ -110,7 +112,7 @@ var root_vbox: VBoxContainer
+ var content: MarginContainer
+ var date_label: Label
+ var cash_label: Label
+-var notifications_label: Label
++var notifications_label: Button
+ var deposits_label: Label
+ var active_loans_label: Label
+ var profit_label: Label
+@@ -266,13 +268,14 @@ func _build_topbar() -> Control:
+     tax_income_label = _top_kpi("TAX INCOME (EST.)", _money(_monthly_tax_revenue_estimate()), C_ACCENT)
+     row.add_child(tax_income_label.get_parent())
+ 
+-    notifications_label = Label.new()
+-    notifications_label.text = "☰"
+-    notifications_label.custom_minimum_size.x = 38
+-    notifications_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+-    notifications_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+-    notifications_label.add_theme_font_size_override("font_size", 20)
++    notifications_label = Button.new()
++    notifications_label.text = "🔔"
++    notifications_label.custom_minimum_size = Vector2(58, 38)
++    notifications_label.add_theme_font_size_override("font_size", 16)
+     notifications_label.add_theme_color_override("font_color", C_MUTED)
++    notifications_label.add_theme_stylebox_override("normal", _panel_style(Color(0.03,0.055,0.075,0.28), 12, Color.TRANSPARENT))
++    notifications_label.add_theme_stylebox_override("hover", _panel_style(Color(0.08,0.16,0.22,0.88), 12, C_BLUE))
++    notifications_label.pressed.connect(func(): _toggle_view("Notifications"))
+     row.add_child(notifications_label)
+     return panel
+ 
+@@ -320,7 +323,7 @@ func _build_sidebar() -> Control:
+     nav_scroll.add_child(box)
+ 
+     var nav_items = [
+-        ["▰", "Dashboard"], ["✉", "Mail"], ["◆", "Loan Desk"], ["▤", "Portfolio"],
++        ["▰", "Dashboard"], ["✉", "Mail"], ["◆", "Loan Desk"], ["▤", "Current Loans"], ["🔔", "Notifications"],
+         ["●", "Customers"], ["▥", "Businesses"], ["▦", "Bank Policies"],
+         ["▣", "Taxes"], ["▥", "City Economy"], ["⌂", "Housing"],
+         ["◎", "City Map"], ["◇", "Competitors"], ["≡", "Reports"],
+@@ -345,7 +348,7 @@ func _build_sidebar() -> Control:
+     quick.add_theme_font_size_override("font_size", 9)
+     quick.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(quick)
+-    for action in [["Open Mail", "Mail"], ["Review Loans", "Loan Desk"], ["Adjust Tax Rate", "Taxes"], ["Economic View", "City Economy"]]:
++    for action in [["Open Mail", "Mail"], ["Review Loans", "Loan Desk"], ["Current Loans", "Current Loans"], ["Adjust Tax Rate", "Taxes"], ["Economic View", "City Economy"]]:
+         var qb = _hud_button(action[0], 186)
+         qb.alignment = HORIZONTAL_ALIGNMENT_LEFT
+         var destination = String(action[1])
+@@ -357,7 +360,7 @@ func _build_sidebar() -> Control:
+     save.pressed.connect(_save_game)
+     outer.add_child(save)
+     var footer = Label.new()
+-    footer.text = "  v0.8 City Visual Overhaul"
++    footer.text = "  v0.9 Credit Response & City Materials"
+     footer.add_theme_font_size_override("font_size", 9)
+     footer.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(footer)
+@@ -494,9 +497,9 @@ GDP %.1f%%   •   Jobs %.1f%%   •   Trust %.0f%%" % [
+         bottom_alerts_label.text = "%s
+ %s" % [alert_one, alert_two]
+     if is_instance_valid(bottom_notifications_label):
+-        bottom_notifications_label.text = "• %d unread mail messages
+-• %d loan applications require review
+-• %d businesses monitored for stress" % [_mail_unread_count(), applications.size(), _count_stressed_businesses()]
++        bottom_notifications_label.text = "• %d unread notifications
++• %d unread mail messages
++• %d loan applications require review" % [_unread_notification_count(), _mail_unread_count(), applications.size()]
+     if is_instance_valid(bottom_economy_label):
+         bottom_economy_label.text = "GDP Growth  %.1f%%     Inflation  %.1f%%     Unemployment  %.1f%%     Confidence  %.0f" % [city.gdp_growth, city.inflation, city.unemployment, city.happiness + 32.0]
+     if is_instance_valid(bottom_city_label):
+@@ -644,7 +647,8 @@ func _show_view(name: String) -> void:
+         "Dashboard": view = _view_dashboard_overlay()
+         "Mail": view = _overlay_panel(_view_mail())
+         "Loan Desk": view = _overlay_panel(_view_loans())
+-        "Portfolio", "Loan Portfolio": view = _overlay_panel(_view_portfolio())
++        "Current Loans", "Portfolio", "Loan Portfolio": view = _overlay_panel(_view_portfolio())
++        "Notifications": view = _overlay_panel(_view_notifications())
+         "Customers": view = _overlay_panel(_view_customers())
+         "Businesses": view = _overlay_panel(_view_businesses())
+         "Bank Policies": view = _overlay_panel(_view_bank_policies())
+@@ -1559,6 +1563,114 @@ func _render_application(v: VBoxContainer, idx: int) -> void:
+     mail.pressed.connect(func(): _select_mail_for_application(int(a.id)); _show_view("Mail"))
+     actions.add_child(mail)
+ 
++func _view_notifications() -> Control:
++    var scroll = ScrollContainer.new()
++    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
