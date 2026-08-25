@@ -1,0 +1,112 @@
+ is_instance_valid(environment):
++        environment.ambient_light_energy = 0.16 + daylight * 0.62
++        environment.background_color = Color("182536").lerp(Color("8bb3c5"), daylight)
++
++func _apply_economy_visuals() -> void:
++    if buildings.is_empty(): return
++    var unemployment = float(economy.get("unemployment", 5.5))
++    var growth = float(economy.get("gdp_growth", 2.0))
++    var stress = clamp((unemployment - 4.0) / 13.0 - growth / 25.0, 0.0, 0.65)
++    for i in range(buildings.size()):
++        var b = buildings[i]
++        var node: Node3D = b.node
++        var occupied = float(b.occupied)
++        var active = occupied > stress + float((i*17)%100)/300.0
++        node.scale.y = 1.0 if active else 0.94
+ 
+ func _gui_input(event: InputEvent) -> void:
+-    if event is InputEventMouseMotion:
+-        if panning:
+-            view_pan += event.position - last_pan_mouse
+-            last_pan_mouse = event.position
+-            _clamp_pan()
+-            queue_redraw()
+-        else:
+-            hovered_district = _district_at(event.position)
+-            queue_redraw()
+-    elif event is InputEventMouseButton:
++    if event is InputEventMouseButton:
+         if event.button_index == MOUSE_BUTTON_MIDDLE:
+             panning = event.pressed
+-            last_pan_mouse = event.position
++            last_mouse = event.position
++            accept_event()
++            return
++        if event.button_index == MOUSE_BUTTON_RIGHT:
++            rotating = event.pressed
++            last_mouse = event.position
+             accept_event()
+             return
+         if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+-            _zoom_at(event.position, 1.12)
++            _zoom_at(event.position, 1.13)
+             accept_event()
+             return
+         if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+-            _zoom_at(event.position, 1.0 / 1.12)
++            _zoom_at(event.position, 1.0/1.13)
+             accept_event()
+             return
+         if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+-            var found = _district_at(event.position)
++            var found = _district_at_screen(event.position)
+             if found != "":
+                 selected_district = found
+                 district_selected.emit(found)
++                _update_district_highlight()
+                 if event.double_click:
+                     _focus_district(found)
+-                queue_redraw()
++                accept_event()
++    elif event is InputEventMouseMotion:
++        if panning:
++            _pan_camera(event.position - last_mouse)
++            last_mouse = event.position
++            accept_event()
++        elif rotating:
++            camera_yaw -= event.relative.x * 0.006
++            camera_elevation = clamp(camera_elevation + event.relative.y * 0.003, deg_to_rad(28.0), deg_to_rad(67.0))
++            last_mouse = event.position
++            _update_camera()
++            accept_event()
++        else:
++            hovered_district = _district_at_screen(event.position)
+ 
+ func _unhandled_key_input(event: InputEvent) -> void:
+     if not (event is InputEventKey) or not event.pressed:
+         return
+-    var step = 55.0
+-    if event.keycode == KEY_W: view_pan.y += step
+-    elif event.keycode == KEY_S: view_pan.y -= step
+-    elif event.keycode == KEY_A: view_pan.x += step
+-    elif event.keycode == KEY_D: view_pan.x -= step
+-    elif event.keycode == KEY_EQUAL or event.keycode == KEY_PLUS: _zoom_at(get_rect().size * 0.5, 1.12)
+-    elif event.keycode == KEY_MINUS: _zoom_at(get_rect().size * 0.5, 1.0 / 1.12)
+-    else: return
+-    _clamp_pan()
+-    queue_redraw()
++    var step = camera_distance * 0.075
++    var right = Vector3(cos(camera_yaw),0,-sin(camera_yaw))
++    var forward = Vector3(-sin(camera_yaw),0,-cos(camera_yaw))
++    if event.keycode == KEY_W: camera_target += forward * step
++    elif event.keycode == KEY_S: camera_target -= forward * step
++    elif event.keycode == KEY_A: camera_target -= right * step
++    elif event.keycode == KEY_D: camera_target += right * step
++    elif event.keycode == KEY_Q: camera_yaw -= deg_to_rad(12.0)
++    elif event.keycode == KEY_E: camera_yaw += deg_to_rad(12.0)
++    elif event.keycode == KEY_EQUAL or event.keycode == KEY_PLUS: camera_distance = clamp(camera_distance/1.14, 42.0, 190.0)
++    elif event.keycode == KEY_MINUS: camera_distance = clamp(camera_distance*1.14, 42.0, 190.0)
++    elif event.keycode == KEY_HOME:
++        camera_target = Vector3.ZERO
++        camera_distance = 118.0
++        camera_yaw = deg_to_rad(-18.0)
++    else:
++        return
++    _clamp_camera_target()
++    _update_camera()
++
++func _pan_camera(delta_screen: Vector2) -> void:
++    var right = Vector3(cos(camera_yaw),0,-sin(camera_yaw))
++    var forward = Vector3(-sin(camera_yaw),0,-cos(camera_yaw))
++    var scale_factor = camera_distance * 0.0028
++    camera_target += (-right * delta_screen.x + forward * delta_screen.y) * scale_fact
