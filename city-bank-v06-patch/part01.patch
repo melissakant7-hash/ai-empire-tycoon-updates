@@ -1,0 +1,286 @@
+ return
++    var step = 55.0
++    if event.keycode == KEY_W: view_pan.y += step
++    elif event.keycode == KEY_S: view_pan.y -= step
++    elif event.keycode == KEY_A: view_pan.x += step
++    elif event.keycode == KEY_D: view_pan.x -= step
++    elif event.keycode == KEY_EQUAL or event.keycode == KEY_PLUS: _zoom_at(get_rect().size * 0.5, 1.12)
++    elif event.keycode == KEY_MINUS: _zoom_at(get_rect().size * 0.5, 1.0 / 1.12)
++    else: return
++    _clamp_pan()
++    queue_redraw()
++
++func _focus_district(name: String) -> void:
++    var s = get_rect().size
++    for d in districts:
++        if String(d.name) == name:
++            var r: Rect2 = d.rect
++            var center = Vector2((r.position.x + r.size.x * 0.5) * s.x, (r.position.y + r.size.y * 0.5) * s.y)
++            view_zoom = clamp(1.85, 1.0, 3.25)
++            view_pan = s * 0.5 - center * view_zoom
++            _clamp_pan()
++            return
++
++func _clamp_pan() -> void:
++    var s = get_rect().size
++    var min_pan = s * (1.0 - view_zoom)
++    view_pan.x = clamp(view_pan.x, min_pan.x, 0.0)
++    view_pan.y = clamp(view_pan.y, min_pan.y, 0.0)
++
+ func _zoom_at(screen_pos: Vector2, factor: float) -> void:
+     var old_zoom = view_zoom
+-    view_zoom = clamp(view_zoom * factor, 1.0, 2.25)
++    view_zoom = clamp(view_zoom * factor, 1.0, 3.25)
+     if is_equal_approx(old_zoom, view_zoom):
+         return
+     var world_before = (screen_pos - view_pan) / old_zoom
+     view_pan = screen_pos - world_before * view_zoom
+-    var s = get_rect().size
+-    var min_pan = s * (1.0 - view_zoom)
+-    view_pan.x = clamp(view_pan.x, min_pan.x, 0.0)
+-    view_pan.y = clamp(view_pan.y, min_pan.y, 0.0)
++    _clamp_pan()
+     queue_redraw()
+ 
+ func _screen_to_world(pos: Vector2) -> Vector2:
+@@ -134,24 +297,25 @@
+     var world_pos = _screen_to_world(pos)
+     var s = get_rect().size
+     for d in districts:
+-        var r = d.rect
++        var r: Rect2 = d.rect
+         var actual = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
+         if actual.has_point(world_pos):
+-            return d.name
++            return String(d.name)
+     return ""
+ 
++func _road_point(ix: int, iy: int, s: Vector2) -> Vector2:
++    return Vector2(float(road_xs[ix]) * s.x, float(road_ys[iy]) * s.y)
++
+ func _draw() -> void:
+     var s = get_rect().size
+     if s.x < 20.0 or s.y < 20.0:
+         return
+-
+-    # Native procedural city world: no screenshot/photo background is used.
+-    draw_rect(Rect2(Vector2.ZERO, s), Color("26343a"), true)
++    draw_rect(Rect2(Vector2.ZERO, s), Color("24343a"), true)
+     draw_set_transform(view_pan, 0.0, Vector2(view_zoom, view_zoom))
+     _draw_waterfront(s)
+     _draw_ground(s)
+-    for d in districts:
+-        _draw_district(s, d)
++    _draw_district_ground(s)
++    _draw_buildings(s)
+     _draw_central_park(s)
+     _draw_roads(s)
+     _draw_city_details(s)
+@@ -159,14 +323,120 @@
+     _draw_traffic(s)
+     _draw_pedestrians(s)
+     _draw_bank_hq(s)
++    _draw_atmosphere(s)
+     _draw_district_highlights(s)
+     draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+ 
+-    # Lightweight city-camera hint.
+-    var hint = "Wheel: zoom   •   Middle mouse: pan   •   Click district: inspect"
+-    draw_rect(Rect2(220, 78, 390, 25), Color(0.02,0.04,0.055,0.72), true)
++    var hint = "Wheel / +/-: zoom   •   Middle mouse / WASD: pan   •   Double-click district: focus"
++    draw_rect(Rect2(220, 78, 520, 25), Color(0.02,0.04,0.055,0.72), true)
+     draw_string(ThemeDB.fallback_font, Vector2(232, 95), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, MUTED)
+ 
++func _draw_district_ground(s: Vector2) -> void:
++    for d in districts:
++        var r: Rect2 = d.rect
++        var rect = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
++        draw_rect(rect, Color(d.color, 0.18), true)
++
++func _draw_buildings(s: Vector2) -> void:
++    var growth = float(economy.get("gdp_growth", 2.0))
++    var unemployment = float(economy.get("unemployment", 5.0))
++    var health = clamp(0.84 + growth * 0.025 - max(0.0, unemployment - 5.0) * 0.025, 0.40, 1.05)
++    for building in buildings:
++        var d = districts[int(building.district)]
++        var dr: Rect2 = d.rect
++        var district_pos = Vector2(dr.position.x * s.x, dr.position.y * s.y)
++        var district_size = Vector2(dr.size.x * s.x, dr.size.y * s.y)
++        var rect = Rect2(
++            district_pos + Vector2(float(building.u) * district_size.x, float(building.v) * district_size.y),
++            Vector2(float(building.w) * district_size.x, float(building.h) * district_size.y)
++        )
++        var occupied = float(building.occupied) * health
++        _draw_building_object(rect, d.color, String(building.kind), float(building.seed), float(building.height), occupied)
++
++func _draw_building_object(rect: Rect2, base: Color, kind: String, seed_value: float, height_factor: float, occupancy: float) -> void:
++    if kind == "industrial":
++        _draw_warehouse(rect, base, seed_value, occupancy)
++        return
++    if kind == "residential" and height_factor < 1.0:
++        _draw_house(rect, base, seed_value, occupancy)
++        return
++    if kind == "retail":
++        _draw_retail(rect, base, seed_value, occupancy)
++        return
++    var lift = (5.0 + seed_value * 15.0) * height_factor
++    draw_rect(Rect2(rect.position + Vector2(7, 8), rect.size), Color(Color("0b1116"), 0.34), true)
++    var facade = base.lightened(0.05 + seed_value * 0.12)
++    if occupancy < 0.58 and seed_value < 0.45:
++        facade = facade.darkened(0.22)
++    if kind == "office": facade = facade.lightened(0.05)
++    if kind == "civic": facade = Color("777d7d")
++    if kind == "university": facade = Color("815f50")
++    draw_rect(rect, facade, true)
++    draw_rect(rect, facade.lightened(0.25), false, 1.0)
++    var roof = PackedVector2Array([
++        rect.position,
++        rect.position + Vector2(lift, -lift * 0.46),
++        rect.position + Vector2(rect.size.x + lift, -lift * 0.46),
++        rect.position + Vector2(rect.size.x, 0)
++    ])
++    draw_colored_polygon(roof, facade.lightened(0.20))
++    var side = PackedVector2Array([
++        rect.position + Vector2(rect.size.x, 0),
++        rect.position + Vector2(rect.size.x + lift, -lift * 0.46),
++        rect.position + Vector2(rect.size.x + lift, rect.size.y - lift * 0.46),
++        rect.position + Vector2(rect.size.x, rect.size.y)
++    ])
++    draw_colored_polygon(side, facade.darkened(0.20))
++    var window_alpha = 0.70 if occupancy > 0.65 else 0.25
++    var rows = 2 if rect.size.y < 32 else 3
++    var cols = 2 if rect.size.x < 35 else 3
++    for wx in range(cols):
++        for wy in range(rows):
++            var wpos = rect.position + Vector2(6 + wx * max(8.0, rect.size.x / float(cols)), 6 + wy * max(7.0, rect.size.y / float(rows)))
++            var lit = fmod(seed_value * 11.0 + float(wx * 3 + wy), 1.0) > 0.35
++            draw_rect(Rect2(wpos, Vector2(4.5, 3.2)), Color(Color("f1d98a") if lit else Color("86a8b7"), window_alpha), true)
++    if kind == "civic":
++        for c in range(3):
++            var x = rect.position.x + rect.size.x * (0.25 + float(c) * 0.25)
++            draw_line(Vector2(x, rect.position.y + 3), Vector2(x, rect.end.y - 3), Color("c1c4bd"), 2.0)
++
++func _draw_house(rect: Rect2, base: Color, seed_value: float, occupancy: float) -> void:
++    var body = Rect2(rect.position + Vector2(0, rect.size.y * 0.20), Vector2(rect.size.x, rect.size.y * 0.80))
++    draw_rect(body, base.lightened(0.18), true)
++    var roof = PackedVector2Array([
++        Vector2(rect.position.x - 2, body.position.y),
++        Vector2(rect.get_center().x, rect.position.y - 5),
++        Vector2(rect.end.x + 2, body.position.y)
++    ])
++    draw_colored_polygon(roof, Color("704d43") if seed_value < 0.5 else Color("555e62"))
++    draw_rect(Rect2(body.position + Vector2(5, 6), Vector2(4, 4)), Color("d8cb8d") if occupancy > 0.55 else Color("52636a"), true)
++    draw_rect(Rect2(Vector2(body.end.x - 9, body.position.y + 6), Vector2(4, 4)), Color("d8cb8d") if occupancy > 0.70 else Color("52636a"), true)
++    draw_rect(Rect2(Vector2(body.get_center().x - 3, body.end.y - 9), Vector2(6, 9)), Color("4e4038"), true)
++
++func _draw_retail(rect: Rect2, base: Color, seed_value: float, occupancy: float) -> void:
++    draw_rect(rect, base.lightened(0.12), true)
++    draw_rect(Rect2(rect.position + Vector2(0, rect.size.y * 0.60), Vector2(rect.size.x, rect.size.y * 0.40)), Color("354852"), true)
++    var awning = Color("c76a55") if seed_value < 0.5 else Color("d0a14d")
++    draw_rect(Rect2(rect.position + Vector2(0, rect.size.y * 0.52), Vector2(rect.size.x, 4)), awning, true)
++    if occupancy < 0.55:
++        draw_line(rect.position + Vector2(3, rect.size.y * 0.68), rect.end - Vector2(3, 3), Color("b34f4f"), 2.0)
++        draw_line(Vector2(rect.end.x - 3, rect.position.y + rect.size.y * 0.68), Vector2(rect.position.x + 3, rect.end.y - 3), Color("b34f4f"), 2.0)
++
++func _draw_warehouse(rect: Rect2, base: Color, seed_value: float, occupancy: float) -> void:
++    var body = Rect2(rect.position + Vector2(0, rect.size.y * 0.18), Vector2(rect.size.x, rect.size.y * 0.82))
++    draw_rect(body, base.lightened(0.08), true)
++    var roof = PackedVector2Array([
++        Vector2(rect.position.x, body.position.y),
++        Vector2(rect.position.x + rect.size.x * 0.25, rect.position.y),
++        Vector2(rect.position.x + rect.size.x * 0.50, body.position.y),
++        Vector2(rect.position.x + rect.size.x * 0.75, rect.position.y),
++        Vector2(rect.end.x, body.position.y)
++    ])
++    draw_polyline(roof, Color("a5a59a"), 2.0)
++    draw_rect(Rect2(Vector2(body.position.x + 5, body.end.y - 10), Vector2(max(10.0, body.size.x * 0.30), 10)), Color("343c3f"), true)
++    if occupancy < 0.50:
++        draw_rect(body, Color(0.12,0.10,0.08,0.22), true)
++
+ func _draw_city_details(s: Vector2) -> void:
+     _draw_street_trees(s)
+     _draw_transit_stops(s)
+@@ -175,234 +445,178 @@
+     _draw_university_details(s)
+     _draw_construction(s)
+     _draw_water_activity(s)
++    _draw_traffic_signals(s)
++
++func _draw_waterfront(s: Vector2) -> void:
++    draw_rect(Rect2(0, 0, s.x, s.y * 0.18), WATER, true)
++    for i in range(14):
++        var y = s.y * (0.02 + float(i) * 0.010)
++        draw_line(Vector2(0, y), Vector2(s.x, y + sin(float(i) + world_time * TAU) * 4.0), Color(WATER_LIGHT, 0.28), 1.4)
++    draw_rect(Rect2(0, s.y * 0.165, s.x, s.y * 0.035), Color("66877a"), true)
++    for ix in [1, 3, 5]:
++        var x = s.x * float(road_xs[ix])
++        draw_rect(Rect2(x - 20, s.y * 0.025, 40, s.y * 0.19), Color("3b444c"), true)
++        draw_rect(Rect2(x - 16, s.y * 0.025, 32, s.y * 0.19), Color("58636d"), true)
++        for j in range(6):
++            draw_line(Vector2(x - 14, s.y * (0.04 + j * 0.027)), Vector2(x + 14, s.y * (0.04 + j * 0.027)), Color("89959c"), 1.0)
++
++func _draw_ground(s: Vector2) -> void:
++    draw_rect(Rect2(0, s.y * 0.19, s.x, s.y * 0.81), GRASS, true)
++    for i in range(30):
++        var x = fmod(float(i * 137), s.x)
++        var y = s.y * 0.21 + fmod(float(i * 89), s.y * 0.73)
++        draw_circle(Vector2(x, y), 22.0 + float(i % 5) * 8.0, Color(Color("526c55"), 0.17))
++
++func _draw_roads(s: Vector2) -> void:
++    for yi in range(road_ys.size()):
++        var y = s.y * float(road_ys[yi])
++        var main = yi in [2, 4]
++        var road_w = 38.0 if main else 24.0
++        draw_rect(Rect2(0, y - road_w * 0.5 - 5, s.x, road_w + 10), SIDEWALK, true)
++        draw_rect(Rect2(0, y - road_w * 0.5, s.x, road_w), ROAD, true)
++        draw_line(Vector2(0, y), Vector2(s.x, y), Color(LANE, 0.70 if main else 0.38), 1.3)
++    for xi in range(road_xs.size()):
++        var x = s.x * float(road_xs[xi])
++        var main = xi in [1, 3, 5]
++        var road_w = 38.0 if main else 24.0
++        draw_rect(Rect2(x - road_w * 0.5 - 5, s.y * 0.19, road_w + 10, s.y * 0.81), SIDEWALK, true)
++        draw_rect(Rect2(x - road_w * 0.5, s.y * 0.19, road_w, s.y * 0.81), ROAD, true)
++        draw_line(Vector2(x, s.y * 0.19), Vector2(x, s.y), Color(LANE, 0.70 if main else 0.38), 1.3)
++
++func _draw_roads_foreground(s: Vector2) -> void:
++    for ix in range(road_xs.size()):
++        for iy in range(road_ys.size()):
++            var c = _road_point(ix, iy, s)
++            var main_intersection = ix in [1,3,5] or iy in [2,4]
++            if not main_intersection:
++                continue
++            for stripe in range(-2, 3):
++                draw_rect(Rect2(c.x - 20, c.y + stripe * 4 - 1, 9, 2.2), Color(Color("e0e2dd"), 0.70), true)
++                draw_rect(Rect2(c.x + 11, c.y + stripe * 4 - 1, 9, 2.2), Color(Color("e0e2dd"), 0.70), true)
+ 
+ func _draw_street_trees(s: Vector2) -> void:
+-    for x_norm in [0.24, 0.485, 0.73]:
+-        var x = s.x * x_norm
+-        for i in range(10):
+-            var y = s.y * (0.23 + float(i) * 0.067)
+-            _draw_tree(Vector2(x - 31, y), 4.8)
+-            _draw_tree(Vector2(x + 31, y + 11), 4.4)
+-    for y_norm in [0.465, 0.745]:
+-        var y = s.y * y_norm
+-        for i in range(16):
+-            var x = s.x * (0.04 + float(i) * 0.058)
+-            _draw_tree(Vector2(x, y - 30), 4.5)
+-            if i % 2 == 0:
+-                _draw_tree(Vector2(x + 17, y + 30), 4.2)
++    for ix in range(road_xs.size()):
++        if ix % 2 == 0:
++            continue
++        var x = s.x * float(road_xs[ix])
++        for j in range(10):
++            var y = s.y * (0.23 + float(j) * 0.068)
++            _draw_tree(Vector2(x - 27, y), 4.6)
++            _draw_tree(Vector2(x + 27, y + 13), 4.1)
++    for iy in [2, 4, 5]:
++        var y = s.y * float(road_ys[iy])
++        for j in range(18):
++            var x = s.x * (0.025 + float(j) * 0.055)
++            _draw_tree(Vector2(x, y - 27), 4.2)
+ 
+ func _draw_transit_stops(s: Vector2) -> void:
+-    var stops = [Vector2(0.31,0.445), Vector2(0.56,0.445), Vector2(0.80,0.445), Vector2(0.40,0.725), Vector2(0.67,0.725)]
++    var stops =
