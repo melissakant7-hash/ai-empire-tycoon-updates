@@ -53,6 +53,8 @@ jobs:
           cat city-bank-v08-patch/part00.patch city-bank-v08-patch/part01.patch city-bank-v08-patch/fix02_0.patch city-bank-v08-patch/fix02_1.patch city-bank-v08-patch/fix02_2.patch city-bank-v08-patch/fix02_3.patch city-bank-v08-patch/fix03_0.patch city-bank-v08-patch/fix03_1.patch city-bank-v08-patch/fix03_2.patch city-bank-v08-patch/fix03_3.patch city-bank-v08-patch/part04.patch city-bank-v08-patch/fix05_0.patch city-bank-v08-patch/fix05_1.patch city-bank-v08-patch/fix05_2.patch city-bank-v08-patch/fix05_3.patch city-bank-v08-patch/part06.patch > v08.patch
           echo "bbf45e643793ca3662d41429c31b2d20a98495715545b52f812efe073fcf34ce  v08.patch" | sha256sum -c -
           git apply -p5 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v08.patch"
+          echo "8c9a9768dd2442d00893df32702fa5d76a7580959d43f67796144643869cdf7d  city-bank-v08-patch/wheel-hotfix.patch" | sha256sum -c -
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v08-patch/wheel-hotfix.patch"
           grep -q 'config/version="0.8.0"' city_bank_tycoon/project.godot
           grep -q 'v0.8 City Visual Overhaul' city_bank_tycoon/scripts/main.gd
           grep -q 'facade_materials' city_bank_tycoon/scripts/city_map.gd
