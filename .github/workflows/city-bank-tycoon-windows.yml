@@ -91,7 +91,20 @@ jobs:
                   push_error("No loan applications generated")
                   quit(1)
                   return
-              var app_id = int(game.applications[0].id)
+
+              var chosen_index = -1
+              for i in range(game.applications.size()):
+                  if String(game.applications[i].type) != "Mortgage":
+                      chosen_index = i
+                      break
+              if chosen_index < 0:
+                  chosen_index = 0
+                  game.policy.mortgage_max_ltv = 200.0
+                  game.policy.mortgage_min_score = 0
+                  game.policy.mortgage_max_dti = 100.0
+              game.bank.cash = max(float(game.bank.cash), 1000000000.0)
+
+              var app_id = int(game.applications[chosen_index].id)
               game._select_mail_for_application(app_id)
               game._show_view("Mail")
               await process_frame
