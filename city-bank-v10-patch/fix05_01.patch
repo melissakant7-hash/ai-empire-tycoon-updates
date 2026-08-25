@@ -1,0 +1,16 @@
+population - 400000.0) / 50000.0 * 2.0 + max(0.0, city.gdp_growth) * 1.1 - (float(government.transit_budget) - 100.0) * 0.12 - (float(government.roads_budget) - 100.0) * 0.08 - float(government.transit_subsidy) * 0.05, 8.0, 95.0)
++    var transit_target = clamp(40.0 + float(government.transit_budget) * 0.30 + float(government.transit_subsidy) * 0.10 - traffic_target * 0.08, 10.0, 98.0)
++    var infra_target = clamp(48.0 + float(government.roads_budget) * 0.28 + float(government.fire_budget) * 0.03 - city.traffic * 0.04, 10.0, 98.0)
++    city.health += (health_target - city.health) * 0.12
++    city.education += (education_target - city.education) * 0.10
++    city.fire_safety += (fire_target - city.fire_safety) * 0.10
++    city.cleanliness += (cleanliness_target - city.cleanliness) * 0.12
++    city.traffic += (traffic_target - city.traffic) * 0.16
++    city.transit_quality += (transit_target - city.transit_quality) * 0.14
++    city.infrastructure += (infra_target - city.infrastructure) * 0.10
++    city.healthcare_cost_monthly = max(0.0, 245.0 * (1.0 - float(government.healthcare_subsidy) / 100.0))
++
++    var service_happiness = (city.health - 70.0) * 0.018 + (city.education - 70.0) * 0.010 + (city.cleanliness - 70.0) * 0.015 + (city.transit_quality - 65.0) * 0.010 + (float(government.parks_budget) - 100.0) * 0.008 + float(government.healthcare_subsidy) * 0.006
++    city.happiness = clamp(city.happiness + city.gdp_growth * 0.05 - max(0.0, city.unemployment - 5.0) * 0.12 - fee_pressure * 0.16 - max(0.0, policy.income_tax - 22.0) * 0.06 - max(0.0, city.inflation - 4.0) * 0.10 + service_happiness - city.crime * 0.005, 5.0, 97.0)
++    city.poverty = clamp(city.poverty + max(0.0, city.unemployment - 6.0) * 0.05 + max(0.0, city.inflation - 4.0) * 0.025 - max(0.0, city.gdp_growth) * 0.025 - (float(government.social_services_budget) - 100.0) * 0.006 - (float(government.housing_support_budget) - 100.0) * 0.004, 1.0, 45.0)
++    city.inequality = clamp(city.inequality + max(0.0, 
