@@ -1,0 +1,140 @@
+diff -ruN cbt_v11_orig/city_bank_tycoon/project.godot cbt_v12_work/city_bank_tycoon/project.godot
+--- cbt_v11_orig/city_bank_tycoon/project.godot	2026-08-25 22:46:39.000000000 +0000
++++ cbt_v12_work/city_bank_tycoon/project.godot	2026-08-25 23:32:41.354823803 +0000
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="1.1.0"
++config/version="1.2.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+@@ -10,6 +10,7 @@
+ window/size/window_width_override=1600
+ window/size/window_height_override=900
+ window/stretch/mode="canvas_items"
++window/stretch/aspect="expand"
+ 
+ [rendering]
+ renderer/rendering_method="mobile"
+diff -ruN cbt_v11_orig/city_bank_tycoon/scripts/document_paper.gd cbt_v12_work/city_bank_tycoon/scripts/document_paper.gd
+--- cbt_v11_orig/city_bank_tycoon/scripts/document_paper.gd	2026-08-25 08:35:08.000000000 +0000
++++ cbt_v12_work/city_bank_tycoon/scripts/document_paper.gd	2026-08-25 23:33:43.922746927 +0000
+@@ -43,6 +43,18 @@
+         _draw_tax_return(page)
+     elif kind == "collateral":
+         _draw_collateral(page)
++    elif kind == "payment_statement":
++        _draw_payment_statement(page)
++    elif kind == "payment_demand":
++        _draw_payment_demand(page)
++    elif kind == "payoff_quote":
++        _draw_payoff_quote(page)
++    elif kind == "restructure_agreement":
++        _draw_restructure_agreement(page)
++    elif kind == "acceleration_notice":
++        _draw_acceleration_notice(page)
++    elif kind == "collateral_notice":
++        _draw_collateral_notice(page)
+     else:
+         _draw_generic(page)
+     _draw_signature_and_stamp(page)
+@@ -273,6 +285,120 @@
+     _text(Vector2(x+20,y+118),"Marketability: Moderate",10,MUTED)
+     _text(Vector2(x+20,y+145),"Recommendation: Confirm ownership before drawdown",10,MUTED)
+ 
++func _draw_loan_header(page: Rect2, title: String, subtitle: String) -> float:
++    var y = _draw_header(page, title, subtitle)
++    var x = page.position.x + 26
++    var w = page.size.x - 52
++    _box(Rect2(x,y,w,112),Color(1,1,1,0.38))
++    _field(x+10,y+22,"Borrower",String(application.get("borrower", application.get("name",""))),w*0.42)
++    _field(x+w*0.50,y+22,"Loan / account",String(application.get("type","Loan")),w*0.45)
++    _field(x+10,y+63,"Outstanding balance",_money(float(application.get("balance",0.0))),w*0.42)
++    _field(x+w*0.50,y+63,"Current status",String(application.get("status","Current")),w*0.45)
++    return y + 140
++
++func _draw_payment_statement(page: Rect2) -> void:
++    var y = _draw_loan_header(page,"LOAN ACCOUNT STATEMENT","Periodic statement of balance, payment and account status")
++    var x = page.position.x + 26
++    var w = page.size.x - 52
++    _text(Vector2(x,y),"CURRENT PAYMENT",11,Color("243b52"))
++    _box(Rect2(x,y+10,w,112),Color(1,1,1,0.36))
++    _field(x+12,y+30,"Scheduled monthly payment",_money(float(application.get("monthly_payment",0.0))),w*0.42)
++    _field(x+w*0.52,y+30,"Interest rate","%.2f%%" % float(application.get("rate",0.0)),w*0.42)
++    _field(x+12,y+72,"Remaining term","%d months" % int(application.get("months_left",0)),w*0.42)
++    _field(x+w*0.52,y+72,"Amount currently due",_money(float(document.get("amount_due",0.0))),w*0.42)
++    y += 150
++    _text(Vector2(x,y),"RECENT PAYMENT ACTIVITY",11,Color("243b52"))
++    _box(Rect2(x,y+10,w,270),Color(1,1,1,0.32))
++    var history = application.get("payment_history",[])
++    var row_y = y + 38
++    if history is Array and history.size() > 0:
++        var start = max(0, history.size()-7)
++        for i in range(start,history.size()):
++            var item = history[i]
++            _text(Vector2(x+14,row_y),String(item.get("date","")),9,MUTED)
++            _text(Vector2(x+180,row_y),String(item.get("result","Payment")),10,INK)
++            _text(Vector2(x+w-160,row_y),_money(float(item.get("amount",0.0))),10,INK)
++            _line(Vector2(x+12,row_y+8),Vector2(x+w-12,row_y+8),0.5,Color("d3d6d9"))
++            row_y += 29
++    else:
++        _text(Vector2(x+14,row_y),"No recorded payment activity is available yet.",10,MUTED)
++    y += 315
++    _text(Vector2(x,y),"This statement is informational and does not by itself accelerate or modify the loan agreement.",9,MUTED)
++
++func _draw_payment_demand(page: Rect2) -> void:
++    var y = _draw_loan_header(page,"FORMAL PAYMENT DEMAND","Notice requiring cure of overdue contractual payments")
++    var x = page.position.x + 26
++    var w = page.size.x - 52
++    _box(Rect2(x,y,w,180),Color("fff7ed"),Color("b45309"))
++    _text(Vector2(x+16,y+34),"AMOUNT IN ARREARS",10,Color("8a3b08"))
++    _text(Vector2(x+16,y+70),_money(float(document.get("arrears_amount",0.0))),28,Color("8a3b08"))
++    _text(Vector2(x+16,y+108),"Reason: %s" % String(document.get("reason","Contractual arrears")),11,INK)
++    _text(Vector2(x+16,y+138),"The borrower is required to cure the arrears promptly to prevent further collection action.",10,INK)
++    y += 220
++    _text(Vector2(x,y),"NOTICE",11,Color("243b52"))
++    _box(Rect2(x,y+10,w,170),Color(1,1,1,0.36))
++    _text(Vector2(x+14,y+38),"This demand concerns missed or unpaid scheduled installments under the existing loan agreement.",10,INK)
++    _text(Vector2(x+14,y+70),"Failure to cure may lead to additional notices, acceleration where contractually permitted, or collateral enforcement.",10,INK)
++    _text(Vector2(x+14,y+116),"This document must be signed and marked ISSUED by an authorized bank officer before dispatch.",10,MUTED)
++
++func _draw_payoff_quote(page: Rect2) -> void:
++    var y = _draw_loan_header(page,"PAYOFF / SETTLEMENT QUOTE","Amount required to settle the outstanding loan in full")
++    var x = page.position.x + 26
++    var w = page.size.x - 52
++    _text(Vector2(x,y),"SETTLEMENT CALCULATION",11,Color("243b52"))
++    _box(Rect2(x,y+10,w,210),Color(1,1,1,0.36))
++    var balance = float(application.get("balance",0.0))
++    var payoff = float(document.get("payoff_amount",balance))
++    _field(x+12,y+35,"Principal outstanding",_money(balance),w*0.42)
++    _field(x+w*0.52,y+35,"Accrued interest / charges",_money(max(0.0,payoff-balance)),w*0.42)
++    _text(Vector2(x+14,y+126),"TOTAL PAYOFF AMOUNT",10,MUTED)
++    _text(Vector2(x+14,y+166),_money(payoff),30,Color("243b52"))
++    y += 255
++    _text(Vector2(x,y),"Quote validity",11,Color("243b52"))
++    _text(Vector2(x,y+28),"This quote reflects the account balance at issuance. Additional interest may accrue if payment is received after the quote period.",10,MUTED)
++
++func _draw_restructure_agreement(page: Rect2) -> void:
++    var y = _draw_loan_header(page,"LOAN RESTRUCTURE AGREEMENT","Proposed amendment to repayment terms")
++    var x = page.position.x + 26
++    var w = page.size.x - 52
++    _text(Vector2(x,y),"REVISED TERMS",11,Color("243b52"))
++    _box(Rect2(x,y+10,w,210),Color("f0f7ff"),Color("5b7fa3"))
++    _field(x+12,y+35,"Current rate","%.2f%%" % float(application.get("rate",0.0)),w*0.42)
++    _field(x+w*0.52,y+35,"Revised rate","%.2f%%" % float(document.get("new_rate",application.get("rate",0.0))),w*0.42)
++    _field(x+12,y+80,"Current remaining term","%d months" % int(application.get("months_left",0)),w*0.42)
++    _field(x+w*0.52,y+80,"Revised remaining term","%d months" % int(document.get("new_term",application.get("months_left",0))),w*0.42)
++    _field(x+12,y+125,"Current payment",_money(float(application.get("monthly_payment",0.0))),w*0.42)
++    _field(x+w*0.52,y+125,"Revised payment",_money(float(document.get("new_payment",0.0))),w*0.42)
++    y += 255
++    _text(Vector2(x,y),"The revised terms become effective only after this agreement is signed, marked ISSUED and sent through the bank's servicing process.",10,INK)
++
++func _draw_acceleration_notice(page: Rect2) -> void:
++    var y = _draw_loan_header(page,"NOTICE OF ACCELERATION","Formal notice making the full outstanding balance immediately due")
++    var x = page.position.x + 26
++    var w = page.size.x - 52
++    _box(Rect2(x,y,w,225),Color("fff0f0"),Color("9b1c1c"))
++    _text(Vector2(x+16,y+34),"FULL BALANCE NOW DUE",10,Color("9b1c1c"))
++    _text(Vector2(x+16,y+76),_money(float(document.get("payoff_amount",application.get("balance",0.0)))),30,Color("9b1c1c"))
++    _text(Vector2(x+16,y+122),"Basis: %s" % String(document.get("reason","Serious payment delinquency")),11,INK)
