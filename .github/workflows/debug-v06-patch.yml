@@ -1,0 +1,36 @@
+name: Diagnose City Bank v0.6 Patch
+
+on:
+  push:
+    branches:
+      - city-bank-tycoon-build
+    paths:
+      - ".github/workflows/debug-v06-patch.yml"
+      - "city-bank-v06-patch/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show patch hashes
+        run: |
+          sha256sum city-bank-v06-patch/part*.patch
+          cat city-bank-v06-patch/part*.patch > actual-v06.patch
+          sha256sum actual-v06.patch
+      - name: Upload exact stored patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: actual-v06-patch
+          path: |
+            actual-v06.patch
+            city-bank-v06-patch/part00.patch
+            city-bank-v06-patch/part01.patch
+            city-bank-v06-patch/part02.patch
+            city-bank-v06-patch/part03.patch
+          if-no-files-found: error
+          retention-days: 1
