@@ -1,0 +1,171 @@
+ild(rv)
+-
+-    var selected_index = _mail_index_by_id(selected_mail_id)
+-    if selected_index < 0:
+-        var prompt = Label.new()
+-        prompt.text = "Select a message to read it."
+-        prompt.add_theme_color_override("font_color", C_MUTED)
+-        rv.add_child(prompt)
+-        return outer
+-
+-    var message = mail_messages[selected_index]
+-    if bool(message.get("unread", false)):
+-        message.unread = false
+-        mail_messages[selected_index] = message
+-    var subj = Label.new()
+-    subj.text = String(message.get("subject","Message"))
+-    subj.add_theme_font_size_override("font_size", 21)
+-    subj.add_theme_color_override("font_color", C_TEXT)
+-    rv.add_child(subj)
+-    var sender = Label.new()
+-    sender.text = "%s  <%s>    %s" % [String(message.get("sender_name","")), String(message.get("sender_email","")), String(message.get("date_label",""))]
+-    sender.add_theme_color_override("font_color", C_MUTED)
+-    rv.add_child(sender)
+-    rv.add_child(HSeparator.new())
+-    var body_scroll = ScrollContainer.new()
+-    body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+-    body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+-    rv.add_child(body_scroll)
+-    var body_v = VBoxContainer.new()
+-    body_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+-    body_v.add_theme_constant_override("separation", 12)
+-    body_scroll.add_child(body_v)
+-    var body = Label.new()
+-    body.text = String(message.get("body",""))
+-    body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+-    body.add_theme_font_size_override("font_size", 13)
+-    body.add_theme_color_override("font_color", C_TEXT)
+-    body_v.add_child(body)
++        main.add_child(_gmail_message_list())
++    return shell
+ 
++func _gmail_message_list() -> Control:
++    var v = VBoxContainer.new()
++    v.add_theme_constant_override("separation", 0)
++    var toolbar = HBoxContainer.new()
++    toolbar.custom_minimum_size.y = 44
++    toolbar.add_theme_constant_override("separation", 12)
++    v.add_child(toolbar)
++    var select_all = Label.new(); select_all.text = "  ☐"; select_all.add_theme_color_override("font_color", Color("5f6368")); select_all.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(select_all)
++    var refresh = Button.new(); refresh.text = "↻"; refresh.flat = true; refresh.add_theme_color_override("font_color", Color("5f6368")); toolbar.add_child(refresh)
++    var more = Button.new(); more.text = "⋮"; more.flat = true; more.add_theme_color_override("font_color", Color("5f6368")); toolbar.add_child(more)
++    var space = Control.new(); space.size_flags_horizontal = Control.SIZE_EXPAND_FILL; toolbar.add_child(space)
++    var count = Label.new(); count.text = "%d messages" % _mail_ids_for_folder(selected_mail_folder).size(); count.add_theme_color_override("font_color", Color("6f7780")); count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(count)
++    v.add_child(HSeparator.new())
++    var scroll = ScrollContainer.new()
++    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
++    v.add_child(scroll)
++    var list = VBoxContainer.new()
++    list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    list.add_theme_constant_override("separation", 0)
++    scroll.add_child(list)
++    var ids = _mail_ids_for_folder(selected_mail_folder)
++    var shown = 0
++    var query = mail_search_query.to_lower()
++    for mid in ids:
++        var idx = _mail_index_by_id(int(mid))
++        if idx < 0: continue
++        var m = mail_messages[idx]
++        var hay = (String(m.get("sender_name","")) + " " + String(m.get("subject","")) + " " + String(m.get("body",""))).to_lower()
++        if query != "" and query not in hay:
++            continue
++        shown += 1
++        var row = Button.new()
++        row.custom_minimum_size.y = 40
++        row.alignment = HORIZONTAL_ALIGNMENT_LEFT
++        row.add_theme_font_size_override("font_size", 11)
++        var unread = bool(m.get("unread", false))
++        var sender = String(m.get("sender_name","Unknown"))
++        var subject = String(m.get("subject",""))
++        var snippet = String(m.get("body","" )).replace("\n", " ").strip_edges()
++        if snippet.length() > 74: snippet = snippet.substr(0, 74) + "…"
++        var attach = "  📎" if m.get("attachment_indices", []).size() > 0 else ""
++        row.text = "  ☐   ☆   %-22s  %s  —  %s%s                                      %s" % [sender, subject, snippet, attach, String(m.get("date_label",""))]
++        row.add_theme_color_override("font_color", Color("202124"))
++        var bg = Color("ffffff") if unread else Color("f2f6fc")
++        row.add_theme_stylebox_override("normal", _panel_style(bg, 0, Color("e7eaee")))
++        row.add_theme_stylebox_override("hover", _panel_style(Color("edf3fb"), 0, Color("c9d2dd")))
++        var message_id = int(m.id)
++        row.pressed.connect(func(): _open_mail_message(message_id))
++        list.add_child(row)
++    if shown == 0:
++        var empty = Label.new(); empty.text = "No messages match this view."; empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; empty.add_theme_color_override("font_color", Color("6f7780")); empty.custom_minimum_size.y = 90; list.add_child(empty)
++    return v
++
++func _gmail_message_reader(mail_id: int) -> Control:
++    var v = VBoxContainer.new()
++    v.add_theme_constant_override("separation", 10)
++    var idx = _mail_index_by_id(mail_id)
++    if idx < 0: return v
++    var message = mail_messages[idx]
++    message.unread = false
++    mail_messages[idx] = message
++    var tools = HBoxContainer.new(); tools.custom_minimum_size.y = 44; v.add_child(tools)
++    var back = Button.new(); back.text = "←"; back.flat = true; back.add_theme_font_size_override("font_size", 18); back.add_theme_color_override("font_color", Color("5f6368")); back.pressed.connect(func(): selected_mail_id = -1; _show_view("Mail")); tools.add_child(back)
++    for symbol in ["▤", "!", "☆", "⋮"]:
++        var tb = Button.new(); tb.text = symbol; tb.flat = true; tb.add_theme_color_override("font_color", Color("5f6368")); tools.add_child(tb)
++    var sp = Control.new(); sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL; tools.add_child(sp)
++    var date = Label.new(); date.text = String(message.get("date_label","")); date.add_theme_color_override("font_color", Color("6f7780")); date.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; tools.add_child(date)
++    v.add_child(HSeparator.new())
++    var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(scroll)
++    var body = VBoxContainer.new(); body.size_flags_horizontal = Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation", 12); scroll.add_child(body)
++    var subj = Label.new(); subj.text = String(message.get("subject","Message")); subj.add_theme_font_size_override("font_size", 23); subj.add_theme_color_override("font_color", Color("202124")); body.add_child(subj)
++    var sender = Label.new(); sender.text = "%s  <%s>" % [String(message.get("sender_name","")), String(message.get("sender_email",""))]; sender.add_theme_color_override("font_color", Color("3c4043")); body.add_child(sender)
++    var text = Label.new(); text.text = String(message.get("body","")); text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; text.add_theme_font_size_override("font_size", 13); text.add_theme_color_override("font_color", Color("202124")); body.add_child(text)
+     var app = _application_any_by_id(int(message.get("application_id", -1)))
+     var attachments = message.get("attachment_indices", [])
+     if not app.is_empty() and attachments.size() > 0:
+-        var attach_title = Label.new()
+-        attach_title.text = "%d ATTACHMENT(S)" % attachments.size()
+-        attach_title.add_theme_font_size_override("font_size", 10)
+-        attach_title.add_theme_color_override("font_color", C_MUTED)
+-        body_v.add_child(attach_title)
+-        var attachment_grid = GridContainer.new()
+-        attachment_grid.columns = 2
+-        attachment_grid.add_theme_constant_override("h_separation", 8)
+-        attachment_grid.add_theme_constant_override("v_separation", 8)
+-        body_v.add_child(attachment_grid)
++        var at = Label.new(); at.text = "%d attachment(s)" % attachments.size(); at.add_theme_color_override("font_color", Color("5f6368")); body.add_child(at)
++        var grid = GridContainer.new(); grid.columns = 2; grid.add_theme_constant_override("h_separation", 8); grid.add_theme_constant_override("v_separation", 8); body.add_child(grid)
+         for di in attachments:
+             var doc_index = int(di)
+-            if doc_index < 0 or doc_index >= app.documents.size():
+-                continue
++            if doc_index < 0 or doc_index >= app.documents.size(): continue
+             var doc = app.documents[doc_index]
+-            var ab = Button.new()
+-            ab.custom_minimum_size = Vector2(205, 58)
+-            ab.alignment = HORIZONTAL_ALIGNMENT_LEFT
+-            ab.text = "▣  %s\n     %s" % [String(doc.get("name","Attachment")), String(doc.get("status","Received"))]
+-            ab.add_theme_color_override("font_color", C_TEXT)
+-            ab.add_theme_stylebox_override("normal", _panel_style(Color(0.06,0.10,0.14,0.96), 6, Color("314451")))
+-            ab.add_theme_stylebox_override("hover", _panel_style(Color(0.08,0.17,0.24,0.98), 6, C_BLUE))
+-            var aid = int(app.id)
+-            var didx = doc_index
+-            ab.pressed.connect(func(): _open_attachment(aid, didx))
+-            attachment_grid.add_child(ab)
+-
+-    var actions = HBoxContainer.new()
+-    actions.add_theme_constant_override("separation", 8)
+-    rv.add_child(actions)
++            var ab = Button.new(); ab.custom_minimum_size = Vector2(240, 62); ab.alignment = HORIZONTAL_ALIGNMENT_LEFT; ab.text = "▣  %s\n     %s" % [String(doc.get("name","Attachment")), String(doc.get("status","Received"))]; ab.add_theme_color_override("font_color", Color("202124")); ab.add_theme_stylebox_override("normal", _panel_style(Color("ffffff"), 8, Color("cfd8e3"))); ab.add_theme_stylebox_override("hover", _panel_style(Color("f1f7ff"), 8, Color("7aa9e8"))); var aid = int(app.id); var didx = doc_index; ab.pressed.connect(func(): _open_attachment(aid, didx)); grid.add_child(ab)
++    var actions = HBoxContainer.new(); actions.add_theme_constant_override("separation", 8); body.add_child(actions)
+     if not app.is_empty() and _active_application_index_by_id(int(app.id)) >= 0:
+-        var reply = _button("Reply", 95)
+-        reply.pressed.connect(func(): _send_application_reply(int(app.id), "Thank you. Your application is currently under review."))
+-        actions.add_child(reply)
+-        var req = _button("Request Documents", 160)
+-        req.pressed.connect(func(): _request_documents_by_id(int(app.id)))
+-        actions.add_child(req)
+-        var counter = _button("Open Loan Terms", 150)
+-        counter.pressed.connect(func(): selected_application = _active_application_index_by_id(int(app.id)); _show_view("Loan Desk"))
+-        actions.add_child(counter)
+-    var archive = _hud_button("Archive", 100)
+-    var current_mid = int(message.id)
+-    archive.pressed.connect(func(): _archive_mail(current_mid))
+-    actions.add_child(archive)
+-    return outer
++        var reply = Button.new(); reply.text = "↩  Reply"; reply.custom_minimum_size.x = 105; reply.pressed.connect(func(): _send_application_reply(int(app.id), "Thank you. Your application is currently under review.")); actions.add_child(reply)
++        var req = Button.new(); req.text = "Request documents"; req.pressed.connect(func(): _request_documents_by_id(int(app.id))); actions.add_child(req)
++        var terms = Button.new(); terms.text = "Open loan terms"; terms.pressed.connect(func(): selected_application = _acti
