@@ -1,0 +1,12 @@
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -1604,7 +1604,7 @@
+         if app_id >= 0:
+             var actions = HBoxContainer.new()
+             row.add_child(actions)
+             var mail = _button("Open related mail", 150)
+-            mail.pressed.connect(func(): _open_application_mail(app_id))
++            mail.pressed.connect(func(): _select_mail_for_application(app_id); _show_view("Mail"))
+             actions.add_child(mail)
+             if _active_application_index_by_id(app_id) >= 0:
+                 var loan_desk = _button("Open Loan Desk", 140)
