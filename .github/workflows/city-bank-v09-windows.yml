@@ -60,6 +60,7 @@ jobs:
           git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v09.patch"
           git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v09.patch"
           git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v09-patch/toast-hotfix.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v09-patch/mail-link-hotfix.patch"
           grep -q 'config/version="0.9.0"' city_bank_tycoon/project.godot
           grep -q 'Counter-offer ACCEPTED' city_bank_tycoon/scripts/main.gd
           grep -q 'Current Loans' city_bank_tycoon/scripts/main.gd
