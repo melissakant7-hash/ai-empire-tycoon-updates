@@ -1,0 +1,17 @@
+0, "infrastructure":73.0, "cleanliness":74.0, "traffic":38.0, "homelessness":1.8, "healthcare_cost_monthly":165.0}
++    for key in city_defaults.keys():
++        if not city.has(key): city[key] = city_defaults[key]
++    var government_defaults = {"monthly_revenue":0.0, "monthly_spending":0.0, "monthly_balance":0.0, "healthcare_budget":100.0, "police_budget":100.0, "fire_budget":100.0, "education_budget":100.0, "transit_budget":100.0, "roads_budget":100.0, "sanitation_budget":100.0, "parks_budget":100.0, "social_services_budget":100.0, "housing_support_budget":100.0, "healthcare_subsidy":65.0, "transit_subsidy":35.0}
++    for key in government_defaults.keys():
++        if not government.has(key): government[key] = government_defaults[key]
+     applications = parsed.get("applications", applications)
+     loans = parsed.get("loans", loans)
+     customers = parsed.get("customers", customers)
+@@ -3282,7 +3483,6 @@ func _apply_save_payload(parsed: Dictionary) -> void:
+     news = parsed.get("news", news)
+     game_notifications = parsed.get("game_notifications", game_notifications)
+     notification_sequence = int(parsed.get("notification_sequence", notification_sequence))
+-    competitors = parsed.get("competitors", competitors)
+     mail_messages = parsed.get("mail_messages", mail_messages)
+     closed_applications = parsed.get("closed_applications", closed_applications)
+     mail_sequence = int(parsed.get("mail_sequence", mail_sequence))
