@@ -1,0 +1,29 @@
+e_override("font_size", 11)
++        var unread = bool(m.get("unread", false))
++        var sender = String(m.get("sender_name","Unknown"))
++        var subject = String(m.get("subject",""))
++        var snippet = String(m.get("body","")).replace("\n", " ").strip_edges()
++        if snippet.length() > 74: snippet = snippet.substr(0, 74) + "…"
++        var attach = "  📎" if m.get("attachment_indices", []).size() > 0 else ""
++        row.text = "  ☐   ☆   %-22s  %s  —  %s%s                                      %s" % [sender, subject, snippet, attach, String(m.get("date_label",""))]
++        row.add_theme_color_override("font_color", Color("202124"))
++        var bg = Color("ffffff") if unread else Color("f2f6fc")
++        row.add_theme_stylebox_override("normal", _panel_style(bg, 0, Color("e7eaee")))
++        row.add_theme_stylebox_override("hover", _panel_style(Color("edf3fb"), 0, Color("c9d2dd")))
++        var message_id = int(m.id)
++        row.pressed.connect(func(): _open_mail_message(message_id))
++        list.add_child(row)
++    if shown == 0:
++        var empty = Label.new(); empty.text = "No messages match this view."; empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; empty.add_theme_color_override("font_color", Color("6f7780")); empty.custom_minimum_size.y = 90; list.add_child(empty)
++    return v
++
++func _gmail_message_reader(mail_id: int) -> Control:
++    var v = VBoxContainer.new()
++    v.add_theme_constant_override("separation", 10)
++    var idx = _mail_index_by_id(mail_id)
++    if idx < 0: return v
++    var message = mail_messages[idx]
++    message.unread = false
++    mail_messages[idx] = message
++    var tools = HBoxContainer.new(); tools.custom_minimum_size.y = 44; v.add_child(tools)
++    var back = Button.new(); back.text = "←"; back.flat = true; back.add_theme_font_size_override("font_size", 18); back.add_theme_color_override("font_color", Color("5f6368")); back.pressed.connect(func(): selected_mail_id = -1; _show_view("Mail"));
