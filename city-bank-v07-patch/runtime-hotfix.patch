@@ -1,0 +1,16 @@
+diff --git a/scripts/city_map.gd b/scripts/city_map.gd
+index 8eb2f94..bf41524 100644
+--- a/scripts/city_map.gd
++++ b/scripts/city_map.gd
+@@ -218,9 +218,9 @@ func _add_traffic_light(ix: int, iy: int) -> void:
+     var p = _road_point(ix, iy)
+     var pole = _box(detail_root, Vector3(0.15, 2.8, 0.15), p + Vector3(3.3, 1.45, 3.3), Color("31383c"), "TrafficLightPole", 0.7, 0.2)
+     pole.rotation.y = 0.0
+-    var signal = _box(detail_root, Vector3(0.42, 0.95, 0.38), p + Vector3(3.3, 2.75, 3.3), Color("20272b"), "TrafficSignal", 0.65, 0.15)
++    var traffic_signal = _box(detail_root, Vector3(0.42, 0.95, 0.38), p + Vector3(3.3, 2.75, 3.3), Color("20272b"), "TrafficSignal", 0.65, 0.15)
+     var light_color = Color("e45b4f") if (ix + iy) % 3 == 0 else Color("60c77d")
+-    var lamp = _box(signal, Vector3(0.18, 0.18, 0.08), Vector3(0, 0.15, -0.22), light_color, "SignalLamp")
++    var lamp = _box(traffic_signal, Vector3(0.18, 0.18, 0.08), Vector3(0, 0.15, -0.22), light_color, "SignalLamp")
+     lamp.material_override = _material(light_color, 0.4, 0.0, light_color)
+ 
+ func _seed_buildings() -> void:
