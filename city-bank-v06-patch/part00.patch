@@ -1,0 +1,371 @@
+diff -ruN city_bank_v05_base/city_bank_tycoon/project.godot city_bank_v06_work/city_bank_tycoon/project.godot
+--- city_bank_v05_base/city_bank_tycoon/project.godot	2026-08-25 18:18:05.000000000 +0000
++++ city_bank_v06_work/city_bank_tycoon/project.godot	2026-08-25 18:48:38.267549491 +0000
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="0.5.0"
++config/version="0.6.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+ diff -ruN city_bank_v05_base/city_bank_tycoon/scripts/city_map.gd city_bank_v06_work/city_bank_tycoon/scripts/city_map.gd
+--- city_bank_v05_base/city_bank_tycoon/scripts/city_map.gd	2026-08-25 18:19:05.000000000 +0000
++++ city_bank_v06_work/city_bank_tycoon/scripts/city_map.gd	2026-08-25 18:50:56.621409246 +0000
+@@ -7,37 +7,45 @@
+ var rng = RandomNumberGenerator.new()
+ var cars: Array[Dictionary] = []
+ var pedestrians: Array[Dictionary] = []
++var buildings: Array[Dictionary] = []
+ var selected_district = "Riverside District"
+ var hovered_district = ""
+ var view_zoom = 1.0
+ var view_pan = Vector2.ZERO
+ var panning = false
+ var last_pan_mouse = Vector2.ZERO
++var world_time = 0.28
+ 
+-const ROAD = Color("2a3139")
+-const ROAD_EDGE = Color("4b535d")
+-const SIDEWALK = Color("70777d")
+-const WATER = Color("2b6079")
+-const WATER_LIGHT = Color("3e7892")
+-const GRASS = Color("4c7153")
+-const PARK = Color("5e8159")
+-const TREE = Color("3f6b49")
+-const TREE_LIGHT = Color("699267")
++const ROAD = Color("242b31")
++const ROAD_EDGE = Color("59616a")
++const SIDEWALK = Color("7b8184")
++const WATER = Color("285f78")
++const WATER_LIGHT = Color("4d89a1")
++const GRASS = Color("405e49")
++const PARK = Color("557b55")
++const TREE = Color("356342")
++const TREE_LIGHT = Color("6d9a65")
+ const TEXT = Color("dce7ef")
+ const MUTED = Color("9aaab7")
++const LANE = Color("c6b878")
++
++# A compact city road graph. Agents move between these intersections rather than
++# looping across the screen, so vehicles can actually turn and pedestrians have destinations.
++var road_xs = [0.075, 0.24, 0.36, 0.485, 0.60, 0.73, 0.86, 0.955]
++var road_ys = [0.215, 0.315, 0.465, 0.605, 0.745, 0.865, 0.955]
+ 
+ var districts = [
+-    {"name":"Oldtown District", "rect":Rect2(0.025,0.20,0.205,0.25), "color":Color("715e4e"), "seed":11, "density":14},
+-    {"name":"Financial District", "rect":Rect2(0.255,0.20,0.215,0.25), "color":Color("4d6577"), "seed":21, "density":18},
+-    {"name":"Riverside District", "rect":Rect2(0.495,0.20,0.225,0.25), "color":Color("5a6c61"), "seed":31, "density":15},
+-    {"name":"University District", "rect":Rect2(0.745,0.20,0.23,0.25), "color":Color("735c58"), "seed":41, "density":12},
+-    {"name":"West Residential", "rect":Rect2(0.025,0.50,0.205,0.22), "color":Color("53666b"), "seed":51, "density":15},
+-    {"name":"Civic Center", "rect":Rect2(0.255,0.50,0.215,0.22), "color":Color("5d646e"), "seed":61, "density":11},
+-    {"name":"Commercial District", "rect":Rect2(0.495,0.50,0.225,0.22), "color":Color("665c70"), "seed":71, "density":16},
+-    {"name":"Industrial District", "rect":Rect2(0.745,0.50,0.23,0.22), "color":Color("756349"), "seed":81, "density":13},
+-    {"name":"Lakeside Suburbs", "rect":Rect2(0.04,0.77,0.27,0.19), "color":Color("4b6e58"), "seed":91, "density":13},
+-    {"name":"South Market", "rect":Rect2(0.35,0.77,0.27,0.19), "color":Color("665d50"), "seed":101, "density":15},
+-    {"name":"Tech Quarter", "rect":Rect2(0.66,0.77,0.29,0.19), "color":Color("4b6470"), "seed":111, "density":16}
++    {"name":"Oldtown District", "rect":Rect2(0.018,0.235,0.205,0.205), "color":Color("7b6453"), "seed":11, "density":18},
++    {"name":"Financial District", "rect":Rect2(0.255,0.235,0.205,0.205), "color":Color("4f6f84"), "seed":21, "density":24},
++    {"name":"Riverside District", "rect":Rect2(0.505,0.235,0.195,0.205), "color":Color("5e7567"), "seed":31, "density":20},
++    {"name":"University District", "rect":Rect2(0.755,0.235,0.205,0.205), "color":Color("775f5a"), "seed":41, "density":16},
++    {"name":"West Residential", "rect":Rect2(0.018,0.495,0.205,0.215), "color":Color("566b70"), "seed":51, "density":20},
++    {"name":"Civic Center", "rect":Rect2(0.255,0.495,0.205,0.215), "color":Color("626975"), "seed":61, "density":15},
++    {"name":"Commercial District", "rect":Rect2(0.505,0.495,0.195,0.215), "color":Color("6c6177"), "seed":71, "density":22},
++    {"name":"Industrial District", "rect":Rect2(0.755,0.495,0.205,0.215), "color":Color("7b694c"), "seed":81, "density":17},
++    {"name":"Lakeside Suburbs", "rect":Rect2(0.018,0.775,0.300,0.165), "color":Color("4e765d"), "seed":91, "density":19},
++    {"name":"South Market", "rect":Rect2(0.385,0.775,0.205,0.165), "color":Color("6f6354"), "seed":101, "density":18},
++    {"name":"Tech Quarter", "rect":Rect2(0.625,0.775,0.335,0.165), "color":Color("4d6d7a"), "seed":111, "density":24}
+ ]
+ 
+ func configure(city_data: Dictionary, bank_data: Dictionary) -> void:
+@@ -48,40 +56,164 @@
+ func _ready() -> void:
+     mouse_filter = Control.MOUSE_FILTER_STOP
+     rng.seed = 847211
++    _seed_buildings()
+     _seed_traffic()
+     _seed_pedestrians()
+     set_process(true)
++    set_process_unhandled_key_input(true)
++
++func _seed_buildings() -> void:
++    buildings.clear()
++    for district_index in range(districts.size()):
++        var d = districts[district_index]
++        var count = int(d.density)
++        var cols = 5 if d.rect.size.x < 0.24 else 7
++        var rows = int(ceil(float(count) / float(cols)))
++        for i in range(count):
++            var col = i % cols
++            var row = int(i / cols)
++            var h1 = float((i * 47 + int(d.seed) * 13) % 100) / 100.0
++            var h2 = float((i * 31 + int(d.seed) * 29) % 100) / 100.0
++            var cell_u = 1.0 / float(cols)
++            var cell_v = 1.0 / float(max(1, rows))
++            var u = float(col) * cell_u + cell_u * (0.10 + h2 * 0.07)
++            var v = float(row) * cell_v + cell_v * (0.12 + h1 * 0.06)
++            var bw = cell_u * (0.52 + h1 * 0.18)
++            var bh = cell_v * (0.48 + h2 * 0.20)
++            buildings.append({
++                "district": district_index,
++                "u": u, "v": v, "w": bw, "h": bh,
++                "seed": h1,
++                "height": _building_height_for_district(String(d.name), h2),
++                "kind": _building_kind_for_district(String(d.name), i),
++                "occupied": 0.78 + h2 * 0.22
++            })
++
++func _building_kind_for_district(district_name: String, index: int) -> String:
++    if district_name == "Financial District" or district_name == "Tech Quarter":
++        return "office" if index % 5 != 0 else "retail"
++    if district_name == "Industrial District":
++        return "industrial"
++    if district_name == "University District":
++        return "university" if index % 3 == 0 else "residential"
++    if district_name == "Civic Center":
++        return "civic" if index % 2 == 0 else "office"
++    if district_name == "Commercial District" or district_name == "South Market" or district_name == "Riverside District":
++        return "retail" if index % 3 == 0 else ("office" if index % 3 == 1 else "residential")
++    if district_name == "Lakeside Suburbs" or district_name == "West Residential":
++        return "residential"
++    return "mixed"
++
++func _building_height_for_district(district_name: String, h: float) -> float:
++    if district_name == "Financial District":
++        return 1.45 + h * 0.85
++    if district_name == "Tech Quarter":
++        return 1.20 + h * 0.65
++    if district_name == "Industrial District" or district_name == "Lakeside Suburbs":
++        return 0.55 + h * 0.35
++    return 0.80 + h * 0.55
+ 
+ func _seed_traffic() -> void:
+     cars.clear()
+     var colors = [Color("dbe6ef"), Color("b94c4c"), Color("3e7cab"), Color("202933"), Color("d69f47"), Color("6b7886"), Color("f1f1ec"), Color("5c8b67")]
+-    for i in range(82):
++    for i in range(118):
++        var ix = rng.randi_range(0, road_xs.size() - 1)
++        var iy = rng.randi_range(0, road_ys.size() - 1)
++        var next = _pick_neighbor(ix, iy, -1, -1, i % 12 == 0)
+         cars.append({
+-            "horizontal": i % 3 != 0,
+-            "lane": [0.465, 0.745, 0.315][i % 3] if i % 3 != 0 else [0.24, 0.485, 0.73, 0.915][i % 4],
+-            "t": fmod(float(i) * 0.071, 1.0),
+-            "speed": 0.025 + float((i * 17) % 18) / 1000.0,
+-            "direction": 1.0 if i % 2 == 0 else -1.0,
+-            "color": colors[i % colors.size()],
+-            "bus": i % 13 == 0
++            "ix": ix, "iy": iy, "nx": next.x, "ny": next.y,
++            "px": -1, "py": -1,
++            "progress": rng.randf(),
++            "speed": 0.26 + rng.randf_range(0.0, 0.18),
++            "color": Color("4c9b70") if i % 12 == 0 else colors[i % colors.size()],
++            "bus": i % 12 == 0,
++            "service": i % 29 == 0
+         })
+ 
++func _pick_neighbor(ix: int, iy: int, prev_x: int, prev_y: int, bus: bool = false) -> Vector2i:
++    var candidates: Array[Vector2i] = []
++    if ix > 0: candidates.append(Vector2i(ix - 1, iy))
++    if ix < road_xs.size() - 1: candidates.append(Vector2i(ix + 1, iy))
++    if iy > 0: candidates.append(Vector2i(ix, iy - 1))
++    if iy < road_ys.size() - 1: candidates.append(Vector2i(ix, iy + 1))
++    if candidates.size() > 1 and prev_x >= 0:
++        for j in range(candidates.size() - 1, -1, -1):
++            if candidates[j].x == prev_x and candidates[j].y == prev_y:
++                candidates.remove_at(j)
++    if bus:
++        var main_candidates: Array[Vector2i] = []
++        for c in candidates:
++            if c.x in [1, 3, 5, 6] or c.y in [1, 2, 4, 5]:
++                main_candidates.append(c)
++        if not main_candidates.is_empty():
++            candidates = main_candidates
++    if candidates.is_empty():
++        return Vector2i(ix, iy)
++    return candidates[rng.randi_range(0, candidates.size() - 1)]
++
+ func _seed_pedestrians() -> void:
+     pedestrians.clear()
+-    for i in range(280):
++    for i in range(420):
++        var ix = rng.randi_range(0, road_xs.size() - 1)
++        var iy = rng.randi_range(0, road_ys.size() - 1)
++        var target = Vector2i(rng.randi_range(0, road_xs.size() - 1), rng.randi_range(0, road_ys.size() - 1))
++        var next = _pedestrian_next(ix, iy, target.x, target.y)
+         pedestrians.append({
+-            "zone": i % 5,
+-            "t": fmod(float(i) * 0.037, 1.0),
+-            "speed": 0.012 + float((i * 11) % 20) / 1700.0,
+-            "direction": 1.0 if i % 2 == 0 else -1.0,
+-            "phase": float((i * 29) % 100) / 100.0
++            "ix": ix, "iy": iy, "nx": next.x, "ny": next.y,
++            "tx": target.x, "ty": target.y,
++            "progress": rng.randf(),
++            "speed": 0.08 + rng.randf_range(0.0, 0.08),
++            "phase": rng.randf(),
++            "side": -1.0 if i % 2 == 0 else 1.0,
++            "purpose": ["work", "shopping", "home", "leisure"][i % 4]
+         })
+ 
++func _pedestrian_next(ix: int, iy: int, tx: int, ty: int) -> Vector2i:
++    if ix == tx and iy == ty:
++        return Vector2i(ix, iy)
++    var choices: Array[Vector2i] = []
++    if ix < tx: choices.append(Vector2i(ix + 1, iy))
++    elif ix > tx: choices.append(Vector2i(ix - 1, iy))
++    if iy < ty: choices.append(Vector2i(ix, iy + 1))
++    elif iy > ty: choices.append(Vector2i(ix, iy - 1))
++    if choices.is_empty():
++        return Vector2i(ix, iy)
++    return choices[rng.randi_range(0, choices.size() - 1)]
++
+ func _process(delta: float) -> void:
+-    for car in cars:
+-        car.t = fmod(float(car.t) + delta * float(car.speed) * float(car.direction) + 1.0, 1.0)
+-    for person in pedestrians:
+-        person.t = fmod(float(person.t) + delta * float(person.speed) * float(person.direction) + 1.0, 1.0)
++    world_time = fmod(world_time + delta / 165.0, 1.0)
++    for i in range(cars.size()):
++        var car = cars[i]
++        var progress = float(car.progress) + delta * float(car.speed)
++        while progress >= 1.0:
++            progress -= 1.0
++            var old_x = int(car.ix)
++            var old_y = int(car.iy)
++            car.ix = int(car.nx)
++            car.iy = int(car.ny)
++            var next = _pick_neighbor(int(car.ix), int(car.iy), old_x, old_y, bool(car.bus))
++            car.px = old_x
++            car.py = old_y
++            car.nx = next.x
++            car.ny = next.y
++        car.progress = progress
++        cars[i] = car
++    for i in range(pedestrians.size()):
++        var person = pedestrians[i]
++        var progress = float(person.progress) + delta * float(person.speed)
++        while progress >= 1.0:
++            progress -= 1.0
++            person.ix = int(person.nx)
++            person.iy = int(person.ny)
++            if int(person.ix) == int(person.tx) and int(person.iy) == int(person.ty):
++                person.tx = rng.randi_range(0, road_xs.size() - 1)
++                person.ty = rng.randi_range(0, road_ys.size() - 1)
++                person.purpose = ["work", "shopping", "home", "leisure"][rng.randi_range(0, 3)]
++            var next = _pedestrian_next(int(person.ix), int(person.iy), int(person.tx), int(person.ty))
++            person.nx = next.x
++            person.ny = next.y
++        person.progress = progress
++        pedestrians[i] = person
+     queue_redraw()
+ 
+ func _gui_input(event: InputEvent) -> void:
+@@ -89,6 +221,7 @@
+         if panning:
+             view_pan += event.position - last_pan_mouse
+             last_pan_mouse = event.position
++            _clamp_pan()
+             queue_redraw()
+         else:
+             hovered_district = _district_at(event.position)
+@@ -112,19 +245,49 @@
+             if found != "":
+                 selected_district = found
+                 district_selected.emit(found)
++                if event.double_click:
++                    _focus_district(found)
+                 queue_redraw()
+ 
++func _unhandled_key_input(event: InputEvent) -> void:
++    if not (event is InputEventKey) or not event.pressed:
++        return
++    var step = 55.0
++    if event.keycode == KEY_W: view_pan.y += step
++    elif event.keycode == KEY_S: view_pan.y -= step
++    elif event.keycode == KEY_A: view_pan.x += step
++    elif event.keycode == KEY_D: view_pan.x -= step
++    elif event.keycode == KEY_EQUAL or event.keycode == KEY_PLUS: _zoom_at(get_rect().size * 0.5, 1.12)
++    elif event.keycode == KEY_MINUS: _zoom_at(get_rect().size * 0.5, 1.0 / 1.12)
++    else: return
++    _clamp_pan()
++    queue_redraw()
++
++func _focus_district(name: String) -> void:
++    var s = get_rect().size
++    for d in districts:
++        if String(d.name) == name:
++            var r: Rect2 = d.rect
++            var center = Vector2((r.position.x + r.size.x * 0.5) * s.x, (r.position.y + r.size.y * 0.5) * s.y)
++            view_zoom = clamp(1.85, 1.0, 3.25)
++            view_pan = s * 0.5 - center * view_zoom
++            _clamp_pan()
++            return
++
++func _clamp_pan() -> void:
++    var s = get_rect().size
++    var min_pan = s * (1.0 - view_zoom)
++    view_pan.x = clamp(view_pan.x, min_pan.x, 0.0)
++    view_pan.y = clamp(view_pan.y, min_pan.y, 0.0)
++
+ func _zoom_at(screen_pos: Vector2, factor: float) -> void:
+     var old_zoom = view_zoom
+-    view_zoom = clamp(view_zoom * factor, 1.0, 2.25)
++    view_zoom = clamp(view_zoom * factor, 1.0, 3.25)
+     if is_equal_approx(old_zoom, view_zoom):
+         return
+     var world_before = (screen_pos - view_pan) / old_zoom
+     view_pan = screen_pos - world_before * view_zoom
+-    var s = get_rect().size
+-    var min_pan = s * (1.0 - view_zoom)
+-    view_pan.x = clamp(view_pan.x, min_pan.x, 0.0)
+-    view_pan.y = clamp(view_pan.y, min_pan.y, 0.0)
++    _clamp_pan()
+     queue_redraw()
+ 
+ func _screen_to_world(pos: Vector2) -> Vector2:
+@@ -134,47 +297,197 @@
+     var world_pos = _screen_to_world(pos)
+     var s = get_rect().size
+     for d in districts:
+-        var r = d.rect
++        var r: Rect2 = d.rect
+         var actual = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
+         if actual.has_point(world_pos):
+-            return d.name
++            return String(d.name)
+     return ""
+ 
++func _road_point(ix: int, iy: int, s: Vector2) -> Vector2:
++    return Vector2(float(road_xs[ix]) * s.x, float(road_ys[iy]) * s.y)
++
+ func _draw() -> void:
+     var s = get_rect().size
+     if s.x < 20.0 or s.y < 20.0:
+         return
+-
+-    # Native procedural city world: no screenshot/photo background is used.
+-    draw_rect(Rect2(Vector2.ZERO, s), Color("26343a"), true)
++    draw_rect(Rect2(Vector2.ZERO, s), Color("24343a"), true)
+     draw_set_transform(view_pan, 0.0, Vector2(view_zoom, view_zoom))
+     _draw_waterfront(s)
+     _draw_ground(s)
+-    for d in districts:
+-        _draw_district(s, d)
++    _draw_district_ground(s)
++    _draw_buildings(s)
+     _draw_central_park(s)
+     _draw_roads(s)
+     _draw_city_details(s)
+@@ -182,184 +495,166 @@
+     _draw_traffic(s)
+     _draw_pedestrians(s)
+     _draw_bank_hq(s)
++    _draw_atmosphere(s)
+     _draw_district_highlights(s)
+     draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+-
+-    # Lightweight city-camera hint.
+-    var hint = "Wheel: zoom   •   Middle mouse: pan   •   Click district: inspect"
+-    draw_rect(Rect2(220, 78, 390, 25), Color(0.02,0.04,0.055,0.72), true)
++
