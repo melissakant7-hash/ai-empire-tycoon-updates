@@ -1,0 +1,140 @@
+     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new()
+@@ -2018,6 +2380,7 @@
+ 
+ func _view_businesses() -> Control:
+     var scroll = ScrollContainer.new()
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new()
+@@ -2070,6 +2433,7 @@
+ 
+ func _view_housing() -> Control:
+     var scroll = ScrollContainer.new()
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new()
+@@ -2115,6 +2479,7 @@
+ 
+ func _view_reports() -> Control:
+     var scroll = ScrollContainer.new()
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new()
+@@ -2184,6 +2549,7 @@
+ 
+ func _view_bank_policies() -> Control:
+     var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 16); scroll.add_child(v)
+     v.add_child(_title("Bank Pricing & Credit Policy", "Higher pricing can improve margins, but customers and borrowers react."))
+     v.add_child(_section("Loan Products"))
+@@ -2302,9 +2668,45 @@
+     var l = Label.new(); l.text = title; l.custom_minimum_size.x = 255; l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; l.add_theme_color_override("font_color", C_TEXT); h.add_child(l)
+     var slider = HSlider.new(); slider.min_value = min_v; slider.max_value = max_v; slider.step = step_v; slider.value = float(government[key]); slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; slider.custom_minimum_size.x = 320; h.add_child(slider)
+     var value = Label.new(); value.text = "%.0f%s" % [float(government[key]), suffix] if step_v >= 1.0 else "%.1f%s" % [float(government[key]), suffix]; value.custom_minimum_size.x = 90; value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; value.add_theme_color_override("font_color", C_ACCENT); h.add_child(value)
+-    slider.value_changed.connect(func(new_value): government[key] = new_value; value.text = "%.0f%s" % [new_value, suffix] if step_v >= 1.0 else "%.1f%s" % [new_value, suffix]; _refresh_city_hud())
++    slider.value_changed.connect(func(new_value): government[key] = new_value; value.text = "%.0f%s" % [new_value, suffix] if step_v >= 1.0 else "%.1f%s" % [new_value, suffix]; _refresh_city_hud(); _refresh_topbar(); _refresh_reactive_view_labels())
++    slider.drag_ended.connect(func(value_changed):
++        if value_changed:
++            call_deferred("_refresh_current_view_after_slider")
++    )
+     return p
+ 
++func _estimated_healthcare_out_of_pocket() -> float:
++    return max(0.0, 245.0 * (1.0 - float(government.healthcare_subsidy) / 100.0))
++
++func _refresh_city_services_labels() -> void:
++    var subsidy = float(government.healthcare_subsidy)
++    var oop = _estimated_healthcare_out_of_pocket()
++    if is_instance_valid(city_services_health_label):
++        if subsidy >= 99.5:
++            city_services_health_label.text = "At 100%, public healthcare is effectively FREE at the point of use. Estimated resident out-of-pocket cost: %s/month." % _money(oop)
++            city_services_health_label.add_theme_color_override("font_color", C_GREEN)
++        elif subsidy >= 75.0:
++            city_services_health_label.text = "High healthcare subsidy: the city covers %.0f%% of the standard resident cost. Estimated resident out-of-pocket cost: %s/month." % [subsidy, _money(oop)]
++            city_services_health_label.add_theme_color_override("font_color", C_GREEN)
++        elif subsidy >= 40.0:
++            city_services_health_label.text = "Shared-cost healthcare: the city covers %.0f%%. Estimated resident out-of-pocket cost: %s/month." % [subsidy, _money(oop)]
++            city_services_health_label.add_theme_color_override("font_color", C_MUTED)
++        else:
++            city_services_health_label.text = "Low healthcare subsidy: residents carry most of the cost. Estimated resident out-of-pocket cost: %s/month." % _money(oop)
++            city_services_health_label.add_theme_color_override("font_color", C_RED)
++    if is_instance_valid(city_services_policy_summary_label):
++        city_services_policy_summary_label.text = "Live policy effect • Health funding %.0f%% • Healthcare subsidy %.0f%% • Transit subsidy %.0f%% • Expected healthcare cost %s/month per resident" % [float(government.healthcare_budget), subsidy, float(government.transit_subsidy), _money(oop)]
++    if is_instance_valid(city_services_cost_label):
++        city_services_cost_label.text = "Estimated monthly city service bill: %s" % _money(_monthly_city_service_spending_estimate())
++
++func _refresh_reactive_view_labels() -> void:
++    if current_view == "City Services":
++        _refresh_city_services_labels()
++
++func _refresh_current_view_after_slider() -> void:
++    if current_view in ["City Services", "Taxes & Budget", "Bank", "Bank Policies", "Housing"]:
++        _show_view(current_view)
++
+ func _view_city_services() -> Control:
+     var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 14); scroll.add_child(v)
+@@ -2317,11 +2719,19 @@
+         v.add_child(_government_row(item[0], item[1]))
+     v.add_child(_section("Resident cost policies"))
+     v.add_child(_government_row("Healthcare subsidy", "healthcare_subsidy", 0.0, 100.0, 1.0, "%"))
+-    var health_label = Label.new()
+-    health_label.text = "At 100%%, public healthcare is effectively FREE for residents. Current estimated out-of-pocket healthcare cost: %s/month per resident." % _money(city.healthcare_cost_monthly)
+-    health_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; health_label.add_theme_color_override("font_color", C_GREEN if government.healthcare_subsidy >= 99.5 else C_MUTED); v.add_child(health_label)
++    city_services_health_label = Label.new()
++    city_services_health_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++    v.add_child(city_services_health_label)
+     v.add_child(_government_row("Public transport subsidy", "transit_subsidy", 0.0, 100.0, 1.0, "%"))
+-    var cost = Label.new(); cost.text = "Estimated monthly city service bill: %s" % _money(_monthly_city_service_spending_estimate()); cost.add_theme_font_size_override("font_size", 16); cost.add_theme_color_override("font_color", C_ACCENT); v.add_child(cost)
++    city_services_policy_summary_label = Label.new()
++    city_services_policy_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++    city_services_policy_summary_label.add_theme_color_override("font_color", C_MUTED)
++    v.add_child(city_services_policy_summary_label)
++    city_services_cost_label = Label.new()
++    city_services_cost_label.add_theme_font_size_override("font_size", 16)
++    city_services_cost_label.add_theme_color_override("font_color", C_ACCENT)
++    v.add_child(city_services_cost_label)
++    _refresh_city_services_labels()
+     return scroll
+ 
+ func _view_taxes() -> Control:
+@@ -2349,6 +2759,7 @@
+ 
+ func _view_city() -> Control:
+     var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 16); scroll.add_child(v)
+     v.add_child(_title("City Economy", "A living economy that feeds back into borrowers, deposits, defaults and tax revenue."))
+     var grid = GridContainer.new(); grid.columns = 3; grid.add_theme_constant_override("h_separation", 12); grid.add_theme_constant_override("v_separation", 12); v.add_child(grid)
+@@ -2389,6 +2800,7 @@
+ 
+ func _view_news() -> Control:
+     var scroll = ScrollContainer.new(); scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 12); scroll.add_child(v)
+     v.add_child(_title("CityWire Financial News", "Headlines are generated from what is actually happening in the simulation."))
+     for i in range(news.size() - 1, -1, -1):
+@@ -2402,7 +2814,11 @@
+     var l = Label.new(); l.text = title; l.custom_minimum_size.x = 280; l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; l.add_theme_color_override("font_color", C_TEXT); h.add_child(l)
+     var s = HSlider.new(); s.min_value = min_v; s.max_value = max_v; s.step = step_v; s.value = policy[key]; s.size_flags_horizontal = Control.SIZE_EXPAND_FILL; s.custom_minimum_size.x = 400; h.add_child(s)
+     var value = Label.new(); value.text = "%.2f%s" % [float(policy[key]), suffix]; value.custom_minimum_size.x = 100; value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; value.add_theme_color_override("font_color", C_ACCENT); h.add_child(value)
+-    s.value_changed.connect(func(new_value): policy[key] = new_value; value.text = "%.2f%s" % [new_value, suffix])
++    s.value_changed.connect(func(new_value): policy[key] = new_value; value.text = "%.2f%s" % [new_value, suffix]; _refresh_topbar(); _refresh_reactive_view_labels())
++    s.drag_ended.connect(func(value_changed):
++        if value_changed:
++            call_deferred("_refresh_current_view_after_slider")
++    )
+     return p
+ 
+ func _seed_businesses() -> void:
+@@ -3597,6 +4013,11 @@
+         if not government.has(key): government[key] = government_defaults[key]
+     applications = parsed.get("applications", applications)
+     loans = parsed.get("loans", loans)
++    for li in range(loans.size()):
++        if not loans[li].has("servicing_documents"):
