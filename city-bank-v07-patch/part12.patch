@@ -1,0 +1,25 @@
+ 13), Vector2(166, 22)), Color(Color("101820"), 0.82), true)
+-        draw_string(ThemeDB.fallback_font, label_pos, String(d.name).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, TEXT)
++func _norm_to_world(uv: Vector2, y: float = 0.0) -> Vector3:
++    return Vector3(_world_x(uv.x), y, _world_z(uv.y))
+diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/scripts/main.gd cbt_v07/city_bank_tycoon/scripts/main.gd
+--- cbt_v06_base_for_patch/city_bank_tycoon/scripts/main.gd	2026-08-25 18:51:54.000000000 +0000
++++ cbt_v07/city_bank_tycoon/scripts/main.gd	2026-08-25 19:35:04.701488338 +0000
+@@ -357,7 +357,7 @@
+     save.pressed.connect(_save_game)
+     outer.add_child(save)
+     var footer = Label.new()
+-    footer.text = "  v0.6 City World & Responsive Underwriting"
++    footer.text = "  v0.7 Native 3D City World"
+     footer.add_theme_font_size_override("font_size", 9)
+     footer.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(footer)
+@@ -1954,7 +1954,7 @@
+ func _view_city_map() -> Control:
+     var v = VBoxContainer.new()
+     v.add_theme_constant_override("separation", 14)
+-    v.add_child(_title("Living City Map", "District activity responds to growth, unemployment and the financial conditions you create."))
++    v.add_child(_title("Native 3D City", "A real Godot 3D city simulation running beneath your banking interface."))
+     var p = _panel_container()
+     p.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
