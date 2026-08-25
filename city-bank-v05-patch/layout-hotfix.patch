@@ -1,0 +1,31 @@
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -444,7 +444,8 @@
+ func _on_district_selected(name: String) -> void:
+     selected_district = name
+     if is_instance_valid(district_panel):
+-        district_panel.visible = true
++        var compact_mail = current_view == "Mail" and get_viewport_rect().size.x < 1900.0
++        district_panel.visible = not compact_mail
+     _refresh_city_hud()
+ 
+ func _monthly_tax_revenue_estimate() -> float:
+@@ -621,6 +622,8 @@
+     current_view = ""
+     for c in content.get_children():
+         c.queue_free()
++    if is_instance_valid(district_panel):
++        district_panel.visible = true
+     _refresh_topbar()
+ 
+ func _toggle_view(name: String) -> void:
+@@ -631,6 +634,9 @@
+ 
+ func _show_view(name: String) -> void:
+     current_view = name
++    if is_instance_valid(district_panel):
++        var compact_mail = name == "Mail" and get_viewport_rect().size.x < 1900.0
++        district_panel.visible = not compact_mail
+     for c in content.get_children():
+         c.queue_free()
+     var view: Control
