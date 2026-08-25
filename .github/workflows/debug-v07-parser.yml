@@ -36,6 +36,7 @@ jobs:
           git apply city-bank-v07-patch/transport-fix.patch
           echo "d894e70bc11784769c41028ae57d56c45d71fc8f6284c753acb874c14e004902  v07.patch" | sha256sum -c -
           git apply -p2 --directory=city_bank_tycoon v07.patch
+          git apply --directory=city_bank_tycoon city-bank-v07-patch/runtime-hotfix.patch
       - name: Check city_map parser directly
         shell: bash
         run: |
