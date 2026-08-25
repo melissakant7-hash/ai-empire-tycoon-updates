@@ -1,0 +1,89 @@
+  _draw_tree(Vector2(x - 27, y), 4.6)
+-            _draw_tree(Vector2(x + 27, y + 13), 4.1)
+-    for iy in [2, 4, 5]:
+-        var y = s.y * float(road_ys[iy])
+-        for j in range(18):
+-            var x = s.x * (0.025 + float(j) * 0.055)
+-            _draw_tree(Vector2(x, y - 27), 4.2)
++func _world_x(u: float) -> float:
++    return (u - 0.5) * WORLD_WIDTH
+ 
+-func _draw_transit_stops(s: Vector2) -> void:
+-    var stops = [Vector2i(1,2), Vector2i(3,2), Vector2i(5,2), Vector2i(1,4), Vector2i(3,4), Vector2i(5,4), Vector2i(6,5)]
+-    for stop in stops:
+-        var p = _road_point(stop.x, stop.y, s) + Vector2(24, -16)
+-        draw_rect(Rect2(p - Vector2(12,5), Vector2(24,10)), Color("cad3d7"), true)
+-        draw_rect(Rect2(p - Vector2(10,3), Vector2(20,6)), Color("4e7e98"), true)
+-        draw_line(p + Vector2(13,-10), p + Vector2(13,8), Color("d8c47b"), 2.0)
+-        draw_circle(p + Vector2(13,-11), 3.0, Color("e7b94e"))
+-
+-func _draw_traffic_signals(s: Vector2) -> void:
+-    var green_phase = int(world_time * 80.0) % 2 == 0
+-    for ix in [1,3,5]:
+-        for iy in [2,4]:
+-            var p = _road_point(ix, iy, s) + Vector2(18, -18)
+-            draw_rect(Rect2(p - Vector2(3,7), Vector2(6,14)), Color("1c2328"), true)
+-            draw_circle(p + Vector2(0,-3.5), 2.0, Color("56b66d") if green_phase else Color("613837"))
+-            draw_circle(p + Vector2(0,3.5), 2.0, Color("633833") if green_phase else Color("d85c52"))
+-
+-func _draw_parking_and_plazas(s: Vector2) -> void:
+-    var plaza = Rect2(s.x * 0.525, s.y * 0.525, s.x * 0.105, s.y * 0.065)
+-    draw_rect(plaza, Color("88877c"), true)
+-    draw_circle(plaza.get_center(), 8.0, Color("557a89"))
+-    for i in range(5):
+-        _draw_tree(plaza.position + Vector2(12 + i * 22, 12 + (i % 2) * 25), 4.0)
+-    var lot = Rect2(s.x * 0.775, s.y * 0.625, s.x * 0.16, s.y * 0.065)
+-    draw_rect(lot, Color("444b50"), true)
+-    for i in range(8):
+-        var px = lot.position.x + 10 + i * max(12.0, lot.size.x / 9.0)
+-        draw_line(Vector2(px, lot.position.y + 4), Vector2(px, lot.end.y - 4), Color("777e82"), 1.0)
+-        if i % 2 == 0:
+-            _draw_vehicle(Vector2(px + 4, lot.position.y + 17 + (i % 3) * 12), 13, 5.5, [Color("a8b5bf"),Color("b85b4f"),Color("477ba2")][i % 3], PI * 0.5, false)
+-
+-func _draw_industry_details(s: Vector2) -> void:
+-    var base = Vector2(s.x * 0.81, s.y * 0.64)
+-    for i in range(3):
+-        var p = base + Vector2(i * 38, 0)
+-        draw_circle(p, 14, Color("8a8d87"))
+-        draw_circle(p, 9, Color("5c6668"))
+-        draw_line(p + Vector2(0,-14), p + Vector2(0,-30), Color("656b6c"), 5.0)
+-        if i == 1:
+-            draw_circle(p + Vector2(2,-40), 8, Color(0.68,0.70,0.69,0.10 + max(0.0, float(economy.get("gdp_growth",2.0))) * 0.015))
+-
+-func _draw_university_details(s: Vector2) -> void:
+-    var field = Rect2(s.x*0.795, s.y*0.345, s.x*0.115, s.y*0.055)
+-    draw_rect(field, Color("4d7a52"), true)
+-    draw_rect(field.grow(-4), Color("c6d0b9"), false, 1.2)
+-    draw_line(Vector2(field.get_center().x, field.position.y+4), Vector2(field.get_center().x, field.end.y-4), Color("c6d0b9"), 1.0)
+-    draw_circle(field.get_center(), 9, Color("c6d0b9"), false, 1.0)
++func _world_z(v: float) -> float:
++    return (v - 0.5) * WORLD_DEPTH
+ 
+-func _draw_construction(s: Vector2) -> void:
+-    var growth = float(economy.get("gdp_growth", 2.0))
+-    if growth < 0.25:
+-        return
+-    var sites = [Vector2(0.15,0.57), Vector2(0.56,0.35), Vector2(0.69,0.82)]
+-    var site_count = clamp(int(1 + growth / 2.0), 1, sites.size())
+-    for i in range(site_count):
+-        var p = Vector2(sites[i].x*s.x, sites[i].y*s.y)
+-        draw_rect(Rect2(p, Vector2(48,31)), Color("65584a"), true)
+-        draw_line(p + Vector2(8,0), p + Vector2(8,-48), Color("d0a04f"), 4.0)
+-        draw_line(p + Vector2(8,-45), p + Vector2(54,-45), Color("d0a04f"), 3.0)
+-        draw_line(p + Vector2(39,-45), p + Vector2(39,-26), Color("d0a04f"), 2.0)
+-
+-func _draw_water_activity(s: Vector2) -> void:
+-    for i in range(5):
+-        var t = fmod(world_time * (0.45 + float(i) * 0.08) + float(i) * 0.21, 1.0)
+-        var p = Vector2(s.x * t, s.y * (0.055 + (i%2)*0.045))
+-        draw_colored_polygon(PackedVector2Array([p+Vector2(-10,0),p+Vector2(10,0),p+Vector2(6,5),p+Vector2(-6,5)]), Color("d7dde0"))
+-        draw_line(p + Vector2(-12,7), p + Vector2(-28,7), Color(WATER_LIGHT,0.55), 1.2)
+-
+-func _draw_central_park(s: Vector2) -> void:
+-    var rect = Rect2(s.x * 0.265, s.y * 0.515, s.x * 0.18, s.y * 0.15)
+-    draw_rect(rect, PARK, true)
+-    draw_rect(rect, Color(Color("a6b28d"), 0.8), false, 1.2)
+-    draw_line(rect.position + Vector2(0, rect.size.y * 0.5), rect.position + Vector2(rect.size.x, rect.size.y * 0.5), Color(Color("b7aa88"), 0.75), 6.0)
+-    draw_line(rect.position + Vector2(rect.size.x * 0.5, 0), rect.position + Vector2(rect.size.x * 0.5, rect.size.y), Color(Color("b7aa88"), 0.75), 6.0)
+-    var center = rect.get_center()
+-    draw_circle(center, 
