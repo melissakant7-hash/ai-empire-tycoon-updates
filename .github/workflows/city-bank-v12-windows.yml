@@ -78,8 +78,14 @@ jobs:
       - name: Apply exact v1.2 changes
         shell: bash
         run: |
-          echo "0728e3878ed20885efa3154d58721884bb2e69f02bfff51e8cce67de0e1c906e  city-bank-v12/v12.patch.gz.b64" | sha256sum -c -
-          base64 -d city-bank-v12/v12.patch.gz.b64 | gzip -dc > v12.patch
+          echo "6d34a0eb49d700e86ea67bd2d6ad67aafeba021b03403875bfb79a1c320c46e4  city-bank-v12/plain-patch/part00.patch" | sha256sum -c -
+          echo "1ebbb201e96f6f80444a0c3ec928abf61a0a4b9d1f28382c2dcf19a6df06abfb  city-bank-v12/plain-patch/part01.patch" | sha256sum -c -
+          echo "a57a59c00249989a47ab816acc01aa2d64f24684eae8b6967cc6fd14c2840523  city-bank-v12/plain-patch/part02.patch" | sha256sum -c -
+          echo "d6dfa2be29b660fc94eea0f8729ebb477dc340cac0f9b5dcac69b790225b06df  city-bank-v12/plain-patch/part03.patch" | sha256sum -c -
+          echo "697b22ece25b7afcac43ab977223f64b8d633c0e2e328403ab00af7f6d93aac9  city-bank-v12/plain-patch/part04.patch" | sha256sum -c -
+          echo "b49948b34052c53c928d0bcdab1c43e96d3868de6b08afd171ebfcdc8626c14a  city-bank-v12/plain-patch/part05.patch" | sha256sum -c -
+          echo "919aae99055f7cd6601e2c025f5b6081b3507d91ad8600ec84608a33a6feda95  city-bank-v12/plain-patch/part06.patch" | sha256sum -c -
+          cat city-bank-v12/plain-patch/part00.patch city-bank-v12/plain-patch/part01.patch city-bank-v12/plain-patch/part02.patch city-bank-v12/plain-patch/part03.patch city-bank-v12/plain-patch/part04.patch city-bank-v12/plain-patch/part05.patch city-bank-v12/plain-patch/part06.patch > v12.patch
           echo "5214cc24eb54e923ae09e401bf445dcd3a6596afcd0b8c56621dd03b4c9570a0  v12.patch" | sha256sum -c -
           cd city_bank_tycoon
           patch --dry-run -p2 < "$GITHUB_WORKSPACE/v12.patch"
