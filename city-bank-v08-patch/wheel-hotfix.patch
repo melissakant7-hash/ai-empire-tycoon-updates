@@ -1,5 +1,5 @@
---- /mnt/data/city_map_v08_before_wheel.gd	2026-08-25 20:57:56.210181909 +0000
-+++ /mnt/data/city_map_v08_fixed.gd	2026-08-25 20:57:55.743285804 +0000
+--- a/scripts/city_map.gd
++++ b/scripts/city_map.gd
 @@ -694,7 +694,7 @@
              wheel_mesh.bottom_radius = 0.28 if bus else 0.22
              wheel_mesh.height = 0.18
