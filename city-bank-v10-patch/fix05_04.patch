@@ -1,0 +1,25 @@
+mortgage": 4.8, "business": 6.6, "savings": 2.8, "fee": 0.0, "share": 17.0},
+-        {"name": "Heritage Bank", "mortgage": 5.4, "business": 5.9, "savings": 1.8, "fee": 6.0, "share": 21.0},
+-        {"name": "Union Commerce", "mortgage": 5.0, "business": 5.6, "savings": 2.0, "fee": 4.0, "share": 14.0},
+-        {"name": "Lumen Private", "mortgage": 4.6, "business": 5.4, "savings": 3.1, "fee": 14.0, "share": 8.0}
+-    ]
+-
+-func _update_competitors() -> void:
+-    for c in competitors:
+-        c.mortgage = clamp(c.mortgage + rng.randf_range(-0.18, 0.18), 2.0, 12.0)
+-        c.business = clamp(c.business + rng.randf_range(-0.20, 0.20), 2.5, 15.0)
+-        c.savings = clamp(c.savings + rng.randf_range(-0.15, 0.15), 0.0, 8.0)
+-        c.fee = clamp(c.fee + rng.randf_range(-0.5, 0.5), 0.0, 25.0)
+-
+ func _city_analysis() -> String:
+     var factors: Array[String] = []
+     if policy.income_tax > 28: factors.append("High personal income taxation is reducing disposable income and migration appeal.")
+@@ -3178,7 +3363,13 @@ func _city_analysis() -> String:
+     if city.unemployment > 8: factors.append("Elevated unemployment is increasing household default risk.")
+     if city.inflation > 5: factors.append("Inflation is reducing real purchasing power.")
+     if policy.monthly_account_fee > 12: factors.append("Bank fees are contributing to public dissatisfaction and account churn.")
+-    if factors.is_empty(): factors.append("No severe imbalance is dominant. The city is responding mostly to normal economic-cycle noise.")
++    if government.police_budget < 75.0: factors.append("Police funding is low and crime pressure is rising.")
++    if government.healthcare_budget < 75.0: factors.append("Healthcare is underfunded, reducing city health and increasing household risk.")
++    if government.education_budget < 75.0: factors.append("Education cuts are weakening skills and long-term productivity.")
++    if government.transit_budget < 70.0 or government.roads_budget < 70.0: factors.ap
