@@ -1,0 +1,100 @@
+ palette.get(kind, Color("676b70"))
++    c = c.lightened((variation - 0.5) * 0.13)
++    c = c.lerp(Color(districts[district_index].color), 0.16)
++    return c
++
++func _add_building_window_band(body: MeshInstance3D, bw: float, height: float, bd: float, seed: float) -> void:
++    if height < 7.0:
++        return
++    var rows = min(5, max(2, int(height / 5.0)))
++    var window_color = Color("a9c8d4") if seed > 0.35 else Color("d7c88a")
++    for r in range(rows):
++        var y = -height * 0.34 + float(r) * (height * 0.68 / float(max(1, rows - 1)))
++        var front = _box(body, Vector3(bw * 0.68, 0.28, 0.08), Vector3(0, y, -bd * 0.505), window_color, "WindowBand")
++        front.material_override = _material(window_color, 0.3, 0.1, window_color.darkened(0.45))
++
++func _add_industrial_detail(body: MeshInstance3D, bw: float, height: float, bd: float, index: int) -> void:
++    var chimney_h = 4.0 + float(index % 3)
++    var chimney_mesh = CylinderMesh.new()
++    chimney_mesh.top_radius = 0.38
++    chimney_mesh.bottom_radius = 0.48
++    chimney_mesh.height = chimney_h
++    var chimney = MeshInstance3D.new()
++    chimney.mesh = chimney_mesh
++    chimney.position = Vector3(bw * 0.25, height * 0.5 + chimney_h * 0.5, bd * 0.18)
++    chimney.material_override = _material(Color("55595a"), 0.8, 0.1)
++    body.add_child(chimney)
++
++func _add_bank_headquarters() -> void:
++    var d = districts[1]
++    var rect: Rect2 = d.rect
++    var x = _world_x(rect.position.x + rect.size.x * 0.51)
++    var z = _world_z(rect.position.y + rect.size.y * 0.55)
++    var tower = _box(building_root, Vector3(9.5, 34.0, 9.0), Vector3(x, 17.2, z), Color("31596d"), "SterlingCityBankHQ", 0.56, 0.18)
++    _box(tower, Vector3(7.5, 1.0, 7.0), Vector3(0, 17.4, 0), Color("c69f52"), "BankCrown", 0.35, 0.4)
++    var beacon = OmniLight3D.new()
++    beacon.light_color = Color("e5ba63")
++    beacon.light_energy = 2.2
++    beacon.omni_range = 12.0
++    beacon.position = Vector3(0, 18.7, 0)
++    tower.add_child(beacon)
++
++func _seed_city_details() -> void:
++    _add_park(Rect2(0.53, 0.27, 0.11, 0.11), 24)
++    _add_park(Rect2(0.28, 0.53, 0.10, 0.12), 20)
++    _add_park(Rect2(0.07, 0.80, 0.12, 0.10), 18)
++    _add_university_field()
++    _add_industrial_yard()
++    _add_bus_stops()
++    _add_parking_lots()
++    _add_construction_sites()
++
++func _add_park(rect: Rect2, tree_count: int) -> void:
++    var center = _norm_to_world(rect.get_center(), 0.14)
++    _box(detail_root, Vector3(rect.size.x * WORLD_WIDTH, 0.12, rect.size.y * WORLD_DEPTH), center, Color("4e784f"), "CityPark")
++    for i in range(tree_count):
++        var u = rect.position.x + 0.02 * rect.size.x + rng.randf() * rect.size.x * 0.96
++        var v = rect.position.y + 0.02 * rect.size.y + rng.randf() * rect.size.y * 0.96
++        _add_tree(Vector3(_world_x(u), 0.2, _world_z(v)), 0.75 + rng.randf() * 0.55)
++
++func _add_tree(pos: Vector3, scale_factor: float) -> void:
++    var root = Node3D.new()
++    root.position = pos
++    detail_root.add_child(root)
++    var trunk_mesh = CylinderMesh.new()
++    trunk_mesh.top_radius = 0.18 * scale_factor
++    trunk_mesh.bottom_radius = 0.25 * scale_factor
++    trunk_mesh.height = 2.0 * scale_factor
++    var trunk = MeshInstance3D.new()
++    trunk.mesh = trunk_mesh
++    trunk.position.y = 1.0 * scale_factor
++    trunk.material_override = _material(Color("70563e"))
++    root.add_child(trunk)
++    var crown_mesh = SphereMesh.new()
++    crown_mesh.radius = 1.15 * scale_factor
++    crown_mesh.height = 2.3 * scale_factor
++    var crown = MeshInstance3D.new()
++    crown.mesh = crown_mesh
++    crown.position.y = 2.65 * scale_factor
++    crown.material_override = _material(Color("3e7046").lightened(rng.randf_range(-0.05, 0.08)))
++    root.add_child(crown)
++
++func _add_university_field() -> void:
++    var center = _norm_to_world(Vector2(0.86, 0.39), 0.14)
++    _box(detail_root, Vector3(13.5, 0.10, 8.5), center, Color("4d7b52"), "UniversityField")
++    _box(detail_root, Vector3(13.7, 0.09, 0.13), center + Vector3(0,0.08,-4.0), Color("e5e2d5"), "FieldLine")
++    _box(detail_root, Vector3(13.7, 0.09, 0.13), center + Vector3(0,0.08,4.0), Color("e5e2d5"), "FieldLine")
++
++func _add_industrial_yard() -> void:
++    var center = _norm_to_world(Vector2(0.86, 0.65), 0.15)
++    _box(detail_root, Vector3(18.0, 0.1, 11.0), center, Color("5a5d58"), "IndustrialYard")
++    for i in range(10):
++        var c = [Color("a64b45"), Color("3e6f99"), Color("d2a24c")][i % 3]
++        _box(detail_root, Vector3(2.3, 1.4, 1.2), center + Vector3(-7.0 + float(i % 5) * 3.3, 0.8, -3.1 + float(i / 5) * 3.0), c, "Container")
++
++func _add_bus_stops() -> void:
++    var stops = [Vector2i(1,2), Vector2i(3,2), Vector2i(5,2), Vector2i(1,4), Vector2i(3,4), Vector2i(5,4), Vector2i(6,5)]
++    for stop in stops:
++        var p = _road_point(stop.x, stop.y) + Vector3(ROAD_WIDTH * 0.65, 0, ROAD_WIDTH * 0.65)
++        _box(detail_root, Vector3(2.7, 0.12, 1.2), p + Vector3(0,0.13,0), Color("65737b"), "BusStopPad")
++   
