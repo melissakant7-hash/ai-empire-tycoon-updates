@@ -1,0 +1,18 @@
+ tools.add_child(back)
++    for symbol in ["▤", "!", "☆", "⋮"]:
++        var tb = Button.new(); tb.text = symbol; tb.flat = true; tb.add_theme_color_override("font_color", Color("5f6368")); tools.add_child(tb)
++    var sp = Control.new(); sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL; tools.add_child(sp)
++    var date = Label.new(); date.text = String(message.get("date_label","")); date.add_theme_color_override("font_color", Color("6f7780")); date.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; tools.add_child(date)
++    v.add_child(HSeparator.new())
++    var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(scroll)
++    var body = VBoxContainer.new(); body.size_flags_horizontal = Control.SIZE_EXPAND_FILL; body.add_theme_constant_override("separation", 12); scroll.add_child(body)
++    var subj = Label.new(); subj.text = String(message.get("subject","Message")); subj.add_theme_font_size_override("font_size", 23); subj.add_theme_color_override("font_color", Color("202124")); body.add_child(subj)
++    var sender = Label.new(); sender.text = "%s  <%s>" % [String(message.get("sender_name","")), String(message.get("sender_email",""))]; sender.add_theme_color_override("font_color", Color("3c4043")); body.add_child(sender)
++    var text = Label.new(); text.text = String(message.get("body","")); text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; text.add_theme_font_size_override("font_size", 13); text.add_theme_color_override("font_color", Color("202124")); body.add_child(text)
+     var app = _application_any_by_id(int(message.get("application_id", -1)))
+     var attachments = message.get("attachment_indices", [])
+     if not app.is_empty() and attachments.size() > 0:
+-        var attach_title = Label.new()
+-        attach_title.text = "%d ATTACHMENT(S)" % attachments.size()
+-        attach_title.add_theme_font_size_override("font_size", 10)
+- 
