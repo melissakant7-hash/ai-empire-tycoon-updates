@@ -1,0 +1,31 @@
+verride("separation", 12)
++    v.add_child(toolbar)
++    var select_all = Label.new(); select_all.text = "  ☐"; select_all.add_theme_color_override("font_color", Color("5f6368")); select_all.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(select_all)
++    var refresh = Button.new(); refresh.text = "↻"; refresh.flat = true; refresh.add_theme_color_override("font_color", Color("5f6368")); toolbar.add_child(refresh)
++    var more = Button.new(); more.text = "⋮"; more.flat = true; more.add_theme_color_override("font_color", Color("5f6368")); toolbar.add_child(more)
++    var space = Control.new(); space.size_flags_horizontal = Control.SIZE_EXPAND_FILL; toolbar.add_child(space)
++    var count = Label.new(); count.text = "%d messages" % _mail_ids_for_folder(selected_mail_folder).size(); count.add_theme_color_override("font_color", Color("6f7780")); count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(count)
++    v.add_child(HSeparator.new())
++    var scroll = ScrollContainer.new()
++    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
++    v.add_child(scroll)
++    var list = VBoxContainer.new()
++    list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    list.add_theme_constant_override("separation", 0)
++    scroll.add_child(list)
++    var ids = _mail_ids_for_folder(selected_mail_folder)
++    var shown = 0
++    var query = mail_search_query.to_lower()
++    for mid in ids:
++        var idx = _mail_index_by_id(int(mid))
++        if idx < 0: continue
++        var m = mail_messages[idx]
++        var hay = (String(m.get("sender_name","")) + " " + String(m.get("subject","")) + " " + String(m.get("body",""))).to_lower()
++        if query != "" and query not in hay:
++            continue
++        shown += 1
++        var row = Button.new()
++        row.custom_minimum_size.y = 40
++        row.alignment = HORIZONTAL_ALIGNMENT_LEFT
++        row.add_theme_font_siz
