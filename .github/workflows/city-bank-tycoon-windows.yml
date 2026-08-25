@@ -32,7 +32,9 @@ jobs:
           unzip -q city-bank-tycoon-v04-source.zip
           cat city-bank-v05-patch/part*.patch > v05.patch
           echo "15b130b9ff2bb5e707b27b15321a8eb43f76530c12570635c25bda2275a3f452  v05.patch" | sha256sum -c -
+          echo "80a50c73f7db00be3fd55f0b01a98a2a0a6aa02f1ac37aef04bb484c44282a4e  city-bank-v05-patch/layout-hotfix.patch" | sha256sum -c -
           git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v05.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v05-patch/layout-hotfix.patch"
           rm -f city_bank_tycoon/assets/city_reference_world.jpg
           rmdir city_bank_tycoon/assets 2>/dev/null || true
           grep -q 'config/version="0.5.0"' city_bank_tycoon/project.godot
