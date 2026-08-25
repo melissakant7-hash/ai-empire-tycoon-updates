@@ -1,0 +1,11 @@
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -2318,7 +2318,7 @@
+     v.add_child(_section("Resident cost policies"))
+     v.add_child(_government_row("Healthcare subsidy", "healthcare_subsidy", 0.0, 100.0, 1.0, "%"))
+     var health_label = Label.new()
+-    health_label.text = "At 100%, public healthcare is effectively FREE for residents. Current estimated out-of-pocket healthcare cost: %s/month per resident." % _money(city.healthcare_cost_monthly)
++    health_label.text = "At 100%%, public healthcare is effectively FREE for residents. Current estimated out-of-pocket healthcare cost: %s/month per resident." % _money(city.healthcare_cost_monthly)
+     health_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; health_label.add_theme_color_override("font_color", C_GREEN if government.healthcare_subsidy >= 99.5 else C_MUTED); v.add_child(health_label)
+     v.add_child(_government_row("Public transport subsidy", "transit_subsidy", 0.0, 100.0, 1.0, "%"))
+     var cost = Label.new(); cost.text = "Estimated monthly city service bill: %s" % _money(_monthly_city_service_spending_estimate()); cost.add_theme_font_size_override("font_size", 16); cost.add_theme_color_override("font_color", C_ACCENT); v.add_child(cost)
