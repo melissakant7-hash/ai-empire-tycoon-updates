@@ -1,0 +1,15 @@
++            loans[li]["servicing_documents"] = []
++        if not loans[li].has("servicing_sequence"):
++            loans[li]["servicing_sequence"] = 0
+     customers = parsed.get("customers", customers)
+     businesses = parsed.get("businesses", businesses)
+     history = parsed.get("history", history)
+@@ -3622,7 +4043,7 @@
+     var l = Label.new(); l.text = text; l.add_theme_font_size_override("font_size", 17); l.add_theme_color_override("font_color", C_ACCENT); return l
+ 
+ func _metric_card(label_text: String, value_text: String, color: Color) -> Control:
+-    var p = _panel_container(); p.custom_minimum_size = Vector2(250, 92); p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    var p = _panel_container(); p.custom_minimum_size = Vector2(0, 92); p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new(); v.add_theme_constant_override("separation", 5); p.add_child(v)
+     var l = Label.new(); l.text = label_text; l.add_theme_font_size_override("font_size", 11); l.add_theme_color_override("font_color", C_MUTED); v.add_child(l)
+     var val = Label.new(); val.text = value_text; val.add_theme_font_size_override("font_size", 22); val.add_theme_color_override("font_color", color); v.add_child(val)
