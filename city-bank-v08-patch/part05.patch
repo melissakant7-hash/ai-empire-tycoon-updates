@@ -1,0 +1,114 @@
+olor("f7e7b0"), 0.55)
++    var tail_mat = _emissive_material(Color("d84943"), 0.42)
++    for side in [-0.32, 0.32]:
++        var head = _box(root, Vector3(width*0.22,0.14,0.07), Vector3(side*width,0.62,-length*0.505), Color("f7e7b0"), "HeadLamp", 0.25)
++        head.material_override = head_mat
++        var tail = _box(root, Vector3(width*0.18,0.13,0.07), Vector3(side*width,0.58,length*0.505), Color("d84943"), "TailLamp", 0.25)
++        tail.material_override = tail_mat
++    if service:
++        var beacon_mat = _emissive_material(Color("e4a43b"), 0.75)
++        var beacon = _box(root, Vector3(0.48,0.16,0.22), Vector3(0,1.36,0), Color("e4a43b"), "ServiceBeacon", 0.25)
++        beacon.material_override = beacon_mat
++    if bus:
++        for j in range(4):
++            _box(root, Vector3(width*0.72,0.24,0.08), Vector3(0,1.03,-length*0.22 + float(j)*length*0.15), glass, "BusWindow", 0.12, 0.12)
+     return root
+ 
+ func _seed_pedestrians() -> void:
+     pedestrians.clear()
+     var clothing = [Color("557aa2"), Color("ab5e54"), Color("617d5c"), Color("8e6c9c"), Color("c49a4d"), Color("4e5965")]
+-    for i in range(460):
++    for i in range(680):
+         var ix = rng.randi_range(0, road_xs.size() - 1)
+         var iy = rng.randi_range(0, road_ys.size() - 1)
+         var target = Vector2i(rng.randi_range(0, road_xs.size() - 1), rng.randi_range(0, road_ys.size() - 1))
+         var next = _pedestrian_next(ix, iy, target.x, target.y)
+         var node = _create_citizen(clothing[i % clothing.size()], i)
++        var citizen_scale = 0.90 + float((i * 17) % 21) / 100.0
++        node.scale = Vector3.ONE * citizen_scale
+         pedestrian_root.add_child(node)
+-        pedestrians.append({"node":node, "ix":ix, "iy":iy, "nx":next.x, "ny":next.y, "tx":target.x, "ty":target.y, "progress":rng.rand(), "speed":0.055 + rng.randf_range(0.0,0.055), "side":-1.0 if i%2==0 else 1.0, "purpose":["work","shopping","home","leisure"][i%4]})
++        pedestrians.append({"node":node, "left_arm":node.get_node("LeftArm"), "right_arm":node.get_node("RightArm"), "left_leg":node.get_node("LeftLeg"), "right_leg":node.get_node("RightLeg"), "ix":ix, "iy":iy, "nx":next.x, "ny":next.y, "tx":target.x, "ty":target.y, "progress":rng.randf(), "speed":0.055 + rng.randf_range(0.0,0.055), "side":-1.0 if i%2==0 else 1.0, "purpose":["work","shopping","home","leisure"][i%4], "phase":rng.randf()*TAU})
+ 
+func _create_citizen(color: Color, index: int) -> Node3D:
+     var root = Node3D.new()
+     root.name = "Citizen3D_%03d" % index
+     var body_mesh = CapsuleMesh.new()
+-    body_mesh.radius = 0.24
+-    body_mesh.height = 1.35
++    body_mesh.radius = 0.22
++    body_mesh.height = 1.18
+     var body = MeshInstance3D.new()
++    body.name = "Torso"
+     body.mesh = body_mesh
+-    body.position.y = 0.78
+-    body.material_override = _material(color, 0.9)
++    body.position.y = 1.02
++    body.material_override = _material(color, 0.90)
+     root.add_child(body)
++    var skin = Color("c89773").lightened(float(index % 5) * 0.025 - 0.05)
+     var head_mesh = SphereMesh.new()
+-    head_mesh.radius = 0.21
+-    head_mesh.height = 0.42
++    head_mesh.radius = 0.20
++    head_mesh.height = 0.40
+     var head = MeshInstance3D.new()
++    head.name = "Head"
+     head.mesh = head_mesh
+-    head.position.y = 1.58
+-    head.material_override = _material(Color("c89773").lightened(float(index % 5) * 0.025 - 0.05), 0.9)
++    head.position.y = 1.72
++    head.material_override = _material(skin, 0.92)
+     root.add_child(head)
++    var hair = _box(root, Vector3(0.34,0.12,0.34), Vector3(0,1.89,-0.05), [Color("40332d"),Color("6b513f"),Color("2c3034"),Color("9b7651")][index%4], "Hair", 0.95)
++    hair.rotation_degrees.y = float(index % 4) * 13.0
++    var limb_color = color.darkened(0.08)
++    for side in [-1.0, 1.0]:
++        var arm_mesh = CapsuleMesh.new()
++        arm_mesh.radius = 0.075
++        arm_mesh.height = 0.70
++        var arm = MeshInstance3D.new()
++        arm.name = "LeftArm" if side < 0.0 else "RightArm"
++        arm.mesh = arm_mesh
++        arm.position = Vector3(side * 0.31, 1.05, 0)
++        arm.rotation_degrees.Z = side * 8.0
++        arm.material_override = _material(limb_color, 0.92)
++        root.add_child(arm)
++        var leg_mesh = CapsuleMesh.new()
++        leg_mesh.radius = 0.085
++        leg_mesh.height = 0.78
++        var leg = MeshInstance3D.new()
++        leg.name = "LeftLeg" if side < 0.0 else "RightLeg"
++        leg.mesh = leg_mesh
++        leg.position = Vector3(side * 0.12, 0.38, 0)
++        leg.material_override = _material(Color("38414b") if index%3 else Color("4f4540"), 0.95)
++        root.add_child(leg)
+     return root
+ 
+func _pick_neighbor(ix: int, iy: int, prev_x: int, prev_y: int, bus: bool = false) -> Vector2i:
+@@ -502,8 +810,10 @@
+ func _process(delta: float) -> void:
+     world_time = fmod(world_time + delta / 185.0, 1.0)
+     _update_day_night()
++    _update_traffic_signals()
+     _move_vehicles(delta)
+     _move_citizens(delta)
++    _move_boats(delta)
+ 
+func _move_vehicles(delta: float) -> void:
+     for i in range(cars.size()):
+@@ -552,19 +862,64 @@
+         var dir = (b-a).normalized()
+         var sidewalk_offset = Vector3(-dir.z,0,dir.x) * (ROAD_WIDTH*0.64 + SIDEWALK_WIDTH*0.35) * float(person.side)
+         var node: Node3D = person.node
+-        node.position = a.lerp(b, progress) + sidewalk_offset + Vector3(0,0.15,0)
++        var walk_phase = float(person.phase) + world_time * TAU * 24.0 + progress * TAU * 2.0
++        node.position = a.lerp(b, progress) + sidewalk_offset + Vector3(0,0.15 + sin(walk_phase * 2.0) * 0.035,0)
+         if dir.length() > 0.1:
+             node.rotation.y = atan2(dir.x, dir.z)
++        var arm_swing = sin(walk_phase) * 23.0
++        var leg_swing = sin(walk_phase) * 18.0
++        var left_arm: MeshInstance3D = person.left_arm
++        var right_arm: MeshInstance3D = person.right_arm
++        var left_leg: MeshInstance3D = person.left_leg
++        var right_leg: MeshInstance3D = person.ri

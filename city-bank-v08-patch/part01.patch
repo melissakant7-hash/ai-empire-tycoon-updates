@@ -1,0 +1,113 @@
+e.FORMAT_RGBA8)
++    var emit = Image.create(96, 96, false, Image.FORMAT_RGBA8)
++    var wall = base_color
++    var mortar = base_color.darkened(0.10)
++    var window_day = Color("8fb1bf") if kind in ["office", "civic", "university"] else Color("a4b6b5")
++    var warm = Color("f3c778")
++    for y in range(96):
++        for x in range(96):
++            var px = wall
++            var em = Color(0,0,0,1)
++            var edge = (x % 24) < 2 or (y % 20) < 2
++            if edge:
++                px = mortar
++            var wx = x % 24
++            var wy = y % 20
++            var is_window = wx >= 5 and wx <= 18 and wy >= 5 and wy <= 14
++            if kind == "industrial":
++                is_window = wx >= 6 and wx <= 18 and wy >= 7 and wy <= 12 and y < 48
++            elif kind == "retail" and y > 58:
++                is_window = wx >= 3 and wx <= 20 and wy >= 4 and wy <= 16
++            if is_window:
++                var lit = ((x / 24) + (y / 20) * 3 + variant) % 5 != 0
++                px = window_day.darkened(0.08 + float((x+y)%7) * 0.008)
++                if lit:
++                    em = warm if ((x / 24 + variant) % 3 == 0) else Color("9cc6d8")
++            img.set_pixel(x, y, px)
++            emit.set_pixel(x, y, em)
++    var mat = StandardMaterial3D.new()
++    mat.albedo_texture = ImageTexture.create_from_image(img)
++    mat.albedo_color = Color.WHITE
++    mat.roughness = 0.72 if kind == "office" else 0.86
++    mat.metallic = 0.08 if kind == "office" else 0.0
++    mat.emission_enabled = true
++    mat.emission_texture = ImageTexture.create_from_image(emit)
++    mat.emission = Color.WHITE
++    mat.emission_energy_multiplier = 0.12
++    facade_materials[key] = mat
++    return mat
++
++func _emissive_material(color: Color, energy: float = 1.0) -> StandardMaterial3D:
++    var mat = _material(color, 0.32, 0.05, color)
++    mat.emission_energy_multiplier = energy
++    return mat
++
+ func _box(parent: Node, size: Vector3, position: Vector3, color: Color, name_text: String = "Box", roughness: float = 0.82, metallic: float = 0.0) -> MeshInstance3D:
+     var mesh = BoxMesh.new()
+     mesh.size = size
+@@ -166,6 +241,19 @@
+     parent.add_child(node)
+     return node
+ 
++func _cylinder(parent: Node, radius: float, height: float, position: Vector3, color: Color, name_text: String = "Cylinder", roughness: float = 0.82, metallic: float = 0.0) -> MeshInstance3D:
++    var mesh = CylinderMesh.new()
++    mesh.top_radius = radius * 0.92
++    mesh.bottom_radius = radius
++    mesh.height = height
++    var node = MeshInstance3D.new()
++    node.name = name_text
++    node.mesh = mesh
++    node.position = position
++    node.material_override = _material(color, roughness, metallic)
++    parent.add_child(node)
++    return node
++
+ func _build_ground_and_water() -> void:
+     _box(city_root, Vector3(WORLD_WIDTH + 24.0, 0.65, WORLD_DEPTH + 18.0), Vector3(0, -0.38, 0), Color("3f5a45"), "CityGround")
+ 
+@@ -186,12 +274,16 @@
+         var x = _world_x(float(u))
+         _box(city_root, Vector3(ROAD_WIDTH + SIDEWALK_WIDTH * 2.0, 0.18, WORLD_DEPTH), Vector3(x, 0.02, 0), sidewalk, "VerticalSidewalk")
+         _box(city_root, Vector3(ROAD_WIDTH, 0.21, WORLD_DEPTH), Vector3(x, 0.08, 0), road_mat, "VerticalRoad", 0.95)
++        _box(detail_root, Vector3(0.08, 0.025, WORLD_DEPTH), Vector3(x - ROAD_WIDTH * 0.46, 0.205, 0), Color("d9ddd9"), "RoadEdgeLine")
++        _box(detail_root, Vector3(0.08, 0.025, WORLD_DEPTH), Vector3(x + ROAD_WIDTH * 0.46, 0.205, 0), Color("d9ddd9"), "RoadEdgeLine")
+         for z in range(-60, 61, 9):
+             _box(detail_root, Vector3(0.13, 0.025, 3.6), Vector3(x, 0.205, float(z)), lane, "LaneMark")
+     for v in road_ys:
+         var z = _world_z(float(v))
+         _box(city_root, Vector3(WORLD_WIDTH, 0.18, ROAD_WIDTH + SIDEWALK_WIDTH * 2.0), Vector3(0, 0.02, z), sidewalk, "HorizontalSidewalk")
+         _box(city_root, Vector3(WORLD_WIDTH, 0.21, ROAD_WIDTH), Vector3(0, 0.08, z), road_mat, "HorizontalRoad", 0.95)
++        _box(detail_root, Vector3(WORLD_WIDTH, 0.025, 0.08), Vector3(0, 0.205, z - ROAD_WIDTH * 0.46), Color("d9ddd9"), "RoadEdgeLine")
++        _box(detail_root, Vector3(WORLD_WIDTH, 0.025, 0.08), Vector3(0, 0.205, z + ROAD_WIDTH * 0.46), Color("d9ddd9"), "RoadEdgeLine")
+         for x in range(-84, 85, 10):
+             _box(detail_root, Vector3(4.0, 0.025, 0.13), Vector3(float(x), 0.205, z), lane, "LaneMark")
+ 
+@@ -221,15 +313,17 @@
+     var traffic_signal = _box(detail_root, Vector3(0.42, 0.95, 0.38), p + Vector3(3.3, 2.75, 3.3), Color("20272b"), "TrafficSignal", 0.65, 0.15)
+     var light_color = Color("e45b4f") if (ix + iy) % 3 == 0 else Color("60c77d")
+     var lamp = _box(traffic_signal, Vector3(0.18, 0.18, 0.08), Vector3(0, 0.15, -0.22), light_color, "SignalLamp")
+-    lamp.material_override = _material(light_color, 0.4, 0.0, light_color)
++    var lamp_mat = _emissive_material(light_color, 0.75)
++    lamp.material_override = lamp_mat
++    traffic_lamps.append({"material":lamp_mat, "phase":float((ix * 7 + iy * 3) % 10) / 10.0})
+ 
+ func _seed_buildings() -> void:
+     buildings.clear()
+     for district_index in range(districts.size()):
+         var d = districts[district_index]
+         var rect: Rect2 = d.rect
+-        var count = int(d.density)
+-        var cols = 5 if rect.size.x < 0.24 else 7
++        var count = int(float(d.density) * 1.48)
++        var cols = 6 if rect.size.x < 0.24 else 8
+         var rows = int(ceil(float(count) / float(cols)))
+         for i in range(count):
+             var col = i % cols
+@@ -238,25 +332,84 @@
+             var h2 = float((i * 31 + int(d.seed) * 29) % 100) / 100.0
+             var cell_u = rect.size.x / float(cols)
+             var cell_v = rect.size.y / float(max(1, rows))
+-            var u = rect.position.x + float(col) * cell_u + cell_u * (0.18 + h2 * 0.05)
+-            var v = rect.position.y + float(row) * cell_v + cell_v * (0.18 + h1 * 0.05)
+-            var bw = max(3.8, cell_u * WORLD_WIDTH * (0.52 + h1 * 0.12))
+-            va

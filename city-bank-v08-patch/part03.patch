@@ -1,0 +1,43 @@
+14.0, 9.0, "civic")
++    var hotel = _box(building_root, Vector3(8.5, 23.0, 8.0), Vector3(_world_x(0.625), 11.7, _world_z(0.315)), Color("5d6f72"), "RiversideHotel", 0.72, 0.06)
++    hotel.material_override = _facade_material("mixed", 2)
++    _add_balconies(hotel, 8.5, 23.0, 8.0, 3)
+ 
+ func _building_kind_for_district(district_name: String, index: int) -> String:
+     if district_name == "Financial District" or district_name == "Tech Quarter":
+@@ -329,13 +482,18 @@
+     var x = _world_x(rect.position.x + rect.size.x * 0.51)
+     var z = _world_z(rect.position.y + rect.size.y * 0.55)
+     var tower = _box(building_root, Vector3(9.5, 34.0, 9.0), Vector3(x, 17.2, z), Color("31596d"), "SterlingCityBankHQ", 0.56, 0.18)
++    tower.material_override = _facade_material("office", 2)
+     _box(tower, Vector3(7.5, 1.0, 7.0), Vector3(0, 17.4, 0), Color("#c69f52"), "BankCrown", 0.35, 0.4)
++    _box(tower, Vector3(5.6, 3.1, 1.0), Vector3(0, -14.8, -4.75), Color("293d48"), "BankEntrance", 0.42, 0.12)
++    var bank_sign = _box(tower, Vector3(5.2, 0.72, 0.11), Vector3(0, -12.55, -4.56), Color("d4ad5a"), "BankSign", 0.34, 0.22)
++    bank_sign.material_override = _emissive_material(Color("d4ad5a"), 0.55)
+     var beacon = OmniLight3D.new()
+     beacon.light_color = Color("e5ba63")
+     beacon.light_energy = 2.2
+     beacon.omni_range = 12.0
+     beacon.position = Vector3(0, 18.7, 0)
+     tower.add_child(beacon)
++    night_lights.append(beacon)
+ 
+ func _seed_city_details() -> void:
+     _add_pari(Rect2(0.53, 0.27, 0.11, 0.11), 24)
+@@ -346,36 +504,54 @@
+     _add_bus_stops()
+     _add_parking_lots()
+     _add_construction_sites()
++    _add_street_trees()
++    _add_street_lights()
++    _add_street_furniture()
++    _add_riverfront_details()
+ 
+ func _add_park(rect: Rect2, tree_count: int) -> void:
+     var center = _norm_to_world(rect.get_center(), 0.14)
+-    _box(detail_root, Vector3(rect.size.x * WORLD_WIDTH, 0.12, rect.size.y * WORLD_DEPTH), center, Color("4e784f"), "CityPark")
++    var park_w = rect.size.x * WORLD_WIDTH
+iúö«¥ªäv·œ¶È³{%ŽD°ÃôÇùº1uëZŠZè¢Õ^rÚ+Þ–«“5Ú–«‘×ž×«
+‰h¯‡»ó‡ÂŠÜj¹>nŒ]zÖ¢–º(µWœ¶Š÷¥ªäÃO6ÓN4ïGž×«ùWœ¶Š÷ÓM=Ð*%¢¶¹õ®ß=ªä=«aùº1uëZŠZè¢Õ^rÚ+ßNôÓN)j¹ÓÍœz{^¯å^rÚ+ßM5Û@¨–ŠÚçÖ»|ö«ö­…ú+Š)ëjx¶·žr‹§¶ö«º·œ¶š,ŠØ¨Ÿ´ÓjÞrÛ"Íì~®x+jw_­ç-²,ÞÇOz½ªï­ç-¦‹"¶*'Ëí4Ú·œ¶È³{/«ž
+Ú×ëyËl‹7²ÓÞ¾‰ö›²êÞrØµÇ§µêñ­ç-²,ÞÇM;¢¶›²úÞrØµÇ§µêò­ç-²,ÞËM<ùÊ'¶)îy§]¶·žUç-¢½ð¢¹]Æí6ÂŠåw;ôïŸ«ž
+Ú×ôçŸ¯j·èº{ZŠvÚ±

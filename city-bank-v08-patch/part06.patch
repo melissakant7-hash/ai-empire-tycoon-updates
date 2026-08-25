@@ -1,0 +1,75 @@
+ight_leg
++        left_arm.rotation_degrees.x = arm_swing
++        right_arm.rotation_degrees.x = -arm_swing
++        left_leg.rotation_degrees.x = -leg_swing
++        right_leg.rotation_degrees.x = leg_swing
+         pedestrians[i] = person
+ 
++func _move_boats(delta: float) -> void:
++    for i in range(boats.size()):
++        var boat = boats[i]
++        boat.x = float(boat.x) + float(boat.direction) * float(boat.speed) * delta
++        if float(boat.x) > WORLD_WIDTH * 0.48:
++            boat.x = -WORLD_WIDTH * 0.48
++        elif float(boat.x) < -WORLD_WIDTH * 0.48:
++            boat.x = WORLD_WIDTH * 0.48
++        var node: Node3D = boat.node
++        node.position = Vector3(float(boat.x), 0.10 + sin(world_time * TAU * 9.0 + float(i)) * 0.06, float(boat.z))
++        node.rotation.y = -PI * 0.5 if float(boat.direction) > 0.0 else PI * 0.5
++        boats[i] = boat
++
++func _update_traffic_signals() -> void:
++    var cycle = fmod(world_time * 18.0, 1.0)
++    for item in traffic_lamps:
++        var phase = fmod(cycle + float(item.phase), 1.0)
++        var mat: StandardMaterial3D = item.material
++        var color = Color("60c77d") if phase < 0.52 else (Color("e3b64f") if phase < 0.62 else Color("e45b4f"))
++        mat.albedo_color = color
++        mat.emission = color
++
+ func _update_day_night() -> void:
+     if not is_instance_valid(sun): return
+     var daylight = clamp(sin(world_time * TAU - 0.55) * 0.58 + 0.58, 0.08, 1.0)
+     sun.light_energy = 0.18 + daylight * 1.35
+     sun.rotation_degrees = Vector3(-18.0 - daylight * 48.0, -35.0 + world_time * 35.0, 0.0)
+     if is_instance_valid(environment):
+-        environment.ambient_light_energy = 0.16 + daylight * 0.62
+-        environment.background_color = Color("182536").lerp(Color("8bb3c5"), daylight)
++        environment.ambient_light_energy = 0.16 + daylight * 0.64
++        environment.tonemap_exposure = 0.82 + daylight * 0.30
++        var sky: Sky = environment.sky
++        if sky != null and sky.sky_material is ProceduralSkyMaterial:
++            var sky_mat: ProceduralSkyMaterial = sky.sky_material
++            sky_mat.sky_top_color = Color("101a2d").lerp(Color("4f87a8"), daylight)
++            sky_mat.sky_horizon_color = Color("354157").lerp(Color("c3d7dc"), daylight)
++    var night = 1.0 - daylight
++    for key in facade_materials.keys():
++        var facade: StandardMaterial3D = facade_materials[key]
++        facade.emission_energy_multiplier = 0.05 + night * 1.25
++    for lamp in night_lights:
++        if is_instance_valid(lamp):
++            lamp.light_energy = night * 2.2
+ 
+ func _apply_economy_visuals() -> void:
+     if buildings.is_empty(): return
+diff -ruN /mnt/data/v08_base_for_patch/city_bank_tycoon/scripts/main.gd /mnt/data/cbt_v08/city_bank_tycoon/scripts/main.gd
+--- /mnt/data/v08_base_for_patch/city_bank_tycoon/scripts/main.gd	2026-08-25 19:35:04.000000000 +0000
++++ /mnt/data/cbt_v08/city_bank_tycoon/scripts/main.gd	2026-08-25 20:07:56.685166167 +0000
+@@ -357,7 +357,7 @@
+     save.pressed.connect(_save_game)
+     outer.add_child(save)
+     var footer = Label.new()
+-    footer.text = "  v0.7 Native 3D City World"
++    footer.text = "  v0.8 City Visual Overhaul"
+     footer.add_theme_font_size_override("font_size", 9)
+     footer.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(footer)
+@@ -1954,7 +1954,7 @@
+ func _view_city_map() -> Control:
+     var v = VBoxContainer.new()
+     v.add_theme_constant_override("separation", 14)
+-    v.add_child(_title("Native 3D City", "A real Godot 3D city simulation running beneath your banking interface."))
++    v.add_child(_title("Living 3D City", "A denser, animated Godot 3D city with detailed streets, facades, traffic and citizens beneath your banking interface."))
+     var p = _panel_container()
+     p.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     p.size_flags_horizontal = Control.SIZE_EXPAND_FILL

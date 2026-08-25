@@ -1,0 +1,129 @@
+diff -ruN /mnt/data/v08_base_for_patch/city_bank_tycoon/README.md /mnt/data/cbt_v08/city_bank_tycoon/README.md
+--- /mnt/data/v08_base_for_patch/city_bank_tycoon/README.md	2026-08-25 19:36:16.000000000 +0000
++++ /mnt/data/cbt_v08/city_bank_tycoon/README.md	2026-08-25 20:07:56.686240566 +0000
+@@ -37,3 +37,14 @@
+ - 460 3D citizens walking on sidewalk-offset routes to work, home, shopping and leisure destinations.
+ - 3D parks, trees, university field, industrial yard, bus stops, parking lots, construction cranes, river and bank headquarters.
+ - Dynamic sun/ambient lighting for a slow day/night cycle while the bank UI remains a native 2D management overlay.
++
++
++## v0.8 City Visual Overhaul
++- Denser 3D city generation with 300+ building objects and district-specific architecture.
++- Procedural facade textures with windows and night-time emission, rooftop equipment, balconies, shop fronts, public-building columns and landmarks.
++- Upgraded road presentation with wider roads/sidewalks, edge markings, crosswalks, traffic lights, street lights and street furniture.
++- Expanded vegetation, parks, fountains, riverfront details and moving boats.
++- Upgraded 3D cars/buses/service vehicles with wheels, glass, headlights and taillights.
++- Upgraded 3D citizens with limbs, clothing/height variation and walking animation.
++- Expanded city activity to 184 vehicles and 680 citizens with the existing banking UI preserved as an overlay.
++- Improved sky, filmic tone mapping and day/night lighting response.
+diff -ruN /mnt/data/v08_base_for_patch/city_bank_tycoon/project.godot /mnt/data/cbt_v08/city_bank_tycoon/project.godot
+--- /mnt/data/v08_base_for_patch/city_bank_tycoon/project.godot	2026-08-25 19:35:04.000000000 +0000
++++ /mnt/data/cbt_v08/city_bank_tycoon/project.godot	2026-08-25 20:03:02.209281046 +0000
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="0.7.0"
++config/version="0.8.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+@@ -12,8 +12,8 @@
+ window/stretch/mode="canvas_items"
+ 
+ [rendering]
+-renderer/rendering_method="gl_compatibility"
+-renderer/rendering_method.mobile="gl_compatibility"
++renderer/rendering_method="mobile"
++renderer/rendering_method.mobile="mobile"
+ 
+ [gui]
+ theme/default_font_multichannel_signed_distance_field=true
+diff -ruN /mnt/data/v08_base_for_patch/city_bank_tycoon/scripts/city_map.gd /mnt/data/cbt_v08/city_bank_tycoon/scripts/city_map.gd
+--- /mnt/data/v08_base_for_patch/city_bank_tycoon/scripts/city_map.gd	2026-08-25 19:51:28.000000000 +0000
++++ /mnt/data/cbt_v08/city_bank_tycoon/scripts/city_map.gd	2026-08-25 20:07:55.721097082 +0000
+@@ -26,6 +26,11 @@
+ var sun: DirectionalLight3D
+ var world_environment: WorldEnvironment
+ var environment: Environment
++var facade_materials: Dictionary = {}
++var night_lights: Array[OmniLight3D] = []
++var traffic_lamps: Array[Dictionary] = []
++var boats: Array[Dictionary] = []
++var city_activity = 1.0
+ 
+ var camera_target = Vector3.ZERO
+ var camera_distance = 118.0
+@@ -37,8 +42,8 @@
+ 
+ const WORLD_WIDTH = 180.0
+ const WORLD_DEPTH = 128.0
+-const ROAD_WIDTH = 5.4
+-const SIDEWALK_WIDTH = 1.15
++const ROAD_WIDTH = 6.6
++const SIDEWALK_WIDTH = 1.55
+ 
+ var road_xs = [0.075, 0.24, 0.36, 0.485, 0.60, 0.73, 0.86, 0.955]
+ var road_ys = [0.215, 0.315, 0.465, 0.605, 0.745, 0.865, 0.955]
+@@ -72,6 +77,7 @@
+     _seed_city_details()
+     _seed_traffic()
+     _seed_pedestrians()
++    _seed_boats()
+     _update_district_highlight()
+     _update_camera()
+     _apply_economy_visuals()
+@@ -109,11 +115,21 @@
+     world_root.add_child(district_highlight_root)
+ 
+     environment = Environment.new()
+-    environment.background_mode = Environment.BG_COLOR
+-    environment.background_color = Color("86aebe")
+-    environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
++    var sky_material = ProceduralSkyMaterial.new()
++    sky_material.sky_top_color = Color("4f87a8")
++    sky_material.sky_horizon_color = Color("c3d7dc")
++    sky_material.ground_bottom_color = Color("31413d")
++    sky_material.ground_horizon_color = Color("91a6a1")
++    sky_material.sun_angle_max = 18.0
++    var sky = Sky.new()
++    sky.sky_material = sky_material
++    environment.background_mode = Environment.BG_SKY
++    environment.sky = sky
++    environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+     environment.ambient_light_color = Color("b9ced5")
+-    environment.ambient_light_energy = 0.72
++    environment.ambient_light_energy = 0.78
++    environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
++    environment.tonemap_exposure = 1.08
+     world_environment = WorldEnvironment.new()
+     world_environment.environment = environment
+     world_root.add_child(world_environment)
+@@ -136,7 +152,7 @@
+     camera = Camera3D.new()
+     camera.name = "CityCamera3D"
+     camera.current = true
+-    camera.fov = 52.0
++    camera.fov = 48.0
+     camera.near = 0.25
+     camera.far = 650.0
+     world_root.add_child(camera)
+@@ -155,6 +171,65 @@
+         mat.emission_energy_multiplier = 0.35
+     return mat
+ 
++func _facade_material(kind: String, variant: int = 0) -> StandardMaterial3D:
++    var key = "%s_%d" % [kind, variant]
++    if facade_materials.has(key):
++        return facade_materials[key]
++    var base_palette = {
++        "office": [Color("465c69"), Color("536c78"), Color("3f5968")],
++        "retail": [Color("745d48"), Color("816a52"), Color("6d5948")],
++        "industrial": [Color("67675f"), Color("727067"), Color("5e625f")],
++        "university": [Color("73584f"), Color("815f55"), Color("6a554f")],
++        "civic": [Color("68737b"), Color("738088"), Color("5e6a72")],
++        "residential": [Color("6e5d55"), Color("7a665d"), Color("635954")],
++        "mixed": [Color("62666b"), Color("6c6c70"), Color("595f66")]
++    }
++    var base_choices: Array = base_palette.get(kind, base_palette["mixed"])
++    var base_color: Color = base_choices[variant % base_choices.size()]
++    var img = Image.create(96, 96, false, Imag

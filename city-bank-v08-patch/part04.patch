@@ -1,0 +1,105 @@
+  _add_tree(Vector3(float(x), 0.2, z), 0.60 + rng.randf() * 0.25)
++
++func _add_street_lights() -> void:
++    var lamp_color = Color("ffd99a")
++    var light_index = 0
++    for ix in range(road_xs.size()):
++        if ix % 2 != 0:
++            continue
++        var x = _world_x(float(road_xs[ix])) - ROAD_WIDTH * 0.70 - SIDEWALK_WIDTH * 0.24
++        for z in range(-52, 55, 13):
++            var root = Node3D.new()
++            root.name = "StreetLight"
++            root.position = Vector3(x, 0.0, float(z))
++            detail_root.add_child(root)
++            _cylinder(root, 0.075, 4.0, Vector3(0,2.0,0), Color("343b3f"), "LampPole", 0.62, 0.35)
++            _box(root, Vector3(0.9,0.10,0.10), Vector3(0.38,3.86,0), Color("343b3f"), "LampArm", 0.62, 0.35)
++            var bulb = _box(root, Vector3(0.24,0.16,0.24), Vector3(0.78,3.72,0), lamp_color, "LampBulb", 0.25, 0.0)
++            bulb.material_override = _emissive_material(lamp_color, 0.10)
++            if light_index % 4 == 0:
++                var omni = OmniLight3D.new()
++                omni.light_color = lamp_color
++                omni.light_energy = 0.0
++                omni.omni_range = 10.0
++                omni.position = Vector3(0.78,3.55,0)
++                root.add_child(omni)
++                night_lights.append(omni)
++            light_index += 1
++
++func _add_street_furniture() -> void:
++    var points = [Vector2(0.58,0.32), Vector2(0.61,0.36), Vector2(0.31,0.58), Vector2(0.12,0.84), Vector2(0.55,0.58), Vector2(0.46,0.84)]
++    for uv in points:
++        var p = _norm_to_world(uv, 0.22)
++        var bench = Node3D.new()
++        bench.position = p
++        bench.rotation_degrees.y = float(int(uv.x * 100.0) % 2) * 90.0
++        detail_root.add_child(bench)
++        _box(bench, Vector3(2.1,0.16,0.55), Vector3(0,0.55,0), Color("76583e"), "BenchSeat", 0.88)
++        _box(bench, Vector3(2.1,0.72,0.12), Vector3(0,0.9,0.25), Color("76583e"), "BenchBack", 0.88)
++        _box(bench, Vector3(0.18,0.65,0.18), Vector3(-0.75,0.30,0), Color("343a3d"), "BenchLeg", 0.75, 0.12)
++        _box(bench, Vector3(0.18,0.65,0.18), Vector3(0.75,0.30,0), Color("343a3d"), "BenchLeg", 0.75, 0.12)
++    for uv in [Vector2(0.57,0.30), Vector2(0.35,0.60), Vector2(0.14,0.85), Vector2(0.66,0.57)]:
++        var p2 = _norm_to_world(uv, 0.22)
++        _cylinder(detail_root, 0.28, 0.82, p2 + Vector3(0,0.41,0), Color("3c4a4b"), "TrashBin", 0.86, 0.08)
++
++func _add_riverfront_details() -> void:
++    var rz = _world_z(0.105)
++    for x in range(-75, 76, 10):
++        _box(detail_root, Vector3(2.8,0.10,0.65), Vector3(float(x),0.16,rz + 7.5), Color("9b8e74"), "RiverBenchPad", 0.92)
++    for x in [-62,-32,18,48,72]:
++        var dock = _box(detail_root, Vector3(6.5,0.20,2.3), Vector3(float(x),0.16,rz + 4.8), Color("6d5944"), "RiverDock", 0.90)
++        dock.rotation_degrees.y = 2.0
++
++func _seed_boats() -> void:
++    boats.clear()
++    var rz = _world_z(0.105)
++    for i in range(9):
++        var root = Node3D.new()
++        root.name = "RiverBoat3D_%02d" % i
++        world_root.add_child(root)
++        var hull = _box(root, Vector3(2.6,0.42,5.2), Vector3(0,0.30,0), Color("e4e2d9") if i % 2 == 0 else Color("4d7087"), "BoatHull", 0.52, 0.08)
++        hull.rotation_degrees.x = 2.0
++        _box(root, Vector3(1.9,0.85,2.0), Vector3(0,0.90,-0.30), Color("a8bdc7"), "BoatCabin", 0.36, 0.06)
++        var direction = 1.0 if i % 2 == 0 else -1.0
++        boats.append({"node":root, "x":-78.0 + float(i) * 18.0, "z":rz + rng.randf_range(-3.2,3.2), "direction":direction, "speed":1.6 + rng.randf_range(0.0,1.3)})
++
+ func _seed_traffic() -> void:
+     cars.clear()
+     var colors = [Color("dbe6ef"), Color("b94c4c"), Color("3e7cab"), Color("202933"), Color("d69f47"), Color("6b7886"), Color("f1f1ec"), Color("5c8b67")]
+-    for i in range(132):
++    for i in range(184):
+         var ix = rng.randi_range(0, road_xs.size() - 1)
+         var iy = rng.randi_range(0, road_ys.size() - 1)
+         var is_bus = i % 14 == 0
+@@ -427,46 +679,102 @@
+ func _create_vehicle(color: Color, bus: bool, service: bool) -> Node3D:
+     var root = Node3D.new()
+     root.name = "Bus3D" if bus else ("ServiceVehicle3D" if service else "Car3D")
+-    var length = 4.4 if bus else 2.25
+-    var width = 1.45 if bus else 1.15
++    var length = 5.8 if bus else 2.65
++    var width = 1.65 if bus else 1.22
+     var body_color = Color("4da06f") if bus else (Color("d7b24f") if service else color)
+-    _box(root, Vector3(width, 0.72, length), Vector3(0,0.52,0), body_color, "VehicleBody", 0.52, 0.18)
+-    _box(root, Vector3(width*0.78, 0.48, length*0.44), Vector3(0,1.05,-length*0.06), body_color.lightened(0.10), "VehicleCab", 0.45, 0.15)
+-    var glass = Color("85a9bb")
+-    _box(root, Vector3(width*0.65,0.28,0.08), Vector3(0,1.08,-length*0.285), glass, "Windshield", 0.18, 0.1)
++    _box(root, Vector3(width, 0.68 if bus else 0.58, length), Vector3(0,0.55,0), body_color, "VehicleBody", 0.48, 0.16)
++    _box(root, Vector3(width*0.82, 0.58 if bus else 0.44, length*0.48), Vector3(0,1.02,-length*0.05), body_color.lightened(0.08), "VehicleCab", 0.42, 0.12)
++    var glass = Color("6e99ad")
++    var windshield = _box(root, Vector3(width*0.68,0.31,0.07), Vector3(0,1.07,-length*0.295), glass, "Windshield", 0.13, 0.14)
++    windshield.material_override = _material(glass, 0.15, 0.15)
++    for side in [-1.0, 1.0]:
++        for z in [-length*0.31, length*0.31]:
++            var wheel_mesh = CylinderMesh.new()
++            wheel_mesh.top_radius = 0.28 if bus else 0.22
++            wheel_mesh.bottom_radius = 0.28 if bus else 0.22
++            wheel_mesh.height = 0.18
++            var wheel = MeshInstance3D.new()
++            wheel.name = "Wheel"
++            wheel.mesh = wheel_mesh
++            wheel.rotation_degrees.z = 90.0
++            wheel.position = Vector3(side * width * 0.52, 0.31, z)
++            wheel.material_override = _material(Color("171a1d"), 0.96, 0.0)
++            root.add_child(wheel)
++    var head_mat = _emissive_material(C
