@@ -1,0 +1,140 @@
++        return
++    var paper = active_loan_document_modal.find_child("LoanDocumentPaper", true, false)
++    if paper != null:
++        paper.configure(_loan_document_context(loan, docs[active_loan_document_index]), docs[active_loan_document_index])
++
++func _close_loan_document_modal(refresh_underlying: bool = true) -> void:
++    if is_instance_valid(active_loan_signature_modal):
++        active_loan_signature_modal.queue_free()
++    active_loan_signature_modal = null
++    if is_instance_valid(active_loan_document_modal):
++        active_loan_document_modal.queue_free()
++    active_loan_document_modal = null
++    active_loan_document_loan_index = -1
++    active_loan_document_index = -1
++    if refresh_underlying and current_view in ["Current Loans", "Loan Portfolio", "Portfolio"]:
++        _show_view("Current Loans")
++
++func _set_active_loan_document_stamp(stamp_text: String) -> void:
++    var li = active_loan_document_loan_index
++    var di = active_loan_document_index
++    if li < 0 or li >= loans.size():
++        return
++    var loan = loans[li]
++    var docs: Array = loan.get("servicing_documents", [])
++    if di < 0 or di >= docs.size():
++        return
++    var doc = docs[di]
++    if bool(doc.get("sent", false)):
++        return
++    doc["stamp"] = stamp_text
++    doc["status"] = "Ready to send" if stamp_text == "ISSUED" else "Voided"
++    docs[di] = doc
++    loan["servicing_documents"] = docs
++    loans[li] = loan
++    _refresh_active_loan_document()
++
++func _open_loan_signature_pad() -> void:
++    if is_instance_valid(active_loan_signature_modal):
++        active_loan_signature_modal.queue_free()
++    var shade = ColorRect.new(); shade.color = Color(0,0,0,0.66); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.mouse_filter = Control.MOUSE_FILTER_STOP; add_child(shade); active_loan_signature_modal = shade
++    var card = PanelContainer.new(); card.set_anchors_preset(Control.PRESET_CENTER); card.position = Vector2(-330,-220); card.size = Vector2(660,440); card.add_theme_stylebox_override("panel", _panel_style(Color("151d27"), 10, C_BORDER)); shade.add_child(card)
++    var v = VBoxContainer.new(); v.add_theme_constant_override("separation", 10); card.add_child(v)
++    var t = Label.new(); t.text = "Bank officer signature"; t.add_theme_font_size_override("font_size", 20); t.add_theme_color_override("font_color", C_TEXT); v.add_child(t)
++    var hint = Label.new(); hint.text = "Sign the servicing document before it can be formally issued to the borrower."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; hint.add_theme_color_override("font_color", C_MUTED); v.add_child(hint)
++    var pad = SignaturePad.new(); pad.size_flags_vertical = Control.SIZE_EXPAND_FILL; v.add_child(pad)
++    var actions = HBoxContainer.new(); actions.alignment = BoxContainer.ALIGNMENT_END; actions.add_theme_constant_override("separation", 8); v.add_child(actions)
++    var clear = _hud_button("Clear", 90); clear.pressed.connect(pad.clear_signature); actions.add_child(clear)
++    var cancel = _hud_button("Cancel", 90); cancel.pressed.connect(_close_loan_signature_modal); actions.add_child(cancel)
++    var apply = _button("Apply signature", 140); apply.pressed.connect(pad.apply_signature); actions.add_child(apply)
++    pad.signature_applied.connect(_apply_loan_signature_points)
++    pad.signature_cancelled.connect(_close_loan_signature_modal)
++
++func _close_loan_signature_modal() -> void:
++    if is_instance_valid(active_loan_signature_modal):
++        active_loan_signature_modal.queue_free()
++    active_loan_signature_modal = null
++
++func _apply_loan_signature_points(points: Array) -> void:
++    var li = active_loan_document_loan_index
++    var di = active_loan_document_index
++    if li < 0 or li >= loans.size():
++        return
++    var loan = loans[li]
++    var docs: Array = loan.get("servicing_documents", [])
++    if di < 0 or di >= docs.size():
++        return
++    var doc = docs[di]
++    doc["signed"] = true
++    doc["signature_points"] = points.duplicate(true)
++    docs[di] = doc
++    loan["servicing_documents"] = docs
++    loans[li] = loan
++    _close_loan_signature_modal()
++    _refresh_active_loan_document()
++
++func _send_active_loan_document() -> void:
++    var li = active_loan_document_loan_index
++    var di = active_loan_document_index
++    if li < 0 or li >= loans.size():
++        return
++    var loan = loans[li]
++    var docs: Array = loan.get("servicing_documents", [])
++    if di < 0 or di >= docs.size():
++        return
++    var doc = docs[di]
++    if not bool(doc.get("opened", false)):
++        _push_notification("Send blocked", "Open and review the PDF first.", "warning", -1)
++        return
++    if not bool(doc.get("signed", false)):
++        _push_notification("Send blocked", "The bank officer signature is required.", "warning", -1)
++        return
++    if String(doc.get("stamp", "")) != "ISSUED":
++        _push_notification("Send blocked", "Stamp the document ISSUED before sending it.", "warning", -1)
++        return
++    doc["sent"] = true
++    doc["status"] = "Sent"
++    doc["sent_date"] = _date_string()
++    docs[di] = doc
++    loan["servicing_documents"] = docs
++    var action_name = String(doc.get("kind", ""))
++    match action_name:
++        "payment_statement":
++            _push_news("A formal loan account statement was sent to %s." % String(loan.borrower))
++        "payment_demand":
++            loan["collection_strategy"] = "Formal demand"
++            _push_news("A signed formal payment demand for %s was issued to %s." % [_money(float(doc.get("arrears_amount", loan.monthly_payment))), String(loan.borrower)])
++        "payoff_quote":
++            _push_news("A payoff quote of %s was issued to %s." % [_money(float(doc.get("payoff_amount", loan.balance))), String(loan.borrower)])
++        "restructure_agreement":
++            loan["rate"] = float(doc.get("new_rate", loan.rate))
++            loan["months_left"] = int(doc.get("new_term", loan.months_left))
++            loan["term"] = max(int(loan.term), int(loan.months_left))
++            loan["monthly_payment"] = float(doc.get("new_payment", loan.monthly_payment))
++            loan["pd"] = max(0.5, float(loan.pd) - 1.0)
++            loan["delinquency"] = max(0, int(loan.delinquency) - 1)
++            loan["status"] = "Restructured"
++            loan["restructured"] = true
++            bank.reputation = clamp(bank.reputation + 0.12, 0.0, 100.0)
++            _push_news("The signed restructure agreement for %s became effective." % String(loan.borrower))
++        "acceleration_notice":
++            loan["status"] = "Accelerated - full balance due"
++            loan["collection_strategy"] = "Acceleration"
++            loan["accelerated"] = true
++            loan["accelerated_amount"] = float(doc.get("payoff_amount", loan.balance))
++            bank.reputation = clamp(bank.reputation - 0.25, 0.0, 100.0)
++            _push_news("NOTICE OF ACCELERATION: %s's full outstanding balance of %s is now immediately due." % [String(loan.borrower), _money(float(loan.accelerated_amount))])
++        "collateral_notice":
++            loan["collection_strategy"] = "Collateral notice issued"
++            loan["collateral_notice_issued"] = true
++            bank.reputation = clamp(bank.reputation - 0.18, 0.0, 100.0)
++            _push_news("A signed collateral enforcement notice was sent to %s concerning %s." % [String(loan.borrower), String(loan.collateral)])
++    loans[li] = loan
++    _close_loan_document_modal(false)
++    _refresh_topbar()
++    _show_view("Current Loans")
++
+ func _view_customers() -> Control:
+     var scroll = ScrollContainer.new()
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
