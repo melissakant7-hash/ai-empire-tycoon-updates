@@ -1,0 +1,126 @@
+or
++    _clamp_camera_target()
++    _update_camera()
++
++func _zoom_at(screen_position: Vector2, factor: float) -> void:
++    var before = _ground_hit(screen_position)
++    camera_distance = clamp(camera_distance / factor, 42.0, 190.0)
++    _update_camera()
++    var after = _ground_hit(screen_position)
++    if before != null and after != null:
++        var delta: Vector3 = before - after
++        camera_target += Vector3(delta.x,0,delta.z)
++        _clamp_camera_target()
++        _update_camera()
++
++func _update_camera() -> void:
++    if not is_instance_valid(camera): return
++    var horizontal = cos(camera_elevation) * camera_distance
++    var offset = Vector3(sin(camera_yaw)*horizontal, sin(camera_elevation)*camera_distance, cos(camera_yaw)*horizontal)
++    camera.global_position = camera_target + offset
++    camera.look_at(camera_target, Vector3.UP)
++    view_zoom = clamp(118.0 / camera_distance, 0.45, 2.8)
++    view_pan = Vector2(camera_target.x, camera_target.z)
+ 
+ func _focus_district(name: String) -> void:
+-    var s = get_rect().size
+     for d in districts:
+         if String(d.name) == name:
+-            var r: Rect2 = d.rect
+-            var center = Vector2((r.position.x + r.size.x * 0.5) * s.x, (r.position.y + r.size.y * 0.5) * s.y)
+-            view_zoom = clamp(1.85, 1.0, 3.25)
+-            view_pan = s * 0.5 - center * view_zoom
+-            _clamp_pan()
++            camera_target = _norm_to_world(d.rect.get_center(), 0.0)
++            camera_distance = 64.0
++            _clamp_camera_target()
++            _update_camera()
+             return
+ 
+-func _clamp_pan() -> void:
+-    var s = get_rect().size
+-    var min_pan = s * (1.0 - view_zoom)
+-    view_pan.x = clamp(view_pan.x, min_pan.x, 0.0)
+-    view_pan.y = clamp(view_pan.y, min_pan.y, 0.0)
+-
+-func _zoom_at(screen_pos: Vector2, factor: float) -> void:
+-    var old_zoom = view_zoom
+-    view_zoom = clamp(view_zoom * factor, 1.0, 3.25)
+-    if is_equal_approx(old_zoom, view_zoom):
+-        return
+-    var world_before = (screen_pos - view_pan) / old_zoom
+-    view_pan = screen_pos - world_before * view_zoom
+-    _clamp_pan()
+-    queue_redraw()
+-
+-func _screen_to_world(pos: Vector2) -> Vector2:
+-    return (pos - view_pan) / view_zoom
+-
+-func _district_at(pos: Vector2) -> String:
+-    var world_pos = _screen_to_world(pos)
+-    var s = get_rect().size
++func _clamp_camera_target() -> void:
++    camera_target.x = clamp(camera_target.x, -WORLD_WIDTH*0.40, WORLD_WIDTH*0.40)
++    camera_target.z = clamp(camera_target.z, -WORLD_DEPTH*0.40, WORLD_DEPTH*0.40)
++    camera_target.y = 0.0
++
++func _ground_hit(screen_position: Vector2):
++    if not is_instance_valid(camera): return null
++    var origin = camera.project_ray_origin(screen_position)
++    var direction = camera.project_ray_normal(screen_position)
++    if abs(direction.y) < 0.00001: return null
++    var t = -origin.y / direction.y
++    if t <= 0.0: return null
++    return origin + direction * t
++
++func _district_at_screen(screen_position: Vector2) -> String:
++    var hit = _ground_hit(screen_position)
++    if hit == null: return ""
++    var uv = Vector2(hit.x / WORLD_WIDTH + 0.5, hit.z / WORLD_DEPTH + 0.5)
+     for d in districts:
+-        var r: Rect2 = d.rect
+-        var actual = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
+-        if actual.has_point(world_pos):
++        if d.rect.has_point(uv):
+             return String(d.name)
+     return ""
+ 
+-func _road_point(ix: int, iy: int, s: Vector2) -> Vector2:
+-    return Vector2(float(road_xs[ix]) * s.x, float(road_ys[iy]) * s.y)
+-
+-func _draw() -> void:
+-    var s = get_rect().size
+-    if s.x < 20.0 or s.y < 20.0:
+-        return
+-    draw_rect(Rect2(Vector2.ZERO, s), Color("24343a"), true)
+-    draw_set_transform(view_pan, 0.0, Vector2(view_zoom, view_zoom))
+-    _draw_waterfront(s)
+-    _draw_ground(s)
+-    _draw_district_ground(s)
+-    _draw_buildings(s)
+-    _draw_central_park(s)
+-    _draw_roads(s)
+-    _draw_city_details(s)
+-    _draw_roads_foreground(s)
+-    _draw_traffic(s)
+-    _draw_pedestrians(s)
+-    _draw_bank_hq(s)
+-    _draw_atmosphere(s)
+-    _draw_district_highlights(s)
+-    draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+-
+-    var hint = "Wheel / +/-: zoom   •   Middle mouse / WASD: pan   •   Double-click district: focus"
+-    draw_rect(Rect2(220, 78, 520, 25), Color(0.02,0.04,0.055,0.72), true)
+-    draw_string(ThemeDB.fallback_font, Vector2(232, 95), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, MUTED)
+-
+-func _draw_district_ground(s: Vector2) -> void:
++func _update_district_highlight() -> void:
++    if not is_instance_valid(district_highlight_root): return
++    for child in district_highlight_root.get_children():
++        child.queue_free()
+     for d in districts:
+-        var r: Rect2 = d.rect
+-        var rect = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
+-        draw_rect(rect, Color(d.color, 0.18), true)
+-
+-func _d
