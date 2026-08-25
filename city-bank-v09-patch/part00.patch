@@ -1,0 +1,114 @@
+diff --git a/project.godot b/project.godot
+index 7049c44..b533d4f 100644
+--- a/project.godot
++++ b/project.godot
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="0.8.0"
++config/version="0.9.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+diff --git a/scripts/city_map.gd b/scripts/city_map.gd
+index d9decf1..87650bd 100644
+--- a/scripts/city_map.gd
++++ b/scripts/city_map.gd
+@@ -175,53 +175,26 @@ func _facade_material(kind: String, variant: int = 0) -> StandardMaterial3D:
+     var key = "%s_%d" % [kind, variant]
+     if facade_materials.has(key):
+         return facade_materials[key]
++    # Export-safe solid facade materials. The previous runtime-generated albedo
++    # texture could render as white on some Windows/GPU combinations.
++    # Windows and facade detail are real geometry, so the building base color
++    # remains stable in editor, CI and exported builds.
+     var base_palette = {
+-        "office": [Color("465c69"), Color("536c78"), Color("3f5968")],
+-        "retail": [Color("745d48"), Color("816a52"), Color("6d5948")],
+-        "industrial": [Color("67675f"), Color("727067"), Color("5e625f")],
+-        "university": [Color("73584f"), Color("815f55"), Color("6a554f")],
+-        "civic": [Color("68737b"), Color("738088"), Color("5e6a72")],
+-        "residential": [Color("6e5d55"), Color("7a665d"), Color("635954")],
+-        "mixed": [Color("62666b"), Color("6c6c70"), Color("595f66")]
++        "office": [Color("405e70"), Color("526d7b"), Color("365565")],
++        "retail": [Color("765840"), Color("876a4e"), Color("66503d")],
++        "industrial": [Color("62665e"), Color("777267"), Color("545e5b")],
++        "university": [Color("775249"), Color("895f53"), Color("684d47")],
++        "civic": [Color("697985"), Color("7b8a91"), Color("5c6d77")],
++        "residential": [Color("785b50"), Color("886b5d"), Color("65524d")],
++        "mixed": [Color("5f666d"), Color("716d70"), Color("53606a")]
+     }
+-    var base_choices: Array = base_palette.get(kind, base_palette["mixed"])
+-    var base_color: Color = base_choices[variant % base_choices.size()]
+-    var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
+-    var emit = Image.create(96, 96, false, Image.FORMAT_RGBA8)
+-    var wall = base_color
+-    var mortar = base_color.darkened(0.10)
+-    var window_day = Color("8fb1bf") if kind in ["office", "civic", "university"] else Color("a4b6b5")
+-    var warm = Color("f3c778")
+-    for y in range(96):
+-        for x in range(96):
+-            var px = wall
+-            var em = Color(0,0,0,1)
+-            var edge = (x % 24) < 2 or (y % 20) < 2
+-            if edge:
+-                px = mortar
+-            var wx = x % 24
+-            var wy = y % 20
+-            var is_window = wx >= 5 and wx <= 18 and wy >= 5 and wy <= 14
+-            if kind == "industrial":
+-                is_window = wx >= 6 and wx <= 18 and wy >= 7 and wy <= 12 and y < 48
+-            elif kind == "retail" and y > 58:
+-                is_window = wx >= 3 and wx <= 20 and wy >= 4 and wy <= 16
+-            if is_window:
+-                var lit = ((x / 24) + (y / 20) * 3 + variant) % 5 != 0
+-                px = window_day.darkened(0.08 + float((x+y)%7) * 0.008)
+-                if lit:
+-                    em = warm if ((x / 24 + variant) % 3 == 0) else Color("9cc6d8")
+-            img.set_pixel(x, y, px)
+-            emit.set_pixel(x, y, em)
++    var choices: Array = base_palette.get(kind, base_palette["mixed"])
++    var base_color: Color = choices[variant % choices.size()]
+     var mat = StandardMaterial3D.new()
+-    mat.albedo_texture = ImageTexture.create_from_image(img)
+-    mat.albedo_color = Color.WHITE
+-    mat.roughness = 0.72 if kind == "office" else 0.86
+-    mat.metallic = 0.08 if kind == "office" else 0.0
+-    mat.emission_enabled = true
+-    mat.emission_texture = ImageTexture.create_from_image(emit)
+-    mat.emission = Color.WHITE
+-    mat.emission_energy_multiplier = 0.12
++    mat.albedo_color = base_color
++    mat.roughness = 0.64 if kind == "office" else 0.84
++    mat.metallic = 0.10 if kind == "office" else 0.0
++    mat.emission_enabled = false
+     facade_materials[key] = mat
+     return mat
+ 
+@@ -354,6 +327,7 @@ func _seed_buildings() -> void:
+ 
+ func _decorate_building(body: MeshInstance3D, kind: String, bw: float, height: float, bd: float, index: int, district_index: int) -> void:
+     var roof_color = _building_color(kind, district_index, 0.55).lightened(0.09)
++    _add_building_window_band(body, bw, height, bd, float((index * 19 + district_index * 11) % 100) / 100.0)
+     if kind == "residential" and height < 9.5:
+         var left_roof = _box(body, Vector3(bw * 0.58, 0.42, bd * 1.02), Vector3(-bw * 0.24, height * 0.5 + 0.38, 0), Color("51463f"), "PitchedRoofL", 0.94)
+         left_roof.rotation_degrees.z = -18.0
+@@ -461,7 +435,7 @@ func _add_building_window_band(body: MeshInstance3D, bw: float, height: float, b
+     var window_color = Color("a9c8d4") if seed > 0.35 else Color("d7c88a")
+     for r in range(rows):
+         var y = -height * 0.34 + float(r) * (height * 0.68 / float(max(1, rows - 1)))
+-        var front = _box(body, Vector3(bw * 0.68, 0.28, 0.08), Vector3(0, y, -bd * 0.505), window_color, "WindowBand")
++        var front = _box(body, Vector3(bw * 0.68, 0.28, 0.08), Vector3(0, y, -bd * 0.505), window_color, "WindowBand_%02d" % r)
+         front.material_override = _material(window_color, 0.3, 0.1, window_color.darkened(0.45))
+ 
+ func _add_industrial_detail(body: MeshInstance3D, bw: float, height: float, bd: float, index: int) -> void:
+@@ -916,7 +890,8 @@ func _update_day_night() -> void:
+     var night = 1.0 - daylight
+     for key in facade_materials.keys():
+         var facade: StandardMaterial3D = facade_materials[key]
+-        facade.emission_energy_multiplier = 0.05 + night * 1.25
++        if facade.emission_enabled:
++            facade.emission_energy_multiplier = 0.05 + night * 1.25
+     for lamp in night_lights:
+         if is_instance_valid(lamp):
+             lamp.light_energy = night * 2.2
