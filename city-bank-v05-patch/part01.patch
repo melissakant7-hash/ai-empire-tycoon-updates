@@ -1,0 +1,146 @@
+ILL
+     panel.mouse_filter = Control.MOUSE_FILTER_STOP
+-    panel.add_theme_stylebox_override("panel", _panel_style(Color(0.035,0.060,0.083,0.94), 10, Color("293d4a")))
++    panel.clip_contents = true
++    panel.add_theme_stylebox_override("panel", _panel_style(Color(0.035,0.060,0.083,0.96), 10, Color("293d4a")))
+     var margin = MarginContainer.new()
+     margin.add_theme_constant_override("margin_left", 16)
+     margin.add_theme_constant_override("margin_right", 16)
+-    margin.add_theme_constant_override("margin_top", 14)
++    margin.add_theme_constant_override("margin_top", 10)
+     margin.add_theme_constant_override("margin_bottom", 14)
+     panel.add_child(margin)
++    var wrapper = VBoxContainer.new()
++    wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
++    wrapper.add_theme_constant_override("separation", 4)
++    margin.add_child(wrapper)
++    var chrome = HBoxContainer.new()
++    chrome.custom_minimum_size.y = 30
++    wrapper.add_child(chrome)
++    var chrome_space = Control.new()
++    chrome_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    chrome.add_child(chrome_space)
++    var close = _hud_button("✕", 34)
++    close.tooltip_text = "Close this panel"
++    close.pressed.connect(_close_current_view)
++    chrome.add_child(close)
+     inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     inner.size_flags_vertical = Control.SIZE_EXPAND_FILL
+-    margin.add_child(inner)
++    wrapper.add_child(inner)
+     return panel
+ 
++func _close_current_view() -> void:
++    current_view = ""
++    for c in content.get_children():
++        c.queue_free()
++    _refresh_topbar()
++
++func _toggle_view(name: String) -> void:
++    if current_view == name and content.get_child_count() > 0:
++        _close_current_view()
++        return
++    _show_view(name)
++
+ func _show_view(name: String) -> void:
+     current_view = name
+     for c in content.get_children():
+@@ -732,17 +788,18 @@
+     header.add_child(header_space)
+     var search_hint = LineEdit.new()
+     search_hint.placeholder_text = "Search mail"
+-    search_hint.custom_minimum_size.x = 260
++    search_hint.custom_minimum_size.x = 210
+     header.add_child(search_hint)
+ 
+     var row = HBoxContainer.new()
+     row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     row.add_theme_constant_override("separation", 8)
++    row.clip_contents = true
+     outer.add_child(row)
+ 
+     var folders = PanelContainer.new()
+-    folders.custom_minimum_size.x = 150
++    folders.custom_minimum_size.x = 138
+     folders.add_theme_stylebox_override("panel", _panel_style(Color(0.025,0.045,0.065,0.96), 8, Color("243441")))
+     row.add_child(folders)
+     var fv = VBoxContainer.new()
+@@ -769,7 +826,7 @@
+         fv.add_child(b)
+ 
+     var list_panel = PanelContainer.new()
+-    list_panel.custom_minimum_size.x = 315
++    list_panel.custom_minimum_size.x = 278
+     list_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.025,0.045,0.065,0.96), 8, Color("243441")))
+     row.add_child(list_panel)
+     var list_scroll = ScrollContainer.new()
+@@ -796,7 +853,7 @@
+                 continue
+             var m = mail_messages[mi]
+             var mb = Button.new()
+-            mb.custom_minimum_size = Vector2(292, 78)
++            mb.custom_minimum_size = Vector2(256, 78)
+             mb.alignment = HORIZONTAL_ALIGNMENT_LEFT
+             var dot = "● " if bool(m.get("unread", false)) else "  "
+             mb.text = "%s%s\n%s\n%s" % [dot, String(m.get("sender_name","Unknown")), String(m.get("subject","")), String(m.get("date_label",""))]
+@@ -873,7 +930,7 @@
+                 continue
+             var doc = app.documents[doc_index]
+             var ab = Button.new()
+-            ab.custom_minimum_size = Vector2(235, 58)
++            ab.custom_minimum_size = Vector2(205, 58)
+             ab.alignment = HORIZONTAL_ALIGNMENT_LEFT
+             ab.text = "▣  %s\n     %s" % [String(doc.get("name","Attachment")), String(doc.get("status","Received"))]
+             ab.add_theme_color_override("font_color", C_TEXT)
+@@ -1176,11 +1233,17 @@
+     var v = VBoxContainer.new()
+     v.add_theme_constant_override("separation", 10)
+     panel.add_child(v)
++    var sign_header = HBoxContainer.new()
++    v.add_child(sign_header)
+     var t = Label.new()
+     t.text = "Place your bank officer signature"
+     t.add_theme_font_size_override("font_size", 19)
+     t.add_theme_color_override("font_color", C_TEXT)
+-    v.add_child(t)
++    t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    sign_header.add_child(t)
++    var sign_close = _hud_button("✕", 34)
++    sign_close.pressed.connect(_close_signature_modal)
++    sign_header.add_child(sign_close)
+     var pad = SignaturePad.new()
+     pad.name = "SignaturePad"
+     v.add_child(pad)
+@@ -1782,10 +1845,40 @@
+     var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 16); scroll.add_child(v)
+     v.add_child(_title("Bank Pricing & Credit Policy", "Higher pricing can improve margins, but customers and borrowers react."))
++    v.add_child(_section("Loan Products"))
++    var auto_product = _panel_container()
++    var auto_row = HBoxContainer.new()
++    auto_row.add_theme_constant_override("separation", 12)
++    auto_product.add_child(auto_row)
++    var auto_text = VBoxContainer.new()
++    auto_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    auto_row.add_child(auto_text)
++    var auto_title = Label.new()
++    auto_title.text = "Auto Loans"
++    auto_title.add_theme_font_size_override("font_size", 16)
++    auto_title.add_theme_color_override("font_color", C_TEXT)
++    auto_text.add_child(auto_title)
++    var auto_desc = Label.new()
++    auto_desc.text = "Disabled by default. Enable this product before the bank can receive new vehicle-finance applications."
++    auto_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++    auto_desc.add_theme_color_override("font_color", C_MUTED)
++    auto_text.add_child(auto_desc)
++    var auto_enabled = bool(policy.get("auto_loans_enabled", false))
++    var auto_toggle = _button("Disable Auto Loans" if auto_enabled else "Enable Auto Loans", 170)
++    auto_toggle.add_theme_color_override("font_color", C_GREEN if auto_enabled else C_ACCENT)
++    auto_toggle.pressed.connect(func(): _set_auto_loans_enabled(not bool(policy.get("auto_loans_enabled", false))))
++    auto_row.add_child(auto_toggle)
++    v.add_child(auto_product)
+     v.add_child(_section("Loan Interest Rates"))
+-    for item in [
+-        ["Personal loans", "personal_rate", 0.0, 30.0, 0.1], ["Mortgages", "mortgage_rate", 0.0, 20.0, 0.1], ["Auto loans", "auto_rate", 0.0, 25.0, 0.1], ["Business loans", "business_rate", 0.0, 25.0, 0.1], ["Credit cards", "cre
