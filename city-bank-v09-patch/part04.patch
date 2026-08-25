@@ -1,0 +1,25 @@
+-        notifications_label.tooltip_text = "%d unread mail • %d applications • %d overdue loans" % [_mail_unread_count(), applications.size(), _count_overdue_loans()]
++        var unread_notifications = _unread_notification_count()
++        notifications_label.text = "🔔 %d" % unread_notifications if unread_notifications > 0 else "🔔"
++        notifications_label.tooltip_text = "%d unread notifications • %d unread mail • %d applications • %d overdue loans" % [unread_notifications, _mail_unread_count(), applications.size(), _count_overdue_loans()]
+     _refresh_city_hud()
+ 
+ func _date_string() -> String:
+@@ -3120,6 +3254,8 @@ func _save_payload() -> Dictionary:
+         "businesses": businesses,
+         "history": history,
+         "news": news,
++        "game_notifications": game_notifications,
++        "notification_sequence": notification_sequence,
+         "competitors": competitors,
+         "mail_messages": mail_messages,
+         "closed_applications": closed_applications,
+@@ -3144,6 +3280,8 @@ func _apply_save_payload(parsed: Dictionary) -> void:
+     businesses = parsed.get("businesses", businesses)
+     history = parsed.get("history", history)
+     news = parsed.get("news", news)
++    game_notifications = parsed.get("game_notifications", game_notifications)
++    notification_sequence = int(parsed.get("notification_sequence", notification_sequence))
+     competitors = parsed.get("competitors", competitors)
+     mail_messages = parsed.get("mail_messages", mail_messages)
+     closed_applications = parsed.get("closed_applications", closed_applications)
