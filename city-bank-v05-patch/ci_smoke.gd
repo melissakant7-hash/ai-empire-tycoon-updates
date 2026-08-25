@@ -50,11 +50,16 @@ func _run():
     if not has_button_text(mail_overlay, "✕"):
         fail("Mail overlay has no close X")
         return
-    var mail_rect = game.content.get_global_rect()
-    var district_rect = game.district_panel.get_global_rect()
-    if mail_rect.end.x > district_rect.position.x + 0.5:
-        fail("Mail UI overlaps the district overview")
-        return
+    if game.get_viewport_rect().size.x < 1900.0:
+        if game.district_panel.visible:
+            fail("District overview must collapse while Mail is open on standard desktop widths")
+            return
+    else:
+        var mail_rect = game.content.get_global_rect()
+        var district_rect = game.district_panel.get_global_rect()
+        if mail_rect.end.x > district_rect.position.x + 0.5:
+            fail("Mail UI overlaps the district overview on wide desktop")
+            return
 
     game._toggle_view("Mail")
     await process_frame
@@ -62,12 +67,18 @@ func _run():
     if game.current_view != "" or game.content.get_child_count() != 0:
         fail("Clicking Mail a second time did not close it")
         return
+    if not game.district_panel.visible:
+        fail("District overview did not return after closing Mail")
+        return
     game._toggle_view("Mail")
     await process_frame
     await process_frame
     if game.current_view != "Mail" or game.content.get_child_count() < 1:
         fail("Mail did not reopen after toggle")
         return
+    game._toggle_view("Mail")
+    await process_frame
+    await process_frame
 
     if not has_button_text(game.district_panel, "✕"):
         fail("District overview has no close X")
