@@ -1,0 +1,86 @@
+ func _view_city_map() -> Control:
+     var v = VBoxContainer.new()
+     v.add_theme_constant_override("separation", 14)
+-    v.add_child(_title("Living 3D City", "A denser, animated Godot 3D city with detailed streets, facades, traffic and citizens beneath your banking interface."))
++    v.add_child(_title("Living 3D City", "A living Godot 3D city with export-safe colored facades, traffic, citizens and district activity beneath your banking interface."))
+     var p = _panel_container()
+     p.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+@@ -2285,39 +2397,56 @@ func _send_offer(idx: int, amount: float, rate: float, term: int) -> void:
+     a.offer_amount = amount
+     a.offer_rate = rate
+     a.offer_term = term
+-    a.status = "Negotiation"
++    a.offer_accepted = false
++    a.status = "Awaiting counter-offer response"
+     var base_market = policy.business_rate if a.is_business else (policy.mortgage_rate if a.type == "Mortgage" else (policy.auto_rate if a.type == "Auto Loan" else policy.personal_rate))
+     var price_penalty = max(0.0, rate - base_market) * 0.11
+     var amount_penalty = max(0.0, 1.0 - amount / max(a.amount, 1.0)) * 0.65
+     var affordability_bonus = 0.10 if _monthly_payment(amount, rate, term) < max(1.0, a.disposable) * 0.72 else -0.10
+     var accept_chance = clamp(0.48 + a.urgency * 0.34 + affordability_bonus - price_penalty - amount_penalty - a.pd / 220.0, 0.08, 0.92)
++    a.offer_accept_chance = accept_chance
++    a.offer_response_due_day = _serial_day() + rng.randi_range(1, 3)
++    applications[idx] = a
++    _push_notification("Counter-offer sent", "%s is reviewing your offer of %s at %.2f%% for %d months. You will be notified when they respond." % [a.name, _money(amount), rate, term], "info", int(a.id))
++    _push_news("Counter-offer sent to %s. Applicant response expected within 1–3 days." % a.name)
++    _show_view("Loan Desk")
++
++func _resolve_counter_offer(idx: int) -> void:
++    if idx < 0 or idx >= applications.size():
++        return
++    var a = applications[idx]
++    if int(a.get("offer_response_due_day", 9999999)) > _serial_day():
++        return
++    var accept_chance = float(a.get("offer_accept_chance", 0.5))
+     var roll = rng.randf()
+     if roll < accept_chance:
+         a.status = "Ready for decision"
+         a.offer_accepted = true
++        a.offer_response_due_day = -1
+         applications[idx] = a
+         _create_followup_mail(int(a.id), "%s accepted your counter-offer" % String(a.name), "Thank you for the revised terms. I accept the proposed amount, rate and term. Please send the final decision documents for signature and completion.", [])
++        _push_notification("Counter-offer ACCEPTED", "%s accepted %s at %.2f%% for %d months. Open the Loan Desk to finalize the signed approval." % [a.name, _money(a.offer_amount), float(a.offer_rate), int(a.offer_term)], "success", int(a.id))
+         _push_news("%s accepted the bank's counter-offer. Final approval still requires your signed and stamped decision form." % a.name)
+-        _show_view("Mail")
+         return
+     if roll < min(0.96, accept_chance + 0.30):
+-        a.offer_rate = max(0.0, rate - rng.randf_range(0.2, 0.8))
+-        a.offer_amount = min(a.amount, amount * rng.randf_range(1.03, 1.12))
++        a.offer_rate = max(0.0, float(a.offer_rate) - rng.randf_range(0.2, 0.8))
++        a.offer_amount = min(float(a.amount), float(a.offer_amount) * rng.randf_range(1.03, 1.12))
+         a.status = "Negotiation"
++        a.offer_response_due_day = -1
+         applications[idx] = a
+         _create_followup_mail(int(a.id), "%s sent a counter-offer" % String(a.name), "I cannot accept the current terms as offered. I would like to request the revised amount and rate shown in my response. Please let me know whether the bank can accommodate this structure.", [])
++        _push_notification("Applicant COUNTERED", "%s did not accept your terms and sent revised terms instead. Open Mail or the Loan Desk to review them." % a.name, "warning", int(a.id))
+         _push_news("%s countered the bank's terms instead of accepting immediately." % a.name)
+-        _show_view("Mail")
+         return
+     _remember_interaction(a, "Walked away from a counter-offer.")
+     _push_news("%s rejected the bank's offer and went back to the market." % a.name)
++    _create_followup_mail(int(a.id), "%s declined your counter-offer" % String(a.name), "Thank you for reviewing my application. I have decided not to proceed with the proposed terms and am withdrawing the request.", [])
++    _push_notification("Counter-offer DECLINED", "%s declined your offer and withdrew the application." % a.name, "danger", int(a.id))
+     a.status = "Withdrawn"
+     a.decision_date = _date_string()
+     closed_applications.append(a.duplicate(true))
+-    _create_followup_mail(int(a.id), "%s withdrew the application" % String(a.name), "Thank you for reviewing my application. I have decided not to proceed with the current terms and am withdrawing the request.", [])
+     applications.remove_at(idx)
+     selected_application = -1
+-    _show_view("Loan Desk")
+ 
+ func _verify_application(idx: int) -> void:
+     if idx < 0 or idx >= applications.size():
+@@ -2422,6 +2551,9 @@ func _advance_day() -> void:
+         applications[i].age_days += 1
+         if applications[i].status == "Documents requested":
+             _resolve_requested_documents(i)
++    for i in range(applications.size() - 1, -1, -1):
++        if String(applications[i].get("status", "")) == "Awaiting counter-offer response":
++            _resolve_counter_offer(i)
+     if day > 30:
+         day = 1
+         month += 1
+@@ -3066,7 +3198,9 @@ func _refresh_topbar() -> void:
+     if is_instance_valid(tax_income_label):
+         tax_income_label.text = _money(_monthly_tax_revenue_estimate())
+     if is_instance_valid(notifications_label):
