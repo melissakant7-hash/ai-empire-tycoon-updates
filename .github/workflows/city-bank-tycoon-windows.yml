@@ -49,6 +49,7 @@ jobs:
           grep -q 'config/version="0.6.0"' city_bank_tycoon/project.godot
 
           cat city-bank-v07-patch/part*.patch > v07.patch
+          git apply "$GITHUB_WORKSPACE/city-bank-v07-patch/transport-fix.patch"
           echo "d894e70bc11784769c41028ae57d56c45d71fc8f6284c753acb874c14e004902  v07.patch" | sha256sum -c -
           git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v07.patch"
           grep -q 'config/version="0.7.0"' city_bank_tycoon/project.godot
