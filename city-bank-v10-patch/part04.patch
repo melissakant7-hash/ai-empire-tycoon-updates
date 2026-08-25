@@ -1,0 +1,105 @@
+ax", "transaction_tax", 0.0, 5.0, 0.05]
+-    ]:
++    v.add_child(_title("Taxes & City Budget", "Set the city's tax system and fund public services. Higher taxes raise revenue but change spending, investment, housing and migration."))
++    var revenue = _monthly_tax_revenue_estimate(); var spending = _monthly_city_service_spending_estimate()
++    var summary = GridContainer.new(); summary.columns = 4; summary.add_theme_constant_override("h_separation", 10); summary.add_theme_constant_override("v_separation", 10); v.add_child(summary)
++    for card in [["Monthly revenue", _money(revenue), C_GREEN], ["Service spending", _money(spending), C_BLUE], ["Operating balance", _money(revenue-spending), C_GREEN if revenue >= spending else C_RED], ["Treasury", _money(city.city_budget), C_ACCENT]]:
++        summary.add_child(_metric_card(card[0], card[1], card[2]))
++    v.add_child(_section("Household taxes"))
++    for item in [["Personal income tax", "income_tax", 0.0, 60.0, 0.5], ["Sales tax", "sales_tax", 0.0, 30.0, 0.25], ["Property tax", "property_tax", 0.0, 8.0, 0.1], ["Capital gains tax", "capital_gains_tax", 0.0, 50.0, 0.5], ["Vehicle tax", "vehicle_tax", 0.0, 20.0, 0.25], ["Fuel tax", "fuel_tax", 0.0, 40.0, 0.5], ["Utility tax", "utility_tax", 0.0, 25.0, 0.25]]:
+         v.add_child(_policy_row(item[0], item[1], item[2], item[3], item[4], "%"))
++    v.add_child(_section("Business & investment taxes"))
++    for item in [["Corporate tax", "corporate_tax", 0.0, 50.0, 0.5], ["Payroll tax", "payroll_tax", 0.0, 15.0, 0.25], ["Business license tax", "business_license_tax", 0.0, 15.0, 0.1], ["Financial transaction tax", "transaction_tax", 0.0, 5.0, 0.05], ["Land value tax", "land_value_tax", 0.0, 5.0, 0.05], ["Vacant property tax", "vacant_property_tax", 0.0, 10.0, 0.1]]:
++        v.add_child(_policy_row(item[0], item[1], item[2], item[3], item[4], "%"))
++    v.add_child(_section("Tourism & discretionary taxes"))
++    for item in [["Luxury goods tax", "luxury_tax", 0.0, 40.0, 0.5], ["Tourism tax", "tourism_tax", 0.0, 25.0, 0.25], ["Hotel tax", "hotel_tax", 0.0, 30.0, 0.25]]:
++        v.add_child(_policy_row(item[0], item[1], item[2], item[3], item[4], "%"))
++    v.add_child(_section("Estimated monthly revenue by source"))
++    var breakdown = _tax_revenue_breakdown()
++    var rev_grid = GridContainer.new(); rev_grid.columns = 3; rev_grid.add_theme_constant_override("h_separation", 8); rev_grid.add_theme_constant_override("v_separation", 8); v.add_child(rev_grid)
++    for key in breakdown.keys(): rev_grid.add_child(_metric_card(String(key), _money(float(breakdown[key])), C_TEXT))
+     return scroll
+ 
+ func _view_city() -> Control:
+@@ -2055,7 +2243,10 @@ func _view_city() -> Control:
+         ["Unemployment", "%.2f%%" % city.unemployment, C_TEXT], ["Inflation", "%.2f%%" % city.inflation, C_TEXT], ["Median salary", _money(city.median_salary), C_TEXT],
+         ["Average home", _money(city.housing_price), C_TEXT], ["Average rent", _money(city.avg_rent), C_TEXT], ["Businesses", _fmt_int(city.businesses), C_TEXT],
+         ["Poverty", "%.1f%%" % city.poverty, C_TEXT], ["Inequality index", "%.1f" % city.inequality, C_TEXT], ["Happiness", "%.0f / 100" % city.happiness, _score_color(city.happiness)],
+-        ["City budget", _money(city.city_budget), C_GREEN], ["City debt", _money(city.city_debt), C_RED], ["Crime index", "%.1f" % city.crime, C_TEXT]
++        ["City budget", _money(city.city_budget), C_GREEN], ["City debt", _money(city.city_debt), C_RED], ["Crime index", "%.1f" % city.crime, C_TEXT],
++        ["Health", "%.0f / 100" % city.health, _score_color(city.health)], ["Education", "%.0f / 100" % city.education, _score_color(city.education)], ["Fire safety", "%.0f / 100" % city.fire_safety, _score_color(city.fire_safety)],
++        ["Transit", "%.0f / 100" % city.transit_quality, _score_color(city.transit_quality)], ["Infrastructure", "%.0f / 100" % city.infrastructure, _score_color(city.infrastructure)], ["Cleanliness", "%.0f / 100" % city.cleanliness, _score_color(city.cleanliness)],
++        ["Traffic", "%.0f / 100" % city.traffic, C_GREEN if city.traffic < 45 else C_RED], ["Homelessness", "%.2f%%" % city.homelessness, C_GREEN if city.homelessness < 2.5 else C_RED], ["Healthcare cost", "%s/mo" % _money(city.healthcare_cost_monthly), C_GREEN if city.healthcare_cost_monthly < 50 else C_TEXT]
+     ]:
+         grid.add_child(_metric_card(card[0], card[1], card[2]))
+     v.add_child(_section("What is currently pressuring the city?"))
+@@ -2082,17 +2273,6 @@ func _view_city_map() -> Control:
+     v.add_child(status)
+     return v
+ 
+-func _view_competitors() -> Control:
+-    var v = VBoxContainer.new(); v.add_theme_constant_override("separation", 16)
+-    v.add_child(_title("Competing Banks", "Customers compare your pricing and can move their deposits elsewhere."))
+-    for c in competitors:
+-        var p = _panel_container(); v.add_child(p)
+-        var h = HBoxContainer.new(); p.add_child(h)
+-        var name = Label.new(); name.text = c.name; name.custom_minimum_size.x = 250; name.add_theme_color_override("font_color", C_TEXT); name.add_theme_font_size_override("font_size", 18); h.add_child(name)
+-        for txt in ["Mortgage %.2f%%" % c.mortgage, "Business %.2f%%" % c.business, "Savings %.2f%%" % c.savings, "Fee %s" % _money(c.fee), "Share %.1f%%" % c.share]:
+-            var l = Label.new(); l.text = txt; l.custom_minimum_size.x = 150; l.add_theme_color_override("font_color", C_MUTED); h.add_child(l)
+-    return v
+-
+ func _view_news() -> Control:
+     var scroll = ScrollContainer.new(); scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 12); scroll.add_child(v)
+@@ -2706,9 +2886,8 @@ func _simulate_month() -> void:
+     bank.monthly_losses = losses
+ 
+     var fee_pressure = policy.monthly_account_fee / 12.0 + policy.atm_fee / 5.0 + policy.overdraft_fee / 50.0 + policy.transfer_fee / 3.0
+-    var competitor_pressure = _competitor_pressure()
+     var satisfaction_effect = (bank.satisfaction - 60.0) * 0.00004
+-    var customer_growth_pct = 0.0025 + (policy.savings_rate - 2.0) * 0.0012 - fee_pressure * 0.0018 - competitor_pressure * 0.001 + satisfaction_effect
++    var customer_growth_pct = 0.0025 + (policy.savings_rate - 2.0) * 0.0012 - fee_pressure * 0.0018 + satisfaction_effect
+     var customer_change = int(bank.customers * customer_growth_pct)
+     bank.customers = max(1000, bank.customers + customer_change)
+     var deposits_change = bank.deposits * (customer_growth_pct * 0.7 + rng.randf_range(-0.002, 0.004))
+@@ -2721,43 +2900,72 @@ func _simulate_month() -> void:
+     var income_tax_drag = max(0.0, policy.income_tax - 18.0) * 0.035
+     var corp_tax_drag = max(0.0, policy.corporate_tax - 20.0) * 0.05
+     var sales_drag = max(0.0, policy.sales_tax - 8.0) * 0.045
++    var payroll_drag = max(0.0, policy.payroll_tax - 1.5) * 0.055
++    var fuel_drag = max(0.0, policy.fuel_tax - 6.0) * 0.010
+     var lending_drag = max(0.0, policy.business_rate - 6.0) * 0.12 + max(0.0, policy.mortgage_rate - 5.0) * 0.10
+     var low_tax_boost = max(0.0, 18.0 - policy.income_tax) * 0.015 + max(0.0, 20.0 - policy.corporate_tax) * 0.025
++    var service_productivity = (float(government.education_budget) - 100.0) * 0.012 + (float(government.roads_budget) - 100.0) * 0.008 + (float(government.transit_budget) - 100.0) * 0.007 + (float(government.healthcare_budget) - 100.0) * 0.003
+     var active_business_ratio = float(_active_business_count()) / max(1.0, float(businesses.size()))
+-    var monthly_growth = (2.3 + low_tax_boost - income_tax_drag - corp_tax_drag - sales_drag - lending_drag + (active_business_ratio - 0.90) * 4.0) / 12.0 / 100.0
+-    monthly_growth += rng.randf_range(-0.0025, 0.0025)
++    var annual_growth = 2.3 + low_tax_boost + service_productivity - income_tax_drag - corp_tax_drag - sales_drag - payroll_drag - fuel_drag - lending_drag + (active_business_ratio - 0.90) * 4.0
++    var monthly_growth = annual_growth / 12.0 / 100.0 + rng.randf_range(-0.0025, 0.0025)
+     city.gdp *= 1.0 + monthly_growth
+     city.gdp_growth = monthly_growth * 12.0 * 100.0
+ 
+-    city.unemployment = clamp(city.unemployment - city.gdp_growth * 0.025 + corp_tax_drag * 0.12 + (1.0 - active_business_ratio) * 0.7 + rng.randf_range(-0.08, 0.08), 1.5, 28.0)
+-    city.inflation = clamp(city.inflation + max(0.0, 4.0 - policy.mortgage_rate) * 0.03 + max(0.0, 5.0 - policy.business_rate) * 0.025 - max(0.0, policy.sales_tax - 10.0) * 0.01 + rng.randf_range(-0.08, 0.08), -1.5, 18.0)
+-    var migration_rate = 0.0015 + city.gdp_growth * 0.00008 - city.unemployment * 0.00008 - max(0.0, policy.income_tax - 25.0) * 0.00005 - fee_pressure * 0.00015
++    var service_jobs = max(0.0, float(government.healthcare_budget + government.education_budget + government.transit_budget + government.police_budget) - 400.0) * 0.002
++    city.unemployment = clamp(city.unemployment - city.gdp_growth * 0.025 + corp_tax_drag * 0.12 + payroll_drag * 0.08 + (1.0 - active_business_ratio) * 0.7 - service_jobs + rng.randf_range(-0.08, 0.08), 1.5, 28.0)
++    city.inflation = clamp(city.inflation + max(0.0, 4.0 - policy.mortgage_rate) * 0.03 + max(0.0, 5.0 - policy.business_rate) * 0.025 - max(0.0, policy.sales_tax - 10.0) * 0.01 + float(government.healthcare_subsidy + government.transit_subsidy) * 0.0007 + rng.randf_range(-0.08, 0.08), -1.5, 18.0)
++    var public_quality = (city.health + city.education + city.infrastructure + city.transit_quality + city.cleanliness) / 5.0
++    var migration_rate = 0.0012 + city.gdp_growth * 0.00008 - city.unemployment * 0.00008 - max(0.0, policy.income_tax - 25.0) * 0.00005 + (public_quality - 65.0) * 0.000015 - fee_pressure * 0.00015
+     city.population = max(50000.0, city.population * (1.0 + migration_rate))
+-    city.businesses = max(1000, int(city.businesses * (1.0 + city.gdp_growth / 100.0 / 24.0 - max(0.0, policy.corporate_tax - 25.0) * 0.0004)))
+-    city.median_salary *= 1.0 + (city.inflation / 100.0 / 12.0) * 0.65 + max(0.0, city.gdp_growth) / 100.0 / 18.0
++    city.businesses = max(1000, int(city.businesses * (1.0 + city.gdp_growth / 100.0 / 24.0 - max(0.0, policy.corporate_tax - 25.0) * 0.0004 - max(0.0, policy.payroll_tax - 4.0) * 0.0003 + max(0.0, city.infrastructure - 70.0) * 0.00004)))
++    city.median_salary *= 1.0 + (city.inflation / 100.0 / 12.0) * 0.65 + max(0.0, city.gdp_growth) / 100.0 / 18.0 + max(0.0, city.education - 70.0) * 0.00006
+ 
+     var credit_supply = max(0.2, (100.0 - policy.mortgage_max_ltv) * -0.012 + 1.0) + max(0.0, 700.0 - policy.mortgage_min_score) * 0.0008
+-    var house_demand = 0.002 + migration_rate * 0.7 - max(0.0, policy.mortgage_rate - 4.5) * 0.0011 - max(0.0, policy.property_tax - 1.2) * 0.002 + credit_supply * 0.0004
++    var house_demand = 0.002 + migration_rate * 0.7 - max(0.0, policy.mortgage_rate - 4.5) * 0.0011 - max(0.0, policy.property_tax - 1.2) * 0.002 - max(0.0, policy.land_value_tax - 1.0) * 0.0005 + credit_supply * 0.0004
+     city.housing_price = max(65000.0, city.housing_price * (1.0 + house_demand + rng.randf_range(-0.003, 0.003)))
+-    city.avg_rent = max(350.0, city.avg_rent * (1.0 + house_demand * 0.45 + city.inflation / 100.0 / 24.0))
+-    var construction_rate = clamp(max(0.0, house_demand) * 0.35 + max(0.0, city.gdp_growth) * 0.0004, -0.003, 0.012)
++    city.avg_rent = max(350.0, city.avg_rent * (1.0 + house_demand * 0.45 + city.inflation / 100.0 / 24.0 - max(0.0, float(government.housing_support_budget) - 100.0) * 0.00005))
++    var construction_rate = clamp(max(0.0, house_demand) * 0.35 + max(0.0, city.gdp_growth) * 0.0004 + max(0.0, float(government.housing_support_budget) - 100.0) * 0.000015, -0.003, 0.012)
+     city.housing_supply = max(10000.0, city.housing_supply * (1.0 + construction_rate))
+     city.housing_vacancy = clamp(city.housing_vacancy + construction_rate * 
