@@ -1,0 +1,140 @@
++            if String(loan.get("collateral", "None")) == "None" or float(loan.get("collateral_value", 0.0)) <= 0.0:
++                return {"allowed": false, "reason": "This loan has no enforceable collateral."}
++            if int(loan.get("delinquency", 0)) < 3 and String(loan.get("status", "")) != "Defaulted":
++                return {"allowed": false, "reason": "Collateral enforcement notice requires at least 90 days delinquency or default."}
++            return {"allowed": true, "reason": "Prepare a formal notice before collateral enforcement."}
++    return {"allowed": false, "reason": "Unavailable."}
++
++func _loan_document_filename(action_name: String, loan: Dictionary) -> String:
++    var suffix = "%04d-%02d-%02d" % [year, month, day]
++    match action_name:
++        "payment_statement": return "Loan Account Statement - %s.pdf" % suffix
++        "payment_demand": return "Formal Payment Demand - %s.pdf" % suffix
++        "payoff_quote": return "Payoff Quote - %s.pdf" % suffix
++        "restructure_agreement": return "Loan Restructure Agreement - %s.pdf" % suffix
++        "acceleration_notice": return "Notice of Acceleration - %s.pdf" % suffix
++        "collateral_notice": return "Collateral Enforcement Notice - %s.pdf" % suffix
++    return "Loan Servicing Document - %s.pdf" % suffix
++
++func _prepare_loan_servicing_document(idx: int, action_name: String) -> void:
++    if idx < 0 or idx >= loans.size():
++        return
++    _ensure_loan_servicing_state(idx)
++    var loan = loans[idx]
++    var availability = _loan_servicing_action_availability(loan, action_name)
++    if not bool(availability.allowed):
++        _push_notification("Action unavailable", String(availability.reason), "warning", -1)
++        return
++    var seq = int(loan.get("servicing_sequence", 0)) + 1
++    loan["servicing_sequence"] = seq
++    var delinquency = max(0, int(loan.get("delinquency", 0)))
++    var interest_due = float(loan.balance) * float(loan.rate) / 100.0 / 12.0
++    var arrears = min(float(loan.balance) + interest_due, float(loan.monthly_payment) * float(max(1, delinquency)))
++    var payoff = float(loan.balance) + interest_due
++    var new_rate = max(0.5, float(loan.rate) - 0.65)
++    var new_term = int(loan.months_left) + 18
++    var new_payment = _monthly_payment(float(loan.balance), new_rate, new_term)
++    var doc = {
++        "id": seq,
++        "name": _loan_document_filename(action_name, loan),
++        "kind": action_name,
++        "status": "Draft",
++        "opened": false,
++        "signed": false,
++        "stamp": "",
++        "signature_points": [],
++        "sent": false,
++        "created_date": _date_string(),
++        "amount_due": float(loan.monthly_payment),
++        "arrears_amount": arrears,
++        "payoff_amount": payoff,
++        "new_rate": new_rate,
++        "new_term": new_term,
++        "new_payment": new_payment,
++        "reason": "Serious payment delinquency" if action_name == "acceleration_notice" else ("Contractual arrears" if action_name in ["payment_demand", "collateral_notice"] else "Routine loan servicing")
++    }
++    var docs: Array = loan.get("servicing_documents", [])
++    docs.append(doc)
++    loan["servicing_documents"] = docs
++    loans[idx] = loan
++    _push_notification("Document created", "%s was added to %s's loan file. Open, sign and stamp it before sending." % [String(doc.name), String(loan.borrower)], "info", -1)
++    _show_view("Current Loans")
++
++func _loan_document_context(loan: Dictionary, doc: Dictionary) -> Dictionary:
++    return {
++        "id": int(loan.get("id", 0)),
++        "case_id": "LOAN-%06d" % int(loan.get("id", 0)),
++        "name": String(loan.get("borrower", "Borrower")),
++        "borrower": String(loan.get("borrower", "Borrower")),
++        "type": String(loan.get("type", "Loan")),
++        "amount": float(loan.get("original_principal", loan.get("balance", 0.0))),
++        "balance": float(loan.get("balance", 0.0)),
++        "rate": float(loan.get("rate", 0.0)),
++        "monthly_payment": float(loan.get("monthly_payment", 0.0)),
++        "months_left": int(loan.get("months_left", 0)),
++        "term": int(loan.get("term", 0)),
++        "status": String(loan.get("status", "Current")),
++        "delinquency": int(loan.get("delinquency", 0)),
++        "collateral": String(loan.get("collateral", "None")),
++        "collateral_value": float(loan.get("collateral_value", 0.0)),
++        "received_label": String(doc.get("created_date", _date_string())),
++        "payment_history": loan.get("payment_history", []),
++        "is_business": bool(loan.get("is_business", false))
++    }
++
++func _open_loan_servicing_document(loan_idx: int, doc_idx: int) -> void:
++    _close_loan_document_modal(false)
++    if loan_idx < 0 or loan_idx >= loans.size():
++        return
++    _ensure_loan_servicing_state(loan_idx)
++    var loan = loans[loan_idx]
++    var docs: Array = loan.get("servicing_documents", [])
++    if doc_idx < 0 or doc_idx >= docs.size():
++        return
++    var doc = docs[doc_idx]
++    doc["opened"] = true
++    docs[doc_idx] = doc
++    loan["servicing_documents"] = docs
++    loans[loan_idx] = loan
++    active_loan_document_loan_index = loan_idx
++    active_loan_document_index = doc_idx
++
++    var overlay = ColorRect.new()
++    overlay.color = Color(0.0, 0.0, 0.0, 0.78)
++    overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
++    overlay.mouse_filter = Control.MOUSE_FILTER_STOP
++    add_child(overlay)
++    active_loan_document_modal = overlay
++
++    var shell = PanelContainer.new()
++    shell.set_anchors_preset(Control.PRESET_CENTER)
++    shell.position = Vector2(-520, -410)
++    shell.size = Vector2(1040, 820)
++    shell.add_theme_stylebox_override("panel", _panel_style(Color("111820"), 10, Color("344554")))
++    overlay.add_child(shell)
++    var v = VBoxContainer.new(); v.add_theme_constant_override("separation", 8); shell.add_child(v)
++
++    var toolbar = HBoxContainer.new(); toolbar.add_theme_constant_override("separation", 8); v.add_child(toolbar)
++    var pdf = Label.new(); pdf.text = "PDF"; pdf.custom_minimum_size = Vector2(46, 32); pdf.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; pdf.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; pdf.add_theme_color_override("font_color", Color.WHITE); pdf.add_theme_stylebox_override("normal", _panel_style(Color("b3261e"), 5, Color.TRANSPARENT)); toolbar.add_child(pdf)
++    var title = Label.new(); title.text = String(doc.name); title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; title.add_theme_font_size_override("font_size", 14); title.add_theme_color_override("font_color", C_TEXT); toolbar.add_child(title)
++    var close = _hud_button("✕", 38); close.pressed.connect(func(): _close_loan_document_modal(true)); toolbar.add_child(close)
++
++    var tools = HBoxContainer.new(); tools.add_theme_constant_override("separation", 8); v.add_child(tools)
++    var state = Label.new(); state.text = "%s • %s" % [String(doc.get("status", "Draft")), "SENT" if bool(doc.get("sent", false)) else "not sent"]; state.size_flags_horizontal = Control.SIZE_EXPAND_FILL; state.add_theme_color_override("font_color", C_MUTED); tools.add_child(state)
++    var sign = _button("✍ Sign", 88); sign.disabled = bool(doc.get("sent", false)); sign.pressed.connect(_open_loan_signature_pad); tools.add_child(sign)
++    var issue = _button("ISSUED", 92); issue.disabled = bool(doc.get("sent", false)); issue.pressed.connect(func(): _set_active_loan_document_stamp("ISSUED")); tools.add_child(issue)
++    var void_b = _hud_button("VOID", 80); void_b.disabled = bool(doc.get("sent", false)); void_b.pressed.connect(func(): _set_active_loan_document_stamp("VOID")); tools.add_child(void_b)
++    var send = _button("Send to borrower", 150); send.disabled = bool(doc.get("sent", false)); send.pressed.connect(_send_active_loan_document); tools.add_child(send)
++
++    var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; v.add_child(scroll)
++    var center = CenterContainer.new(); center.size_flags_horizontal = Control.SIZE_EXPAND_FILL; center.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.add_child(center)
++    var paper = DocumentPaper.new(); paper.name = "LoanDocumentPaper"; paper.custom_minimum_size = Vector2(760, 980); paper.configure(_loan_document_context(loan, doc), doc); center.add_child(paper)
++
++func _refresh_active_loan_document() -> void:
++    if not is_instance_valid(active_loan_document_modal):
++        return
++    if active_loan_document_loan_index < 0 or active_loan_document_loan_index >= loans.size():
++        return
++    var loan = loans[active_loan_document_loan_index]
++    var docs: Array = loan.get("servicing_documents", [])
++    if active_loan_document_index < 0 or active_loan_document_index >= docs.size():
