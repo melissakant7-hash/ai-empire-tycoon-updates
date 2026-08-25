@@ -1,0 +1,92 @@
+      _box(detail_root, Vector3(0.12, 2.0, 0.12), p + Vector3(-1.0,1.0,0), Color("38444c"), "BusStopPole")
++        _box(detail_root, Vector3(0.8, 0.55, 0.12), p + Vector3(-1.0,1.9,0), Color("4c9b70"), "BusStopSign")
++
++func _add_parking_lots() -> void:
++    for center_uv in [Vector2(0.69,0.57), Vector2(0.43,0.83), Vector2(0.91,0.82)]:
++        var c = _norm_to_world(center_uv, 0.12)
++        _box(detail_root, Vector3(9.0,0.09,6.0), c, Color("454b4f"), "ParkingLot")
++        for row in range(3):
++            _box(detail_root, Vector3(8.0,0.03,0.08), c + Vector3(0,0.07,-2.0 + float(row)*2.0), Color("d1d1c9"), "ParkingLine")
++
++func _add_construction_sites() -> void:
++    for uv in [Vector2(0.67,0.34), Vector2(0.53,0.83), Vector2(0.32,0.42)]:
++        var base = _norm_to_world(uv, 0.13)
++        _box(detail_root, Vector3(7.5,0.12,6.5), base, Color("8b7650"), "ConstructionSite")
++        var mast = _box(detail_root, Vector3(0.35,12.0,0.35), base + Vector3(-2.5,6.0,0), Color("d2a53c"), "CraneMast", 0.7, 0.2)
++        _box(mast, Vector3(8.0,0.28,0.28), Vector3(3.5,5.5,0), Color("d2a53c"), "CraneBoom", 0.7, 0.2)
++
+ func _seed_traffic() -> void:
+     cars.clear()
+     var colors = [Color("dbe6ef"), Color("b94c4c"), Color("3e7cab"), Color("202933"), Color("d69f47"), Color("6b7886"), Color("f1f1ec"), Color("5c8b67")]
+-    for i in range(118):
++    for i in range(132):
++        var ix = rng.randi_range(0, road_xs.size() - 1)
++        var iy = rng.randi_range(0, road_ys.size() - 1)
++        var is_bus = i % 14 == 0
++        var next = _pick_neighbor(ix, iy, -1, -1, is_bus)
++        var node = _create_vehicle(colors[i % colors.size()], is_bus, i % 37 == 0)
++        vehicle_root.add_child(node)
++        cars.append({"node":node, "ix":ix, "iy":iy, "nx":next.x, "ny":next.y, "px":-1, "py":-1, "progress":rng.randf(), "speed":0.22 + rng.randf_range(0.0,0.16), "bus":is_bus})
++
++func _create_vehicle(color: Color, bus: bool, service: bool) -> Node3D:
++    var root = Node3D.new()
++    root.name = "Bus3D" if bus else ("ServiceVehicle3D" if service else "Car3D")
++    var length = 4.4 if bus else 2.25
++    var width = 1.45 if bus else 1.15
++    var body_color = Color("4da06f") if bus else (Color("d7b24f") if service else color)
++    _box(root, Vector3(width, 0.72, length), Vector3(0,0.52,0), body_color, "VehicleBody", 0.52, 0.18)
++    _box(root, Vector3(width*0.78, 0.48, length*0.44), Vector3(0,1.05,-length*0.06), body_color.lightened(0.10), "VehicleCab", 0.45, 0.15)
++    var glass = Color("85a9bb")
++    _box(root, Vector3(width*0.65,0.28,0.08), Vector3(0,1.08,-length*0.285), glass, "Windshield", 0.18, 0.1)
++    return root
++
++func _seed_pedestrians() -> void:
++    pedestrians.clear()
++    var clothing = [Color("557aa2"), Color("ab5e54"), Color("617d5c"), Color("8e6c9c"), Color("c49a4d"), Color("4e5965")]
++    for i in range(460):
+         var ix = rng.randi_range(0, road_xs.size() - 1)
+         var iy = rng.randi_range(0, road_ys.size() - 1)
+-        var next = _pick_neighbor(ix, iy, -1, -1, i % 12 == 0)
+-        cars.append({
+-            "ix": ix, "iy": iy, "nx": next.x, "ny": next.y,
+-            "px": -1, "py": -1,
+-            "progress": rng.randf(),
+-            "speed": 0.26 + rng.randf_range(0.0, 0.18),
+-            "color": Color("4c9b70") if i % 12 == 0 else colors[i % colors.size()],
+-            "bus": i % 12 == 0,
+-            "service": i % 29 == 0
+-        })
++        var target = Vector2i(rng.randi_range(0, road_xs.size() - 1), rng.randi_range(0, road_ys.size() - 1))
++        var next = _pedestrian_next(ix, iy, target.x, target.y)
++        var node = _create_citizen(clothing[i % clothing.size()], i)
++        pedestrian_root.add_child(node)
++        pedestrians.append({"node":node, "ix":ix, "iy":iy, "nx":next.x, "ny":next.y, "tx":target.x, "ty":target.y, "progress":rng.randf(), "speed":0.055 + rng.randf_range(0.0,0.055), "side":-1.0 if i%2==0 else 1.0, "purpose":["work","shopping","home","leisure"][i%4]})
++
++func _create_citizen(color: Color, index: int) -> Node3D:
++    var root = Node3D.new()
++    root.name = "Citizen3D_%03d" % index
++    var body_mesh = CapsuleMesh.new()
++    body_mesh.radius = 0.24
++    body_mesh.height = 1.35
++    var body = MeshInstance3D.new()
++    body.mesh = body_mesh
++    body.position.y = 0.78
++    body.material_override = _material(color, 0.9)
++    root.add_child(body)
++    var head_mesh = SphereMesh.new()
++    head_mesh.radius = 0.21
++    head_mesh.height = 0.42
++    var head = MeshInstance3D.new()
++    head.mesh = head_mesh
++    head.position.y = 1.58
++    head.material_override = _material(Color("c89773").lightened(float(index % 5) * 0.025 - 0.05), 0.9)
++    root.add_child(head)
++    return root
+ 
+ func _pick_neighbor(ix: int, iy: int, prev_x: int, prev_y: int, bus: bool = false) -> Vector2i:
+     var candidates: Array[Vector2i] = []
+@@ -143,45 +482,30 @@
+     if bus:
+         var main_candidates: Array[Vector2i] = []
+         for c in candidates:
+-            if c.x in [1, 3, 5, 6] o
