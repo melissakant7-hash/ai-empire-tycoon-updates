@@ -1,0 +1,162 @@
+dit_card_rate", 0.0, 45.0, 0.1]
+-    ]:
++    var loan_rate_items = [
++        ["Personal loans", "personal_rate", 0.0, 30.0, 0.1],
++        ["Mortgages", "mortgage_rate", 0.0, 20.0, 0.1],
++        ["Business loans", "business_rate", 0.0, 25.0, 0.1],
++        ["Credit cards", "credit_card_rate", 0.0, 45.0, 0.1]
++    ]
++    if auto_enabled:
++        loan_rate_items.insert(2, ["Auto loans", "auto_rate", 0.0, 25.0, 0.1])
++    for item in loan_rate_items:
+         v.add_child(_policy_row(item[0], item[1], item[2], item[3], item[4], "%"))
+     v.add_child(_section("Deposits & Service Fees"))
+     for item in [
+@@ -1795,6 +1888,16 @@
+     var hint = Label.new(); hint.text = "Policy effects are evaluated continuously. Extreme loan rates increase default risk and reduce demand; excessive fees reduce customer satisfaction and can move deposits to competitors."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; hint.add_theme_color_override("font_color", C_MUTED); v.add_child(hint)
+     return scroll
+ 
++
++func _set_auto_loans_enabled(enabled: bool) -> void:
++    policy["auto_loans_enabled"] = enabled
++    if enabled:
++        _push_news("Auto lending product enabled. New vehicle-finance applications can now enter the Mail inbox.")
++    else:
++        _push_news("Auto lending product disabled. No new auto-loan applications will be generated; existing cases remain in review.")
++    _show_view("Bank Policies")
++    _refresh_city_hud()
++
+ func _view_taxes() -> Control:
+     var scroll = ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     var v = VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; v.add_theme_constant_override("separation", 14); scroll.add_child(v)
+@@ -2002,8 +2105,11 @@
+                 applicant_status = "Freelancer"
+             elif status_roll < 0.26:
+                 applicant_status = "Contract Worker"
+-        var types = ["Personal Loan", "Auto Loan", "Mortgage", "Home Renovation", "Debt Consolidation", "Emergency Loan"]
+-        var purposes = ["Personal project", "Vehicle purchase", "Purchase a home", "Renovate current home", "Consolidate debt", "Unexpected household expense"]
++        var types = ["Personal Loan", "Mortgage", "Home Renovation", "Debt Consolidation", "Emergency Loan"]
++        var purposes = ["Personal project", "Purchase a home", "Renovate current home", "Consolidate debt", "Unexpected household expense"]
++        if bool(policy.get("auto_loans_enabled", false)):
++            types.append("Auto Loan")
++            purposes.append("Vehicle purchase")
+         var index = rng.randi_range(0, types.size() - 1)
+         var loan_type = types[index]
+         var purpose = purposes[index]
+@@ -3005,6 +3111,8 @@
+     bank = parsed.get("bank", bank)
+     city = parsed.get("city", city)
+     policy = parsed.get("policy", policy)
++    if not policy.has("auto_loans_enabled"):
++        policy["auto_loans_enabled"] = false
+     applications = parsed.get("applications", applications)
+     loans = parsed.get("loans", loans)
+     customers = parsed.get("customers", customers)
+--- a/scripts/city_map.gd
++++ b/scripts/city_map.gd
+@@ -1,7 +1,5 @@
+ extends Control
+ 
+-const CITY_TEXTURE = preload("res://assets/city_reference_world.jpg")
+-
+ signal district_selected(district_name: String)
+ 
+ var economy: Dictionary = {}
+@@ -11,6 +9,10 @@
+ var pedestrians: Array[Dictionary] = []
+ var selected_district = "Riverside District"
+ var hovered_district = ""
++var view_zoom = 1.0
++var view_pan = Vector2.ZERO
++var panning = false
++var last_pan_mouse = Vector2.ZERO
+ 
+ const ROAD = Color("2a3139")
+ const ROAD_EDGE = Color("4b535d")
+@@ -53,7 +55,7 @@
+ func _seed_traffic() -> void:
+     cars.clear()
+     var colors = [Color("dbe6ef"), Color("b94c4c"), Color("3e7cab"), Color("202933"), Color("d69f47"), Color("6b7886"), Color("f1f1ec"), Color("5c8b67")]
+-    for i in range(58):
++    for i in range(82):
+         cars.append({
+             "horizontal": i % 3 != 0,
+             "lane": [0.465, 0.745, 0.315][i % 3] if i % 3 != 0 else [0.24, 0.485, 0.73, 0.915][i % 4],
+@@ -66,7 +68,7 @@
+ 
+ func _seed_pedestrians() -> void:
+     pedestrians.clear()
+-    for i in range(210):
++    for i in range(280):
+         pedestrians.append({
+             "zone": i % 5,
+             "t": fmod(float(i) * 0.037, 1.0),
+@@ -84,21 +86,57 @@
+ 
+ func _gui_input(event: InputEvent) -> void:
+     if event is InputEventMouseMotion:
+-        hovered_district = _district_at(event.position)
+-        queue_redraw()
+-    elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+-        var found = _district_at(event.position)
+-        if found != "":
+-            selected_district = found
+-            district_selected.emit(found)
++        if panning:
++            view_pan += event.position - last_pan_mouse
++            last_pan_mouse = event.position
++            queue_redraw()
++        else:
++            hovered_district = _district_at(event.position)
+             queue_redraw()
++    elif event is InputEventMouseButton:
++        if event.button_index == MOUSE_BUTTON_MIDDLE:
++            panning = event.pressed
++            last_pan_mouse = event.position
++            accept_event()
++            return
++        if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
++            _zoom_at(event.position, 1.12)
++            accept_event()
++            return
++        if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
++            _zoom_at(event.position, 1.0 / 1.12)
++            accept_event()
++            return
++        if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
++            var found = _district_at(event.position)
++            if found != "":
++                selected_district = found
++                district_selected.emit(found)
++                queue_redraw()
++
++func _zoom_at(screen_pos: Vector2, factor: float) -> void:
++    var old_zoom = view_zoom
++    view_zoom = clamp(view_zoom * factor, 1.0, 2.25)
++    if is_equal_approx(old_zoom, view_zoom):
++        return
++    var world_before = (screen_pos - view_pan) / old_zoom
++    view_pan = screen_pos - world_before * view_zoom
++    var s = get_rect().size
++    var min_pan = s * (1.0 - view_zoom)
++    view_pan.x = clamp(view_pan.x, min_pan.x, 0.0)
++    view_pan.y = clamp(view_pan.y, min_pan.y, 0.0)
++    queue_redraw()
++
++func _screen_to_world(pos: Vector2) -> Vector2:
++    return (pos - view_pan) / view_zoom
+ 
+ func _district_at(pos: Vector2) -> String:
++    var world_pos = _screen_to_world(pos)
+     var s = get_rect().size
+     for d in districts:
+         var r = d.rect
+         var actual = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
+-        if actual.has_point(pos):
++        if actual.has_point(world_pos):
+             return d.name
+     return ""
+ 
+@@ -107,14 +145,109 @@
+     if s.x < 20.0 or s.y < 20.0:
+       
