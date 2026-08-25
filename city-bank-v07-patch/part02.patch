@@ -1,0 +1,92 @@
+or ix in range(road_xs.size()):
++        for iy in range(road_ys.size()):
++            if (ix + iy) % 2 == 0:
++                _add_crosswalk(ix, iy)
++            if (ix * 3 + iy) % 4 == 0:
++                _add_traffic_light(ix, iy)
++
++func _add_crosswalk(ix: int, iy: int) -> void:
++    var p = _road_point(ix, iy)
++    for stripe in range(-3, 4):
++        _box(detail_root, Vector3(0.38, 0.03, 2.2), p + Vector3(float(stripe) * 0.62, 0.22, -2.5), Color("d8d9d4"), "Crosswalk")
++
++func _add_traffic_light(ix: int, iy: int) -> void:
++    var p = _road_point(ix, iy)
++    var pole = _box(detail_root, Vector3(0.15, 2.8, 0.15), p + Vector3(3.3, 1.45, 3.3), Color("31383c"), "TrafficLightPole", 0.7, 0.2)
++    pole.rotation.y = 0.0
++    var signal = _box(detail_root, Vector3(0.42, 0.95, 0.38), p + Vector3(3.3, 2.75, 3.3), Color("20272b"), "TrafficSignal", 0.65, 0.15)
++    var light_color = Color("e45b4f") if (ix + iy) % 3 == 0 else Color("60c77d")
++    var lamp = _box(signal, Vector3(0.18, 0.18, 0.08), Vector3(0, 0.15, -0.22), light_color, "SignalLamp")
++    lamp.material_override = _material(light_color, 0.4, 0.0, light_color)
++
+ func _seed_buildings() -> void:
+     buildings.clear()
+     for district_index in range(districts.size()):
+         var d = districts[district_index]
++        var rect: Rect2 = d.rect
+         var count = int(d.density)
+-        var cols = 5 if d.rect.size.x < 0.24 else 7
++        var cols = 5 if rect.size.x < 0.24 else 7
+         var rows = int(ceil(float(count) / float(cols)))
+         for i in range(count):
+             var col = i % cols
+             var row = int(i / cols)
+             var h1 = float((i * 47 + int(d.seed) * 13) % 100) / 100.0
+             var h2 = float((i * 31 + int(d.seed) * 29) % 100) / 100.0
+-            var cell_u = 1.0 / float(cols)
+-            var cell_v = 1.0 / float(max(1, rows))
+-            var u = float(col) * cell_u + cell_u * (0.10 + h2 * 0.07)
+-            var v = float(row) * cell_v + cell_v * (0.12 + h1 * 0.06)
+-            var bw = cell_u * (0.52 + h1 * 0.18)
+-            var bh = cell_v * (0.48 + h2 * 0.20)
+-            buildings.append({
+-                "district": district_index,
+-                "u": u, "v": v, "w": bw, "h": bh,
+-                "seed": h1,
+-                "height": _building_height_for_district(String(d.name), h2),
+-                "kind": _building_kind_for_district(String(d.name), i),
+-                "occupied": 0.78 + h2 * 0.22
+-            })
++            var cell_u = rect.size.x / float(cols)
++            var cell_v = rect.size.y / float(max(1, rows))
++            var u = rect.position.x + float(col) * cell_u + cell_u * (0.18 + h2 * 0.05)
++            var v = rect.position.y + float(row) * cell_v + cell_v * (0.18 + h1 * 0.05)
++            var bw = max(3.8, cell_u * WORLD_WIDTH * (0.52 + h1 * 0.12))
++            var bd = max(3.5, cell_v * WORLD_DEPTH * (0.50 + h2 * 0.12))
++            var kind = _building_kind_for_district(String(d.name), i)
++            var height_factor = _building_height_for_district(String(d.name), h2)
++            var height = _height_for_kind(kind) * height_factor
++            var pos = Vector3(_world_x(u + cell_u * 0.34), height * 0.5 + 0.22, _world_z(v + cell_v * 0.34))
++            var base_color = _building_color(kind, district_index, h1)
++            var body = _box(building_root, Vector3(bw, height, bd), pos, base_color, "%s_%03d" % [String(d.name).replace(" ", "_"), i], 0.76, 0.04 if kind == "office" else 0.0)
++            var roof_h = 0.45 if height < 11.0 else 0.8
++            _box(body, Vector3(bw * 0.42, roof_h, bd * 0.45), Vector3(0, height * 0.5 + roof_h * 0.5, 0), base_color.lightened(0.08), "Roof")
++            if kind == "office" or kind == "retail" or kind == "mixed":
++                _add_building_window_band(body, bw, height, bd, h1)
++            if kind == "industrial":
++                _add_industrial_detail(body, bw, height, bd, i)
++            buildings.append({"node":body, "district":district_index, "kind":kind, "occupied":0.78 + h2 * 0.22, "base_height":height})
++
++    _add_bank_headquarters()
+ 
+ func _building_kind_for_district(district_name: String, index: int) -> String:
+     if district_name == "Financial District" or district_name == "Tech Quarter":
+@@ -113,22 +282,192 @@
+         return 0.55 + h * 0.35
+     return 0.80 + h * 0.55
+ 
++func _height_for_kind(kind: String) -> float:
++    if kind == "office": return 16.0
++    if kind == "retail": return 8.0
++    if kind == "industrial": return 7.0
++    if kind == "university": return 9.0
++    if kind == "civic": return 11.0
++    if kind == "residential": return 8.5
++    return 10.0
++
++func _building_color(kind: String, district_index: int, variation: float) -> Color:
++    var palette = {
++        "office": Color("526978"), "retail": Color("786651"), "industrial": Color("6c6658"),
++        "university": Color("7b5e55"), "civic": Color("68727b"), "residential": Color("725f55"), "mixed": Color("64666b")
++    }
++    var c: Color =
