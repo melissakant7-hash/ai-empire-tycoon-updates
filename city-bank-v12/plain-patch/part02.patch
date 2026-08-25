@@ -1,0 +1,140 @@
+         status.add_theme_color_override("font_color", _loan_status_color(loan.status))
+         top.add_child(status)
+-        var balance = Label.new()
+-        balance.text = _money(loan.balance)
+-        balance.custom_minimum_size.x = 140
+-        balance.add_theme_color_override("font_color", C_TEXT)
+-        top.add_child(balance)
+-        var payment = Label.new()
+-        payment.text = "%s / mo" % _money(loan.monthly_payment)
+-        payment.custom_minimum_size.x = 145
+-        payment.add_theme_color_override("font_color", C_MUTED)
+-        top.add_child(payment)
+-        var rate = Label.new()
+-        rate.text = "%.2f%%" % loan.rate
+-        rate.custom_minimum_size.x = 80
+-        rate.add_theme_color_override("font_color", C_ACCENT)
+-        top.add_child(rate)
+-
+-        var detail = Label.new()
+-        detail.text = "%d months left  •  PD %.1f%%  •  Collateral %s (%s)  •  Late stage %d" % [int(loan.months_left), float(loan.pd), loan.collateral, _money(loan.collateral_value), int(loan.delinquency)]
+-        detail.add_theme_color_override("font_color", C_MUTED)
+-        row.add_child(detail)
+ 
+-        if loan.status != "Paid" and loan.status != "Defaulted" and loan.status != "Written off":
+-            var actions = HBoxContainer.new()
+-            actions.add_theme_constant_override("separation", 8)
+-            row.add_child(actions)
+-            var restructure = _button("Restructure", 125)
+-            restructure.pressed.connect(func(): _restructure_loan(i))
+-            actions.add_child(restructure)
+-            var friendly = _button("Friendly Collections", 145)
+-            friendly.pressed.connect(func(): _collection_action(i, "Friendly"))
+-            actions.add_child(friendly)
+-            var legal = _button("Legal Enforcement", 140)
+-            legal.pressed.connect(func(): _collection_action(i, "Legal"))
+-            actions.add_child(legal)
++        var facts = GridContainer.new()
++        facts.columns = 3
++        facts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++        facts.add_theme_constant_override("h_separation", 12)
++        facts.add_theme_constant_override("v_separation", 6)
++        row.add_child(facts)
++        for pair in [
++            ["Loan type", String(loan.type)],
++            ["Outstanding", _money(float(loan.balance))],
++            ["Monthly payment", _money(float(loan.monthly_payment))],
++            ["Interest rate", "%.2f%%" % float(loan.rate)],
++            ["Remaining term", "%d months" % int(loan.months_left)],
++            ["Default risk", "%.1f%%" % float(loan.pd)],
++            ["Delinquency", "%d month(s)" % int(loan.delinquency)],
++            ["Collateral", String(loan.collateral)],
++            ["Collateral value", _money(float(loan.collateral_value))]
++        ]:
++            var fact = VBoxContainer.new()
++            fact.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++            var fk = Label.new(); fk.text = String(pair[0]); fk.add_theme_font_size_override("font_size", 9); fk.add_theme_color_override("font_color", C_MUTED); fact.add_child(fk)
++            var fv = Label.new(); fv.text = String(pair[1]); fv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; fv.add_theme_color_override("font_color", C_TEXT); fact.add_child(fv)
++            facts.add_child(fact)
++
++        row.add_child(_section("Loan servicing actions"))
++        var action_hint = Label.new()
++        action_hint.text = "Every material servicing action creates a formal PDF first. Open it, review it, sign it, stamp it ISSUED, then send it to the borrower. No direct one-click enforcement."
++        action_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
++        action_hint.add_theme_color_override("font_color", C_MUTED)
++        row.add_child(action_hint)
++
++        var actions = GridContainer.new()
++        actions.columns = 2
++        actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++        actions.add_theme_constant_override("h_separation", 8)
++        actions.add_theme_constant_override("v_separation", 8)
++        row.add_child(actions)
++        var action_defs = [
++            ["Create payment statement", "payment_statement"],
++            ["Create payment demand", "payment_demand"],
++            ["Create payoff quote", "payoff_quote"],
++            ["Create restructure agreement", "restructure_agreement"],
++            ["Create acceleration notice", "acceleration_notice"],
++            ["Create collateral notice", "collateral_notice"]
++        ]
++        for action_def in action_defs:
++            var action_name = String(action_def[1])
++            var b = _button(String(action_def[0]), 0)
++            b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++            b.custom_minimum_size.x = 0
++            var availability = _loan_servicing_action_availability(loan, action_name)
++            b.disabled = not bool(availability.allowed)
++            b.tooltip_text = String(availability.reason)
++            b.pressed.connect(func(): _prepare_loan_servicing_document(i, action_name))
++            actions.add_child(b)
++
++        var docs: Array = loan.get("servicing_documents", [])
++        if not docs.is_empty():
++            row.add_child(_section("Servicing documents"))
++            for di in range(docs.size()):
++                var doc = docs[di]
++                var file = Button.new()
++                var state = "SENT" if bool(doc.get("sent", false)) else (String(doc.get("stamp", "")) if String(doc.get("stamp", "")) != "" else "DRAFT")
++                var sign_state = "signed" if bool(doc.get("signed", false)) else "signature required"
++                file.text = "▣  %s\n%s • %s" % [String(doc.get("name", "Loan Document.pdf")), state, sign_state]
++                file.alignment = HORIZONTAL_ALIGNMENT_LEFT
++                file.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++                file.custom_minimum_size.y = 58
++                file.add_theme_color_override("font_color", C_GREEN if bool(doc.get("sent", false)) else C_TEXT)
++                file.add_theme_stylebox_override("normal", _panel_style(Color("101720"), 7, C_BORDER))
++                file.add_theme_stylebox_override("hover", _panel_style(Color("192431"), 7, C_BLUE))
++                file.pressed.connect(func(): _open_loan_servicing_document(i, di))
++                row.add_child(file)
+         v.add_child(p)
+     return scroll
+ 
++func _ensure_loan_servicing_state(idx: int) -> void:
++    if idx < 0 or idx >= loans.size():
++        return
++    var loan = loans[idx]
++    if not loan.has("servicing_documents"):
++        loan["servicing_documents"] = []
++    if not loan.has("servicing_sequence"):
++        loan["servicing_sequence"] = 0
++    loans[idx] = loan
++
++func _loan_servicing_action_availability(loan: Dictionary, action_name: String) -> Dictionary:
++    if String(loan.get("status", "")) in ["Paid", "Written off"]:
++        return {"allowed": false, "reason": "This loan is no longer active."}
++    match action_name:
++        "payment_statement":
++            return {"allowed": true, "reason": "Create a formal account/payment statement."}
++        "payment_demand":
++            if int(loan.get("delinquency", 0)) <= 0:
++                return {"allowed": false, "reason": "A formal payment demand is only valid when a payment is overdue."}
++            return {"allowed": true, "reason": "Demand payment of current arrears."}
++        "payoff_quote":
++            return {"allowed": true, "reason": "Quote the amount required to settle the loan in full."}
++        "restructure_agreement":
++            return {"allowed": true, "reason": "Prepare revised terms. The restructure only applies after the signed and stamped agreement is sent."}
++        "acceleration_notice":
++            if int(loan.get("delinquency", 0)) < 2 and String(loan.get("status", "")) != "Defaulted":
++                return {"allowed": false, "reason": "Acceleration requires at least 60 days of delinquency or default. It makes the full outstanding balance immediately due."}
++            return {"allowed": true, "reason": "Make the full outstanding balance immediately due because of serious delinquency/default."}
++        "collateral_notice":
