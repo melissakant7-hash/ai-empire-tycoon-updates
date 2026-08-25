@@ -1,0 +1,61 @@
+e_document_index = -1
+ var mail_sequence = 1000
++var mail_search_query = ""
++
++var government = {
++    "monthly_revenue": 0.0,
++    "monthly_spending": 0.0,
++    "monthly_balance": 0.0,
++    "healthcare_budget": 100.0,
++    "police_budget": 100.0,
++    "fire_budget": 100.0,
++    "education_budget": 100.0,
++    "transit_budget": 100.0,
++    "roads_budget": 100.0,
++    "sanitation_budget": 100.0,
++    "parks_budget": 100.0,
++    "social_services_budget": 100.0,
++    "housing_support_budget": 100.0,
++    "healthcare_subsidy": 65.0,
++    "transit_subsidy": 35.0
++}
+ 
+ func _ready() -> void:
+     rng.randomize()
+-    _seed_competitors()
+     _seed_businesses()
+     _seed_customers()
+     for i in range(7):
+         _generate_application()
+-    _push_news("City economy opens with stable growth and moderate inflation.")
++    _push_news("City administration opens with stable growth, a funded service network and moderate inflation.")
+     _push_news("%s begins the year with %s customers." % [bank.name, _fmt_int(bank.customers)])
+     _record_history()
+     _build_ui()
+@@ -185,7 +217,7 @@ func _build_ui() -> void:
+     sidebar.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+     sidebar.offset_top = 74
+     sidebar.offset_right = 205
+-    sidebar.offset_bottom = -132
++    sidebar.offset_bottom = -190
+     add_child(sidebar)
+ 
+     content = MarginContainer.new()
+@@ -193,7 +225,7 @@ func _build_ui() -> void:
+     content.offset_left = 218
+     content.offset_top = 86
+     content.offset_right = -338
+-    content.offset_bottom = -145
++    content.offset_bottom = -205
+     content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+     content.clip_contents = true
+     add_child(content)
+@@ -202,9 +234,15 @@ func _build_ui() -> void:
+     district_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+     district_panel.offset_left = -300
+     district_panel.offset_top = 86
+-    district_panel.offset_bottom = -145
++    district_panel.offset_bottom = -205
+     add_child(district_panel)
+ 
++    
