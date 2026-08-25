@@ -74,10 +74,14 @@ jobs:
           echo "8395e3b83e06d9aa4387a9f14e6dab67b9d8a4db7c5bb30235c277c7908edf8b  v11.patch" | sha256sum -c -
           git apply --check -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v11.patch"
           git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v11.patch"
+          echo "15c81d64b2d0794bbec8a09a3aea878cf9731d693d58daf5863766788653d888  city-bank-v11/city-services-hotfix.patch" | sha256sum -c -
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v11/city-services-hotfix.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v11/city-services-hotfix.patch"
           grep -q 'config/version="1.1.0"' city_bank_tycoon/project.godot
           grep -q 'Gmail-inspired dark mode' city_bank_tycoon/scripts/main.gd
           grep -q 'Manual file verification' city_bank_tycoon/scripts/main.gd
           grep -q 'PDF Document' city_bank_tycoon/scripts/main.gd
+          grep -q 'At 100%%, public healthcare' city_bank_tycoon/scripts/main.gd
 
       - name: Prepare Godot export templates
         shell: bash
@@ -121,7 +125,7 @@ jobs:
           set -e
           test "$status" -eq 0
           grep -q 'CI_V10_BANK_CITY_GMAIL_OK' smoke-v10.log
-          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke-v10.log; then exit 1; fi
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call|String formatting error' smoke-v10.log; then exit 1; fi
           rm -f city_bank_tycoon/ci_smoke.gd
 
       - name: Run v1.1 dark mail PDF verification test
@@ -134,7 +138,7 @@ jobs:
           set -e
           test "$status" -eq 0
           grep -q 'CI_V11_GMAIL_DARK_PDF_VERIFICATION_OK' smoke-v11.log
-          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke-v11.log; then exit 1; fi
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call|String formatting error' smoke-v11.log; then exit 1; fi
           rm -f city_bank_tycoon/ci_smoke.gd
 
       - name: Export native Windows executable
@@ -147,7 +151,7 @@ jobs:
           set -e
           test "$status" -eq 0
           test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v1.1.exe"
-          if grep -qE 'SCRIPT ERROR: Parse Error|Failed to load script.*Parse error' export.log; then exit 1; fi
+          if grep -qE 'SCRIPT ERROR: Parse Error|Failed to load script.*Parse error|String formatting error' export.log; then exit 1; fi
           ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v1.1.exe"
 
       - name: Upload playable Windows build
