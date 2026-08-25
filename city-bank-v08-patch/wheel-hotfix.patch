@@ -1,0 +1,11 @@
+--- /mnt/data/city_map_v08_before_wheel.gd	2026-08-25 20:57:56.210181909 +0000
++++ /mnt/data/city_map_v08_fixed.gd	2026-08-25 20:57:55.743285804 +0000
+@@ -694,7 +694,7 @@
+             wheel_mesh.bottom_radius = 0.28 if bus else 0.22
+             wheel_mesh.height = 0.18
+             var wheel = MeshInstance3D.new()
+-            wheel.name = "Wheel"
++            wheel.name = "Wheel_%s_%s" % ["L" if side < 0.0 else "R", "Front" if z < 0.0 else "Rear"]
+             wheel.mesh = wheel_mesh
+             wheel.rotation_degrees.z = 90.0
+             wheel.position = Vector3(side * width * 0.52, 0.31, z)
