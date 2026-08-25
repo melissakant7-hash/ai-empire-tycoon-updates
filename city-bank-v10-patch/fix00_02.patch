@@ -1,0 +1,36 @@
+var city_tools = _build_city_tools_bar()
++    city_tools.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
++    city_tools.offset_top = -190
++    city_tools.offset_bottom = -132
++    add_child(city_tools)
++
+     var bottom = _build_bottom_hud()
+     bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+     bottom.offset_top = -132
+@@ -228,7 +266,7 @@ func _build_topbar() -> Control:
+     brand.add_theme_color_override("font_color", C_TEXT)
+     brand_box.add_child(brand)
+     var sub = Label.new()
+-    sub.text = "      City Bank Headquarters"
++    sub.text = "      Bank & City Administration"
+     sub.add_theme_font_size_override("font_size", 10)
+     sub.add_theme_color_override("font_color", C_MUTED)
+     brand_box.add_child(sub)
+@@ -325,9 +363,8 @@ func _build_sidebar() -> Control:
+     var nav_items = [
+         ["▰", "Dashboard"], ["✉", "Mail"], ["◆", "Loan Desk"], ["▤", "Current Loans"], ["🔔", "Notifications"],
+         ["●", "Customers"], ["▥", "Businesses"], ["▦", "Bank Policies"],
+-        ["▣", "Taxes"], ["▥", "City Economy"], ["⌂", "Housing"],
+-        ["◎", "City Map"], ["◇", "Competitors"], ["≡", "Reports"],
+-        ["▧", "News"], ["⚙", "Settings"]
++        ["🏛", "City Hall"], ["▣", "Taxes & Budget"], ["✚", "City Services"], ["▥", "City Economy"], ["⌂", "Housing"],
++        ["◎", "City Map"], ["≡", "Reports"], ["▧", "News"], ["⚙", "Settings"]
+     ]
+     for item in nav_items:
+         var b = Button.new()
+@@ -348,7 +385,7 @@ func _build_sidebar() -> Control:
+     quick.add_theme_font_size_override("font_size", 9)
+     quick.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(quick)
+-    for action in [["Open Mail", "Mail"], ["Review Loans", "Loan Desk"], ["Current Loans", "Current Loans"], ["Adjust Tax Rate", "Taxes"], ["Economic View", "City Economy"]]:
++    for action in [["Open Mail", "Mail"], ["Review Loans", "Loan Desk"], ["City Hall", "City Hall"], ["Taxes & Budget", "Taxes & Bu
