@@ -1,0 +1,11 @@
+--- a/scripts/city_map.gd
++++ b/scripts/city_map.gd
+@@ -610,7 +610,7 @@
+         var x = _world_x(float(road_xs[ix])) - ROAD_WIDTH * 0.70 - SIDEWALK_WIDTH * 0.24
+         for z in range(-52, 55, 13):
+             var root = Node3D.new()
+-            root.name = "StreetLight"
++            root.name = "StreetLight_%02d_%03d" % [ix, z + 100]
+             root.position = Vector3(x, 0.0, float(z))
+             detail_root.add_child(root)
+             _cylinder(root, 0.075, 4.0, Vector3(0,2.0,0), Color("343b3f"), "LampPole", 0.62, 0.35)
