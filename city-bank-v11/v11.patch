@@ -1,0 +1,174 @@
+diff -ruN cbt_v10_for_v11_diff/city_bank_tycoon/project.godot cbt_v11_work/city_bank_tycoon/project.godot
+--- cbt_v10_for_v11_diff/city_bank_tycoon/project.godot	2026-08-25 22:01:24.000000000 +0000
++++ cbt_v11_work/city_bank_tycoon/project.godot	2026-08-25 22:46:39.323882936 +0000
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="1.0.0"
++config/version="1.1.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+diff -ruN cbt_v10_for_v11_diff/city_bank_tycoon/scripts/main.gd cbt_v11_work/city_bank_tycoon/scripts/main.gd
+--- cbt_v10_for_v11_diff/city_bank_tycoon/scripts/main.gd	2026-08-25 22:04:46.000000000 +0000
++++ cbt_v11_work/city_bank_tycoon/scripts/main.gd	2026-08-25 22:47:43.684980156 +0000
+@@ -397,7 +397,7 @@
+     save.pressed.connect(_save_game)
+     outer.add_child(save)
+     var footer = Label.new()
+-    footer.text = "  v1.0 Bank + City Administration"
++    footer.text = "  v1.1 Document Verification"
+     footer.add_theme_font_size_override("font_size", 9)
+     footer.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(footer)
+@@ -876,17 +876,19 @@
+     return p
+ 
+ func _view_mail() -> Control:
++    # Gmail-inspired dark mode: charcoal surfaces, muted separators, blue selected folder,
++    # pale-blue search field and strong contrast for unread mail.
+     var shell = PanelContainer.new()
+     shell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     shell.size_flags_vertical = Control.SIZE_EXPAND_FILL
+-    shell.add_theme_stylebox_override("panel", _panel_style(Color("f6f8fc"), 10, Color("d8e0ea")))
++    shell.add_theme_stylebox_override("panel", _panel_style(Color("1f1f1f"), 10, Color("3c4043")))
+     var root = VBoxContainer.new()
+     root.add_theme_constant_override("separation", 0)
+     shell.add_child(root)
+ 
+     var top = PanelContainer.new()
+-    top.custom_minimum_size.y = 58
+-    top.add_theme_stylebox_override("panel", _panel_style(Color("ffffff"), 0, Color("e1e6ec")))
++    top.custom_minimum_size.y = 60
++    top.add_theme_stylebox_override("panel", _panel_style(Color("1f1f1f"), 0, Color("3c4043")))
+     root.add_child(top)
+     var th = HBoxContainer.new()
+     th.add_theme_constant_override("separation", 12)
+@@ -895,7 +897,7 @@
+     brand.text = "  ✉  CityMail"
+     brand.custom_minimum_size.x = 190
+     brand.add_theme_font_size_override("font_size", 19)
+-    brand.add_theme_color_override("font_color", Color("3c4043"))
++    brand.add_theme_color_override("font_color", Color("e8eaed"))
+     brand.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+     th.add_child(brand)
+     var search = LineEdit.new()
+@@ -903,9 +905,10 @@
+     search.text = mail_search_query
+     search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     search.custom_minimum_size.y = 42
+-    search.add_theme_color_override("font_color", Color("202124"))
+-    search.add_theme_color_override("font_placeholder_color", Color("6f7780"))
+-    search.add_theme_stylebox_override("normal", _panel_style(Color("eaf1fb"), 18, Color.TRANSPARENT))
++    search.add_theme_color_override("font_color", Color("e8eaed"))
++    search.add_theme_color_override("font_placeholder_color", Color("9aa0a6"))
++    search.add_theme_stylebox_override("normal", _panel_style(Color("303134"), 18, Color.TRANSPARENT))
++    search.add_theme_stylebox_override("focus", _panel_style(Color("3c4043"), 18, Color("8ab4f8")))
+     search.text_submitted.connect(func(value): mail_search_query = value.strip_edges(); selected_mail_id = -1; _show_view("Mail"))
+     th.add_child(search)
+     var unread = Label.new()
+@@ -913,7 +916,7 @@
+     unread.custom_minimum_size.x = 90
+     unread.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+     unread.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+-    unread.add_theme_color_override("font_color", Color("5f6368"))
++    unread.add_theme_color_override("font_color", Color("bdc1c6"))
+     th.add_child(unread)
+ 
+     var body_row = HBoxContainer.new()
+@@ -922,19 +925,19 @@
+     root.add_child(body_row)
+ 
+     var nav = PanelContainer.new()
+-    nav.custom_minimum_size.x = 190
+-    nav.add_theme_stylebox_override("panel", _panel_style(Color("f6f8fc"), 0, Color.TRANSPARENT))
++    nav.custom_minimum_size.x = 195
++    nav.add_theme_stylebox_override("panel", _panel_style(Color("1f1f1f"), 0, Color.TRANSPARENT))
+     body_row.add_child(nav)
+     var nv = VBoxContainer.new()
+     nv.add_theme_constant_override("separation", 4)
+     nav.add_child(nv)
+     var compose = Button.new()
+     compose.text = "✎  Compose"
+-    compose.custom_minimum_size = Vector2(155, 48)
++    compose.custom_minimum_size = Vector2(160, 48)
+     compose.add_theme_font_size_override("font_size", 13)
+-    compose.add_theme_color_override("font_color", Color("1f1f1f"))
++    compose.add_theme_color_override("font_color", Color("062e3f"))
+     compose.add_theme_stylebox_override("normal", _panel_style(Color("c2e7ff"), 16, Color.TRANSPARENT))
+-    compose.add_theme_stylebox_override("hover", _panel_style(Color("afdafa"), 16, Color.TRANSPARENT))
++    compose.add_theme_stylebox_override("hover", _panel_style(Color("a8d8f8"), 16, Color.TRANSPARENT))
+     nv.add_child(compose)
+     for folder_name in ["Inbox", "Starred", "Loan Applications", "Sent", "Archive"]:
+         var b = Button.new()
+@@ -942,11 +945,11 @@
+         var extra = "  %d" % _mail_unread_count() if folder_name == "Inbox" else ""
+         b.text = "%s   %s%s" % [icon, folder_name, extra]
+         b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+-        b.custom_minimum_size = Vector2(180, 36)
+-        b.add_theme_color_override("font_color", Color("202124"))
+-        var base = Color("d3e3fd") if selected_mail_folder == folder_name else Color.TRANSPARENT
++        b.custom_minimum_size = Vector2(185, 36)
++        b.add_theme_color_override("font_color", Color("e8eaed"))
++        var base = Color("3c4758") if selected_mail_folder == folder_name else Color.TRANSPARENT
+         b.add_theme_stylebox_override("normal", _panel_style(base, 0, Color.TRANSPARENT))
+-        b.add_theme_stylebox_override("hover", _panel_style(Color("e8eaed"), 0, Color.TRANSPARENT))
++        b.add_theme_stylebox_override("hover", _panel_style(Color("303134"), 0, Color.TRANSPARENT))
+         var f = folder_name
+         b.pressed.connect(func(): selected_mail_folder = f; selected_mail_id = -1; _show_view("Mail"))
+         nv.add_child(b)
+@@ -954,7 +957,7 @@
+     var main = PanelContainer.new()
+     main.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     main.size_flags_vertical = Control.SIZE_EXPAND_FILL
+-    main.add_theme_stylebox_override("panel", _panel_style(Color("ffffff"), 10, Color("e1e6ec")))
++    main.add_theme_stylebox_override("panel", _panel_style(Color("202124"), 10, Color("3c4043")))
+     body_row.add_child(main)
+ 
+     if selected_mail_id >= 0 and _mail_index_by_id(selected_mail_id) >= 0:
+@@ -970,12 +973,12 @@
+     toolbar.custom_minimum_size.y = 44
+     toolbar.add_theme_constant_override("separation", 12)
+     v.add_child(toolbar)
+-    var select_all = Label.new(); select_all.text = "  ☐"; select_all.add_theme_color_override("font_color", Color("5f6368")); select_all.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(select_all)
+-    var refresh = Button.new(); refresh.text = "↻"; refresh.flat = true; refresh.add_theme_color_override("font_color", Color("5f6368")); toolbar.ad_child(refresh)
+-    var more = Button.new(); more.text = "⃮"; more.flat = true; more.add_theme_color_override("font_color", Color("5f6368")); toolbar.add_child(more)
++    var select_all = Label.new(); select_all.text = "  ☐"; select_all.add_theme_color_override("font_color", Color("bdc1c6")); select_all.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(select_all)
++    var refresh = Button.new(); refresh.text = "▻"; refresh.flat = true; refresh.add_theme_color_override("font_color", Color("bdc1c6")); toolbar.add_child(refresh)
++    var more = Button.new(); more.text = "⃮"; more.flat = true; more.add_theme_color_override("font_color", Color("bdc1c6")); toolbar.add_child(more)
+     var space = Control.new(); space.size_flags_horizontal = Control.SIZE_EXPAND_FILL; toolbar.add_child(space)
+-    var count = Label.new(); count.text = "%d messages" % _mail_ids_for_folder(selected_mail_folder).size(); count.add_theme_color_override("font_color", Color("6f7780")); count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.ad_child(count)
++    var count = Label.new(); count.text = "%d messages" % _mail_ids_for_folder(selected_mail_folder).size(); count.add_theme_color_override("font_color", Color("9aa0a6")); count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; toolbar.add_child(count)
+     var sep = HSeparator.new(); sep.add_theme_color_override("separator", Color("3c4043")); v.add_child(sep)
+     var scroll = ScrollContainer.new()
+     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+@@ -1002,12 +1005,12 @@
+        if snippet.length() > 74: snippet = snippet.substr(0, 74) + "…"
+        var attach = "  📉" if m.get("attachment_indices", []).size() > 0 else ""
+        row.text = "  ☐   ☆   %-22s  %s  — %s%s                                        %s" % [sender, subject, snipppet, attach, String(m.get("date_label",""))]
+-        row.add_theme_color_override("font_color", Color("202124"))
+-        var bg = Color("ffffff") if unread else Color("f2f6fc")
++        row.add_theme_color_override("font_color", Color("f1f3f4") if is_unread else Color("bdc1c6"))
++        var bg = Color("292a2d") if is_unread else Color("202124")
+        row.add_theme_stylebox_override("normal", _panel_style(bg, 0, Color("3c4043")))
+-        row.add_theme_stylebox_override("hover", _panel_style(Color("edf3fb"), 0, Color("c9d2dd"))
++        row.add_theme_stylebox_override("hover", _panel_style(Color("303134"), 0, Color("5f6368"))
+        var message_id = int(m.id)
+        row.pressed.connect(func(): _open_mail_message(message_id))
+         list.add_child(row)
+     if shown == 0:
+@@ -1015,45 +1018,137 @@
+    return v
+ 
+ func _gmail_message_reader(mail_id: int) -> Control:
+     var v = VBoxContainer.new()
+-    v.add_theme_constant_override("separation", 10)
++    v.add_theme_constant_override("separation", 10)
+     var idx = _mail_index_by_id(mail_id)
+     if idx < 0: return v
+     var message = mail_messages[idx]
+     message.unread = false
+     mail_messages[idx] = message
+-    var tools = HBoxContainer.new(); tools.custom_minimum_size.y = 44; v.add_child(tools)
+-    var back = Button.new(); back.text = "←";
