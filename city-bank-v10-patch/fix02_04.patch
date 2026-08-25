@@ -1,0 +1,31 @@
+       attach_title.add_theme_color_override("font_color", C_MUTED)
+-        body_v.add_child(attach_title)
+-        var attachment_grid = GridContainer.new()
+-        attachment_grid.columns = 2
+-        attachment_grid.add_theme_constant_override("h_separation", 8)
+-        attachment_grid.add_theme_constant_override("v_separation", 8)
+-        body_v.add_child(attachment_grid)
++        var at = Label.new(); at.text = "%d attachment(s)" % attachments.size(); at.add_theme_color_override("font_color", Color("5f6368")); body.add_child(at)
++        var grid = GridContainer.new(); grid.columns = 2; grid.add_theme_constant_override("h_separation", 8); grid.add_theme_constant_override("v_separation", 8); body.add_child(grid)
+         for di in attachments:
+             var doc_index = int(di)
+-            if doc_index < 0 or doc_index >= app.documents.size():
+-                continue
++            if doc_index < 0 or doc_index >= app.documents.size(): continue
+             var doc = app.documents[doc_index]
+-            var ab = Button.new()
+-            ab.custom_minimum_size = Vector2(205, 58)
+-            ab.alignment = HORIZONTAL_ALIGNMENT_LEFT
+-            ab.text = "▣  %s\n     %s" % [String(doc.get("name","Attachment")), String(doc.get("status","Received"))]
+-            ab.add_theme_color_override("font_color", C_TEXT)
+-            ab.add_theme_stylebox_override("normal", _panel_style(Color(0.06,0.10,0.14,0.96), 6, Color("314451")))
+-            ab.add_theme_stylebox_override("hover", _panel_style(Color(0.08,0.17,0.24,0.98), 6, C_BLUE))
+-            var aid = int(app.id)
+-            var didx = doc_index
+-            ab.pressed.connect(func(): _open_attachment(aid, didx))
+-            attachment_grid.add_child(ab)
+-
+-    var actions = HBoxContainer.new()
+-    actions.add_theme_constant_override("separation", 8)
+-    rv.add_child(actions)
++            var ab = Button.new(); ab.custom_minimum_size = Vector2(240, 62); ab.alignment = HORIZONTAL_ALIGNMENT_LEFT; ab.t
