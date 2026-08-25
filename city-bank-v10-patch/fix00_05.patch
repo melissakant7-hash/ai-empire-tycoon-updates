@@ -1,0 +1,41 @@
+  "Utility tax": city.gdp * 0.025 * policy.utility_tax / 100.0 / 12.0,
++        "Vacant property tax": property_base * (city.housing_vacancy / 100.0) * policy.vacant_property_tax / 100.0 / 12.0,
++        "Land value tax": property_base * 0.32 * policy.land_value_tax / 100.0 / 12.0
++    }
++
++func _monthly_tax_revenue_estimate() -> float:
++    var total = 0.0
++    for value in _tax_revenue_breakdown().values():
++        total += float(value)
++    return max(0.0, total)
++
++func _monthly_city_service_spending_estimate() -> float:
++    var pop = city.population
++    var annual_per_capita = {
++        "healthcare_budget": 1800.0, "police_budget": 680.0, "fire_budget": 330.0, "education_budget": 1550.0,
++        "transit_budget": 720.0, "roads_budget": 520.0, "sanitation_budget": 390.0, "parks_budget": 190.0,
++        "social_services_budget": 780.0, "housing_support_budget": 610.0
++    }
++    var total = 0.0
++    for key in annual_per_capita.keys():
++        total += pop * float(annual_per_capita[key]) / 12.0 * float(government[key]) / 100.0
++    total += pop * 135.0 * float(government.healthcare_subsidy) / 100.0
++    total += pop * 38.0 * float(government.transit_subsidy) / 100.0
++    return total
+ 
+ func _refresh_city_hud() -> void:
+     if is_instance_valid(city_world):
+@@ -482,13 +580,15 @@ func _refresh_city_hud() -> void:
+ !  Delinquency Rate                   %.1f%%
+ 
+ ▣  Tax Income (est.)                  %s
++✚  Health                             %.0f%%
++⚑  Safety                             %.0f%%
+ ⌂  Average Property                   %s
+ €  Average Rent                       %s
+ 
+ DISTRICT TREND
+ GDP %.1f%%   •   Jobs %.1f%%   •   Trust %.0f%%" % [
+             _fmt_int(district_population), district_unemployment, district_happiness, business_health,
+-            _money(district_deposits), _money(district_loans), delinquency, _money(_monthly_tax_revenue_estimate() * district_factor),
++            _money(district_deposits), _money(district_loans), 
