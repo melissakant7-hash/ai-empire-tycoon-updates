@@ -1,0 +1,34 @@
+pend("Transport or road maintenance cuts are increasing traffic and reducing productivity.")
++    if government.housing_support_budget < 70.0 and city.avg_rent > 1200.0: factors.append("Housing assistance is low while rents are elevated, increasing homelessness pressure.")
++    if _monthly_tax_revenue_estimate() < _monthly_city_service_spending_estimate(): factors.append("The city government is spending more than it collects in taxes this month.")
++    if factors.is_empty(): factors.append("No severe imbalance is dominant. Bank policy and city services are both operating near sustainable levels.")
+     return "\n".join(factors)
+ 
+ func _set_speed(new_speed: int) -> void:
+@@ -3248,6 +3439,7 @@ func _save_payload() -> Dictionary:
+         "bank": bank,
+         "city": city,
+         "policy": policy,
++        "government": government,
+         "applications": applications,
+         "loans": loans,
+         "customers": customers,
+@@ -3256,7 +3448,6 @@ func _save_payload() -> Dictionary:
+         "news": news,
+         "game_notifications": game_notifications,
+         "notification_sequence": notification_sequence,
+-        "competitors": competitors,
+         "mail_messages": mail_messages,
+         "closed_applications": closed_applications,
+         "mail_sequence": mail_sequence
+@@ -3272,8 +3463,18 @@ func _apply_save_payload(parsed: Dictionary) -> void:
+     bank = parsed.get("bank", bank)
+     city = parsed.get("city", city)
+     policy = parsed.get("policy", policy)
++    government = parsed.get("government", government)
+     if not policy.has("auto_loans_enabled"):
+         policy["auto_loans_enabled"] = false
++    var policy_defaults = {"payroll_tax":1.5, "fuel_tax":6.0, "hotel_tax":7.0, "utility_tax":3.0, "vacant_property_tax":0.5, "land_value_tax":0.3}
++    for key in policy_defaults.keys():
++        if not policy.has(key): policy[key] = policy_defaults[key]
++    var city_defaults = {"health":72.0, "education":70.0, "fire_safety":78.0, "transit_quality":66.
