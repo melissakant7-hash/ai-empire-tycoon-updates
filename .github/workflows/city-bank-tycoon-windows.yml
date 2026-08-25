@@ -5,7 +5,7 @@ on:
     branches:
       - city-bank-tycoon-build
     paths:
-      - "city-bank-source/**"
+      - "city-bank-v02-source/**"
       - ".github/workflows/city-bank-tycoon-windows.yml"
   workflow_dispatch:
 
@@ -23,19 +23,21 @@ jobs:
       - name: Checkout build branch
         uses: actions/checkout@v4
 
-      - name: Reassemble City Bank Tycoon source
+      - name: Reassemble City Bank Tycoon v0.2 source
         shell: bash
         run: |
-          cat city-bank-source/part*.b64 | base64 -d > city-bank-tycoon-source.zip
-          echo "876d0b94ff888e94db74d9cb1c382ceb9691df61950857bd67d2f558f48be0e4  city-bank-tycoon-source.zip" | sha256sum -c -
-          unzip -q city-bank-tycoon-source.zip
+          cat city-bank-v02-source/part*.b64 | base64 -d > city-bank-tycoon-v02-source.zip
+          echo "04000a9ac317701f2b0c299175da4bb54b446c792b515a3b54c2b6fdd4510bc7  city-bank-tycoon-v02-source.zip" | sha256sum -c -
+          unzip -q city-bank-tycoon-v02-source.zip
           test -f city_bank_tycoon/project.godot
           test -f city_bank_tycoon/export_presets.cfg
-
-      - name: Apply Godot 4.7 compatibility fix
-        shell: bash
-        run: |
-          sed -i 's/:=/=/g' city_bank_tycoon/scripts/main.gd city_bank_tycoon/scripts/city_map.gd
+          test -f city_bank_tycoon/scripts/main.gd
+          test -f city_bank_tycoon/scripts/core/save_manager.gd
+          test -f city_bank_tycoon/scripts/line_chart.gd
+          if grep -R -n ':=' city_bank_tycoon/scripts; then
+            echo 'Build-time compatibility syntax still exists in source.'
+            exit 1
+          fi
 
       - name: Prepare Godot export templates
         shell: bash
@@ -59,12 +61,53 @@ jobs:
             exit 1
           fi
 
+      - name: Run gameplay smoke test
+        shell: bash
+        run: |
+          cat > city_bank_tycoon/ci_smoke.gd <<'GDSCRIPT'
+          extends SceneTree
+
+          func _initialize():
+              call_deferred("_run")
+
+          func _run():
+              var packed = load("res://main.tscn")
+              if packed == null:
+                  push_error("Could not load main scene")
+                  quit(1)
+                  return
+              var game = packed.instantiate()
+              root.add_child(game)
+              await process_frame
+              var views = ["Dashboard", "Loan Desk", "Loan Portfolio", "Customers", "Businesses", "Bank Policies", "Taxes", "City Economy", "Housing", "City Map", "Competitors", "Reports", "News", "Settings"]
+              for view_name in views:
+                  game._show_view(view_name)
+                  await process_frame
+              for i in range(35):
+                  game._advance_day()
+              game._show_view("Dashboard")
+              await process_frame
+              print("CI_SMOKE_TEST_OK")
+              quit(0)
+          GDSCRIPT
+          set +e
+          godot --headless --path city_bank_tycoon -s res://ci_smoke.gd 2>&1 | tee smoke.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          grep -q 'CI_SMOKE_TEST_OK' smoke.log
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke.log; then
+            echo 'Gameplay smoke test found a script/runtime error.'
+            exit 1
+          fi
+          rm -f city_bank_tycoon/ci_smoke.gd
+
       - name: Export native Windows executable
         shell: bash
         run: |
           mkdir -p "$GITHUB_WORKSPACE/build/windows"
           set +e
-          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe" 2>&1 | tee export.log
+          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.2.exe" 2>&1 | tee export.log
           status=${PIPESTATUS[0]}
           set -e
           test "$status" -eq 0
@@ -72,13 +115,13 @@ jobs:
             echo 'Export contained GDScript parse errors.'
             exit 1
           fi
-          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
-          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
+          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.2.exe"
+          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.2.exe"
 
       - name: Upload playable Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: CityBankTycoon-Windows-x64
-          path: build/windows/CityBankTycoon.exe
+          name: CityBankTycoon-v0.2-Windows-x64
+          path: build/windows/CityBankTycoon-v0.2.exe
           if-no-files-found: error
           retention-days: 30
