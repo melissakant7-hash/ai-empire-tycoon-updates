@@ -1,0 +1,47 @@
+ild(rv)
+-
+-    var selected_index = _mail_index_by_id(selected_mail_id)
+-    if selected_index < 0:
+-        var prompt = Label.new()
+-        prompt.text = "Select a message to read it."
+-        prompt.add_theme_color_override("font_color", C_MUTED)
+-        rv.add_child(prompt)
+-        return outer
+-
+-    var message = mail_messages[selected_index]
+-    if bool(message.get("unread", false)):
+-        message.unread = false
+-        mail_messages[selected_index] = message
+-    var subj = Label.new()
+-    subj.text = String(message.get("subject","Message"))
+-    subj.add_theme_font_size_override("font_size", 21)
+-    subj.add_theme_color_override("font_color", C_TEXT)
+-    rv.add_child(subj)
+-    var sender = Label.new()
+-    sender.text = "%s  <%s>    %s" % [String(message.get("sender_name","")), String(message.get("sender_email","")), String(message.get("date_label",""))]
+-    sender.add_theme_color_override("font_color", C_MUTED)
+-    rv.add_child(sender)
+-    rv.add_child(HSeparator.new())
+-    var body_scroll = ScrollContainer.new()
+-    body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+-    body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+-    rv.add_child(body_scroll)
+-    var body_v = VBoxContainer.new()
+-    body_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+-    body_v.add_theme_constant_override("separation", 12)
+-    body_scroll.add_child(body_v)
+-    var body = Label.new()
+-    body.text = String(message.get("body",""))
+-    body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+-    body.add_theme_font_size_override("font_size", 13)
+-    body.add_theme_color_override("font_color", C_TEXT)
+-    body_v.add_child(body)
++        main.add_child(_gmail_message_list())
++    return shell
+ 
++func _gmail_message_list() -> Control:
++    var v = VBoxContainer.new()
++    v.add_theme_constant_override("separation", 0)
++    var toolbar = HBoxContainer.new()
++    toolbar.custom_minimum_size.y = 44
++    toolbar.add_theme_constant_o
