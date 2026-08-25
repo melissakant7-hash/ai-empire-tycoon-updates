@@ -1,0 +1,130 @@
+diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/README.md cbt_v07/city_bank_tycoon/README.md
+--- cbt_v06_base_for_patch/city_bank_tycoon/README.md	2026-08-25 18:19:58.000000000 +0000
++++ cbt_v07/city_bank_tycoon/README.md	2026-08-25 19:36:16.095286192 +0000
+@@ -27,4 +27,13 @@
+ Use the left navigation to switch management areas. The top bar controls pause and simulation speed.
+ 
+ ## Build
+-Godot 4.7.x, Windows Desktop export.
+\ No newline at end of file
++Godot 4.7.x, Windows Desktop export.
++## v0.7 Native 3D City World
++- Replaced the previous 2D/pseudo-3D city renderer with a real Godot 3D SubViewport world.
++- Perspective Camera3D with wheel zoom, middle-mouse pan, right-mouse orbit, WASD pan, Q/E rotate, Home reset and district focus.
++- Procedural 3D road meshes, bridges, sidewalks, lane markings, crosswalks and traffic lights.
++- 200+ persistent 3D buildings with district-specific height/type variation, windows, rooftops and industrial details.
++- 132 moving 3D vehicles including buses and service vehicles following the road graph.
++- 460 3D citizens walking on sidewalk-offset routes to work, home, shopping and leisure destinations.
++- 3D parks, trees, university field, industrial yard, bus stops, parking lots, construction cranes, river and bank headquarters.
++- Dynamic sun/ambient lighting for a slow day/night cycle while the bank UI remains a native 2D management overlay.
+diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/project.godot cbt_v07/city_bank_tycoon/project.godot
+--- cbt_v06_base_for_patch/city_bank_tycoon/project.godot	2026-08-25 18:48:38.000000000 +0000
++++ cbt_v07/city_bank_tycoon/project.godot	2026-08-25 19:35:04.695921102 +0000
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="0.6.0"
++config/version="0.7.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+ diff -ruN cbt_v06_base_for_patch/city_bank_tycoon/scripts/city_map.gd cbt_v07/city_bank_tycoon/scripts/city_map.gd
+--- cbt_v06_base_for_patch/city_bank_tycoon/scripts/city_map.gd	2026-08-25 18:50:56.000000000 +0000
++++ cbt_v07/city_bank_tycoon/scripts/city_map.gd	2026-08-25 19:35:03.921002928 +0000
+@@ -1,4 +1,4 @@
+-extends Control
++extends SubViewportContainer
+ 
+ signal district_selected(district_name: String)
+ 
+@@ -12,25 +12,34 @@
+ var hovered_district = ""
+ var view_zoom = 1.0
+ var view_pan = Vector2.ZERO
+-var panning = false
+-var last_pan_mouse = Vector2.ZERO
+ var world_time = 0.28
+ 
+-const ROAD = Color("242b31")
+-const ROAD_EDGE = Color("59616a")
+-const SIDEWALK = Color("7b8184")
+-const WATER = Color("285f78")
+-const WATER_LIGHT = Color("4d89a1")
+-const GRASS = Color("405e49")
+-const PARK = Color("557b55")
+-const TREE = Color("356342")
+-const TREE_LIGHT = Color("6d9a65")
+-const TEXT = Color("dce7ef")
+-const MUTED = Color("9aaab7")
+-const LANE = Color("c6b878")
++var viewport_3d: SubViewport
++var world_root: Node3D
++var city_root: Node3D
++var vehicle_root: Node3D
++var pedestrian_root: Node3D
++var building_root: Node3D
++var detail_root: Node3D
++var district_highlight_root: Node3D
++var camera: Camera3D
++var sun: DirectionalLight3D
++var world_environment: WorldEnvironment
++var environment: Environment
++
++var camera_target = Vector3.ZERO
++var camera_distance = 118.0
++var camera_yaw = deg_to_rad(-18.0)
++var camera_elevation = deg_to_rad(48.0)
++var panning = false
++var rotating = false
++var last_mouse = Vector2.ZERO
++
++const WORLD_WIDTH = 180.0
++const WORLD_DEPTH = 128.0
++const ROAD_WIDTH = 5.4
++const SIDEWALK_WIDTH = 1.15
+ 
+-# A compact city road graph. Agents move between these intersections rather than
+-# looping across the screen, so vehicles can actually turn and pedestrians have destinations.
+ var road_xs = [0.075, 0.24, 0.36, 0.485, 0.60, 0.73, 0.86, 0.955]
+ var road_ys = [0.215, 0.315, 0.465, 0.605, 0.745, 0.865, 0.955]
+ 
+@@ -51,43 +60,203 @@
+ func configure(city_data: Dictionary, bank_data: Dictionary) -> void:
+     economy = city_data
+     bank_state = bank_data
+-    queue_redraw()
++    if is_instance_valid(world_root):
++        _apply_economy_visuals()
+ 
+ func _ready() -> void:
+     mouse_filter = Control.MOUSE_FILTER_STOP
++    stretch = true
+     rng.seed = 847211
++    _build_3d_world()
+     _seed_buildings()
++    _seed_city_details()
+     _seed_traffic()
+     _seed_pedestrians()
++    _update_district_highlight()
++    _update_camera()
++    _apply_economy_visuals()
+     set_process(true)
+     set_process_unhandled_key_input(true)
+ 
++func _build_3d_world() -> void:
++    viewport_3d = SubViewport.new()
++    viewport_3d.name = "City3DViewport"
++    viewport_3d.transparent_bg = false
++    viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
++    add_child(viewport_3d)
++
++    world_root = Node3D.new()
++    world_root.name = "Native3DCityWorld"
++    viewport_3d.add_child(world_root)
++
++    city_root = Node3D.new()
++    city_root.name = "CityGeometry"
++    world_root.add_child(city_root)
++    building_root = Node3D.new()
++    building_root.name = "Buildings"
++
