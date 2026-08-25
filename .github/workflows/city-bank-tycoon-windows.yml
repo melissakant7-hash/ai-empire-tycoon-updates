@@ -1,0 +1,78 @@
+name: Build City Bank Tycoon Windows
+
+on:
+  push:
+    branches:
+      - city-bank-tycoon-build
+    paths:
+      - "city-bank-source/**"
+      - ".github/workflows/city-bank-tycoon-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-windows:
+    name: Export Windows x64
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.7.2
+
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+
+      - name: Reassemble City Bank Tycoon source
+        shell: bash
+        run: |
+          cat city-bank-source/part*.b64 | base64 -d > city-bank-tycoon-source.zip
+          echo "876d0b94ff888e94db74d9cb1c382ceb9691df61950857bd67d2f558f48be0e4  city-bank-tycoon-source.zip" | sha256sum -c -
+          unzip -q city-bank-tycoon-source.zip
+          test -f city_bank_tycoon/project.godot
+          test -f city_bank_tycoon/export_presets.cfg
+
+      - name: Prepare Godot export templates
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates"
+          if [ -d /root/.local/share/godot/export_templates/4.7.2.stable ]; then
+            cp -a /root/.local/share/godot/export_templates/4.7.2.stable "$HOME/.local/share/godot/export_templates/"
+          fi
+          godot --version
+
+      - name: Import and validate game
+        shell: bash
+        run: |
+          godot --headless --path city_bank_tycoon --editor --quit
+
+      - name: Export native Windows executable
+        shell: bash
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/build/windows"
+          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
+          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon.exe"
+          ls -lah "$GITHUB_WORKSPACE/build/windows"
+
+      - name: Package Windows build
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/build/windows"
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          exe = Path("CityBankTycoon.exe")
+          assert exe.exists(), "CityBankTycoon.exe was not produced"
+          with zipfile.ZipFile("CityBankTycoon-Windows-x64.zip", "w", zipfile.ZIP_DEFLATED) as archive:
+              archive.write(exe, exe.name)
+          PY
+
+      - name: Upload playable Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: CityBankTycoon-Windows-x64
+          path: |
+            build/windows/CityBankTycoon.exe
+            build/windows/CityBankTycoon-Windows-x64.zip
+          if-no-files-found: error
+          retention-days: 30
