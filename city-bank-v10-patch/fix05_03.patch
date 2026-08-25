@@ -1,0 +1,32 @@
+_update_competitors()
+     _generate_monthly_news(last_month_profit, customer_change)
+     while applications.size() < 5:
+         _generate_application()
+@@ -2781,9 +2988,10 @@ func _simulate_businesses() -> void:
+     for b in businesses:
+         if not b.active:
+             continue
+-        var tax_drag = max(0.0, policy.corporate_tax - 20.0) * 0.012 + max(0.0, policy.sales_tax - 8.0) * 0.006
++        var tax_drag = max(0.0, policy.corporate_tax - 20.0) * 0.012 + max(0.0, policy.sales_tax - 8.0) * 0.006 + max(0.0, policy.payroll_tax - 1.5) * 0.010
+         var rate_drag = max(0.0, policy.business_rate - 6.0) * 0.018
+-        var demand = city.gdp_growth * 0.18 - tax_drag - rate_drag + rng.randf_range(-1.2, 1.2)
++        var city_productivity = (city.infrastructure - 70.0) * 0.018 + (city.education - 70.0) * 0.012 + (city.transit_quality - 65.0) * 0.010 - max(0.0, city.traffic - 45.0) * 0.010
++        var demand = city.gdp_growth * 0.18 + city_productivity - tax_drag - rate_drag + rng.randf_range(-1.2, 1.2)
+         b.growth = clamp(b.growth * 0.55 + demand, -28.0, 35.0)
+         b.annual_revenue = max(10000.0, b.annual_revenue * (1.0 + b.growth / 100.0 / 12.0))
+         var margin = clamp(b.annual_profit / max(b.annual_revenue, 1.0) + b.growth / 1000.0 - city.inflation / 1500.0, -0.22, 0.28)
+@@ -3146,29 +3354,6 @@ func _generate_monthly_news(monthly_profit: float, customer_change: int) -> void
+     if bank.liquidity_ratio < 8.0:
+         _push_news("LIQUIDITY ALERT: Bank cash has fallen below 8%% of customer deposits.")
+ 
+-func _competitor_pressure() -> float:
+-    var pressure = 0.0
+-    for c in competitors:
+-        pressure += max(0.0, policy.mortgage_rate - c.mortgage) * 0.15
+-        pressure += max(0.0, c.savings - policy.savings_rate) * 0.25
+-        pressure += max(0.0, policy.monthly_account_fee - c.fee) * 0.04
+-    return pressure / max(1, competitors.size())
+-
+-func _seed_competitors() -> void:
+-    competitors = [
+-        {"name": "NovaDirect", "
