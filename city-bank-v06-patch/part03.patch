@@ -1,0 +1,269 @@
+us: float) -> void:
+     draw_circle(pos + Vector2(2, 3), radius + 1, Color(Color("13231a"), 0.38))
+     draw_circle(pos, radius, TREE)
+     draw_circle(pos + Vector2(-radius * 0.25, -radius * 0.28), radius * 0.55, TREE_LIGHT)
+ 
++func _car_position(car: Dictionary, s: Vector2) -> Vector2:
++    var a = _road_point(int(car.ix), int(car.iy), s)
++    var b = _road_point(int(car.nx), int(car.ny), s)
++    return a.lerp(b, float(car.progress))
++
+ func _draw_traffic(s: Vector2) -> void:
+     for car in cars:
+-        var pos: Vector2
+-        var angle = 0.0
+-        if bool(car.horizontal):
+-            pos = Vector2(float(car.t) * s.x, float(car.lane) * s.y + (7.0 if float(car.direction) > 0 else -7.0))
+-            angle = 0.0
+-        else:
+-            pos = Vector2(float(car.lane) * s.x + (7.0 if float(car.direction) > 0 else -7.0), (0.17 + float(car.t) * 0.83) * s.y)
+-            angle = PI * 0.5
+-        var length = 20.0 if not bool(car.bus) else 39.0
+-        var width = 8.0 if not bool(car.bus) else 10.0
+-        _draw_vehicle(pos, length, width, car.color, angle)
++        var a = _road_point(int(car.ix), int(car.iy), s)
++        var b = _road_point(int(car.nx), int(car.ny), s)
++        var pos = a.lerp(b, float(car.progress))
++        var direction = (b - a).normalized()
++        var angle = atan2(direction.y, direction.x)
++        var bus = bool(car.bus)
++        var length = 34.0 if bus else (24.0 if bool(car.service) else 18.0)
++        var width = 9.5 if bus else 7.0
++        _draw_vehicle(pos, length, width, car.color, angle, bus)
+ 
+-func _draw_vehicle(pos: Vector2, length: float, width: float, color: Color, angle: float) -> void:
++func _draw_vehicle(pos: Vector2, length: float, width: float, color: Color, angle: float, bus: bool) -> void:
+     var forward = Vector2(cos(angle), sin(angle))
+     var side = Vector2(-sin(angle), cos(angle))
+     var half_l = length * 0.5
+@@ -419,27 +633,24 @@
+     draw_colored_polygon(shadow, Color(Color("0b1014"), 0.45))
+     draw_colored_polygon(points, color)
+     draw_line(pos - forward * 2 - side * half_w, pos - forward * 2 + side * half_w, color.lightened(0.35), 2.0)
++    if bus:
++        for j in range(3):
++            var wp = pos + forward * (-9 + j * 9)
++            draw_line(wp - side * 3.1, wp + side * 3.1, Color("b9d4dc"), 1.3)
+ 
+ func _pedestrian_position(s: Vector2, p: Dictionary) -> Vector2:
+-    var t = float(p.t)
+-    var zone = int(p.zone)
+-    if zone == 0:
+-        var rect = Rect2(s.x * 0.27, s.y * 0.53, s.x * 0.18, s.y * 0.15)
+-        var phase = fmod(t * 4.0, 4.0)
+-        if phase < 1.0: return Vector2(lerp(rect.position.x, rect.end.x, phase), rect.position.y)
+-        if phase < 2.0: return Vector2(rect.end.x, lerp(rect.position.y, rect.end.y, phase - 1.0))
+-        if phase < 3.0: return Vector2(lerp(rect.end.x, rect.position.x, phase - 2.0), rect.end.y)
+-        return Vector2(rect.position.x, lerp(rect.end.y, rect.position.y, phase - 3.0))
+-    if zone == 1:
+-        return Vector2(t * s.x, s.y * 0.44 + sin(float(p.phase) * TAU) * 7.0)
+-    if zone == 2:
+-        return Vector2(t * s.x, s.y * 0.765 + sin(float(p.phase) * TAU) * 6.0)
+-    if zone == 3:
+-        return Vector2(s.x * 0.225 + sin(float(p.phase) * TAU) * 7.0, s.y * (0.20 + t * 0.76))
+-    return Vector2(s.x * 0.715 + sin(float(p.phase) * TAU) * 7.0, s.y * (0.20 + t * 0.76))
++    var a = _road_point(int(p.ix), int(p.iy), s)
++    var b = _road_point(int(p.nx), int(p.ny), s)
++    var pos = a.lerp(b, float(p.progress))
++    var dir = (b - a).normalized()
++    var side_vec = Vector2(-dir.y, dir.x)
++    return pos + side_vec * (15.0 * float(p.side))
+ 
+ func _draw_pedestrians(s: Vector2) -> void:
+-    for p in pedestrians:
++    var activity = clamp(1.0 - max(0.0, float(economy.get("unemployment",5.0)) - 5.0) * 0.035, 0.52, 1.0)
++    var draw_count = int(float(pedestrians.size()) * activity)
++    for i in range(draw_count):
++        var p = pedestrians[i]
+         var pos = _pedestrian_position(s, p)
+         var head = Color("e2b893") if int(float(p.phase) * 10.0) % 3 != 0 else Color("9d6d50")
+         var clothes = [Color("4779a6"), Color("ad5454"), Color("4f8b66"), Color("d49e50"), Color("6f648d"), Color("d7d9dc")][int(float(p.phase) * 100.0) % 6]
+@@ -448,21 +659,28 @@
+         draw_circle(pos, 1.8, head)
+ 
+ func _draw_bank_hq(s: Vector2) -> void:
+-    var pos = Vector2(s.x * 0.43, s.y * 0.78)
++    var pos = Vector2(s.x * 0.43, s.y * 0.82)
+     draw_circle(pos + Vector2(3, 4), 15, Color(Color("10161b"), 0.45))
+     draw_circle(pos, 13, Color("d7ad55"))
+     draw_circle(pos, 7, Color("1b242b"))
+-    draw_string(ThemeDB.fallback_font, pos + Vector2(18, 4), "YOUR BANK HQ", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f5d995"))
++    draw_string(ThemeDB.fallback_font, pos + Vector2(18, 4), "STERLING CITY BANK HQ", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f5d995"))
++
++func _draw_atmosphere(s: Vector2) -> void:
++    # Slow visual day/night cycle. It changes only presentation, never financial simulation state.
++    var daylight = 0.5 + 0.5 * sin(world_time * TAU - PI * 0.5)
++    var night_alpha = clamp((0.48 - daylight) * 0.42, 0.0, 0.22)
++    if night_alpha > 0.001:
++        draw_rect(Rect2(Vector2.ZERO, s), Color(0.03,0.07,0.15,night_alpha), true)
+ 
+ func _draw_district_highlights(s: Vector2) -> void:
+     for d in districts:
+-        if d.name != hovered_district and d.name != selected_district:
++        if String(d.name) != hovered_district and String(d.name) != selected_district:
+             continue
+-        var r_norm = d.rect
+-        var rect = Rect2(Vector2(r_norm.position.x * s.x, r_norm.position.y * s.y), Vector2(r_norm.size.x * s.x, r_norm.size.y * s.y))
+-        var col = Color("79b7eb") if d.name == hovered_district else Color("d9b66f")
+-        draw_rect(rect.grow(-2), Color(col, 0.06), true)
+-        draw_rect(rect.grow(-2), Color(col, 0.82), false, 2.0)
++        var r: Rect2 = d.rect
++        var rect = Rect2(Vector2(r.position.x * s.x, r.position.y * s.y), Vector2(r.size.x * s.x, r.size.y * s.y))
++        var col = Color("79b7eb") if String(d.name) == hovered_district else Color("d9b66f")
++        draw_rect(rect.grow(-2), Color(col, 0.05), true)
++        draw_rect(rect.grow(-2), Color(col, 0.84), false, 2.0)
+         var label_pos = rect.position + Vector2(9, 18)
+-        draw_rect(Rect2(label_pos - Vector2(5, 13), Vector2(160, 22)), Color(Color("101820"), 0.78), true)
+-        draw_string(ThemeDB.fallback_font, label_pos, d.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, TEXT)
++        draw_rect(Rect2(label_pos - Vector2(5, 13), Vector2(166, 22)), Color(Color("101820"), 0.82), true)
++        draw_string(ThemeDB.fallback_font, label_pos, String(d.name).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, TEXT)
+diff -ruN city_bank_v05_base/city_bank_tycoon/scripts/main.gd city_bank_v06_work/city_bank_tycoon/scripts/main.gd
+--- city_bank_v05_base/city_bank_tycoon/scripts/main.gd	2026-08-25 18:31:42.000000000 +0000
++++ city_bank_v06_work/city_bank_tycoon/scripts/main.gd	2026-08-25 18:51:54.835241706 +0000
+@@ -357,7 +357,7 @@
+     save.pressed.connect(_save_game)
+     outer.add_child(save)
+     var footer = Label.new()
+-    footer.text = "  v0.5 Living City & UI Controls"
++    footer.text = "  v0.6 City World & Responsive Underwriting"
+     footer.add_theme_font_size_override("font_size", 9)
+     footer.add_theme_color_override("font_color", C_MUTED)
+     outer.add_child(footer)
+@@ -1341,7 +1341,7 @@
+     outer.add_child(row)
+ 
+     var left = _panel_container()
+-    left.custom_minimum_size.x = 470
++    left.custom_minimum_size.x = 410
+     var lv = VBoxContainer.new()
+     lv.add_theme_constant_override("separation", 8)
+     left.add_child(lv)
+@@ -1356,6 +1356,8 @@
+     header.add_child(gen)
+     var scroll = ScrollContainer.new()
+     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
++    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+     lv.add_child(scroll)
+     var list = VBoxContainer.new()
+     list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+@@ -1384,6 +1386,8 @@
+     var right_scroll = ScrollContainer.new()
+     right_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+     right_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
++    right_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+     right.add_child(right_scroll)
+     var rv = VBoxContainer.new()
+     rv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+@@ -1421,11 +1425,13 @@
+     var meta = Label.new()
+     meta.text = "%s  •  %s  •  Requested %s  •  %s" % [a.type, a.purpose, _money(a.amount), a.status]
+     meta.add_theme_color_override("font_color", C_MUTED)
++    meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+     v.add_child(meta)
+     v.add_child(HSeparator.new())
+ 
+     var grid = GridContainer.new()
+-    grid.columns = 4
++    # Keep underwriting metrics readable without ever requiring horizontal scrolling.
++    grid.columns = 2
+     grid.add_theme_constant_override("h_separation", 10)
+     grid.add_theme_constant_override("v_separation", 10)
+     v.add_child(grid)
+@@ -1439,10 +1445,16 @@
+         ["EST. DEFAULT", "%.1f%%" % a.pd, C_RED if a.pd > 8 else C_TEXT],
+         ["RISK RANGE", "%.1f–%.1f%%" % [a.pd_low, a.pd_high], C_MUTED]
+     ]:
+-        grid.add_child(_metric_card(card[0], card[1], card[2]))
+-
+-    var file_row = HBoxContainer.new()
+-    file_row.add_theme_constant_override("separation", 14)
++        var metric = _metric_card(card[0], card[1], card[2])
++        metric.custom_minimum_size.x = 0
++        metric.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++        grid.add_child(metric)
++
++    var file_row = GridContainer.new()
++    file_row.columns = 1
++    file_row.add_theme_constant_override("h_separation", 14)
++    file_row.add_theme_constant_override("v_separation", 10)
++    file_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     v.add_child(file_row)
+ 
+     var profile = _panel_container()
+@@ -1524,19 +1536,26 @@
+     ov.add_child(send)
+     v.add_child(offer)
+ 
+-    var actions = HBoxContainer.new()
+-    actions.add_theme_constant_override("separation", 10)
++    var actions = GridContainer.new()
++    actions.columns = 2
++    actions.add_theme_constant_override("h_separation", 10)
++    actions.add_theme_constant_override("v_separation", 8)
++    actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     v.add_child(actions)
+-    var form = _button("Open Application Form", 190)
++    var form = _button("Open Application Form", 0)
++    form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     form.pressed.connect(func(): _open_attachment(int(a.id), 0))
+     actions.add_child(form)
+-    var verify = _button("Verify Documents", 160)
++    var verify = _button("Verify Documents", 0)
++    verify.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     verify.pressed.connect(func(): _verify_application(idx))
+     actions.add_child(verify)
+-    var docs = _button("Request Missing Docs", 170)
++    var docs = _button("Request Missing Docs", 0)
++    docs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     docs.pressed.connect(func(): _request_documents(idx))
+     actions.add_child(docs)
+-    var mail = _button("Open Mail", 110)
++    var mail = _button("Open Mail", 0)
++    mail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     mail.pressed.connect(func(): _select_mail_for_application(int(a.id)); _show_view("Mail"))
+     actions.add_child(mail)
+ 
+@@ -2852,9 +2871,11 @@
+ func _offer_spin_row(label_text: String, min_value: float, max_value: float, step_value: float, current_value: float, suffix: String) -> Dictionary:
+     var container = HBoxContainer.new()
+     container.add_theme_constant_override("separation", 10)
++    container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     var label = Label.new()
+     label.text = label_text
+-    label.custom_minimum_size.x = 190
++    label.custom_minimum_size.x = 132
++    label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+     label.add_theme_color_override("font_color", C_MUTED)
+     container.add_child(label)
+     var spin = SpinBox.new()
+@@ -2864,12 +2885,10 @@
+     spin.value = current_value
+     spin.allow_greater = false
+     spin.allow_lesser = false
+-    spin.custom_minimum_size.x = 220
++    spin.suffix = suffix
++    spin.custom_minimum_size.x = 120
++    spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+     container.add_child(spin)
+-    var unit = Label.new()
+-    unit.text = suffix
+-    unit.add_theme_color_override("font_color", C_ACCENT)
+-    container.add_child(unit)
+     return {"container": container, "spin": spin}
+ 
+ func _customer_by_id(id_value: int) -> Dictionary:
+@@ -3152,9 +3171,9 @@
+     return p
+ 
+ func _key_value(k: String, val: String) -> Control:
+-    var h = HBoxContainer.new(); h.custom_minimum_size.y = 26
+-    var kl = Label.new(); kl.text = k; kl.custom_minimum_size.x = 180; kl.add_theme_color_override("font_color", C_MUTED); h.add_child(kl)
+-    var vl = Label.new(); vl.text = val; vl.add_theme_color_override("font_color", C_TEXT); h.add_child(vl)
++    var h = HBoxContainer.new(); h.custom_minimum_size.y = 26; h.size_flags_horizontal = Control.SIZE_EXPAND_FILL
++    var kl = Label.new(); kl.text = k; kl.custom_minimum_size.x = 126; kl.add_theme_color_override("font_color", C_MUTED); h.add_child(kl)
++    var vl = Label.new(); vl.text = val; vl.size_flags_horizontal = Control.SIZE_EXPAND_FILL; vl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; vl.add_theme_color_override("font_color", C_TEXT); h.add_child(vl)
+     return h
+ 
+ func _panel_container() -> PanelContainer:
