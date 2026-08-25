@@ -1,0 +1,64 @@
+diff --git a/city_bank_tycoon/project.godot b/city_bank_tycoon/project.godot
+index b533d4f..c62b1a2 100644
+--- a/city_bank_tycoon/project.godot
++++ b/city_bank_tycoon/project.godot
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="0.9.0"
++config/version="1.0.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+diff --git a/city_bank_tycoon/scripts/main.gd b/city_bank_tycoon/scripts/main.gd
+index ef0aa0c..4715c03 100644
+--- a/city_bank_tycoon/scripts/main.gd
++++ b/city_bank_tycoon/scripts/main.gd
+@@ -32,14 +32,13 @@ var game_notifications: Array[Dictionary] = []
+ var notification_sequence = 0
+ var applications: Array[Dictionary] = []
+ var loans: Array[Dictionary] = []
+-var competitors: Array[Dictionary] = []
+ var customers: Array[Dictionary] = []
+ var businesses: Array[Dictionary] = []
+ var history: Array[Dictionary] = []
+ var last_month_profit = 0.0
+ var verification_spend = 0.0
+ var months_simulated = 0
+-const SAVE_VERSION = 5
++const SAVE_VERSION = 6
+ 
+ var bank = {
+     "name": "Sterling City Bank",
+@@ -72,6 +71,15 @@ var city = {
+     "poverty": 11.2,
+     "inequality": 37.0,
+     "crime": 24.0,
++    "health": 72.0,
++    "education": 70.0,
++    "fire_safety": 78.0,
++    "transit_quality": 66.0,
++    "infrastructure": 73.0,
++    "cleanliness": 74.0,
++    "traffic": 38.0,
++    "homelessness": 1.8,
++    "healthcare_cost_monthly": 165.0,
+     "city_budget": 420000000.0,
+     "city_debt": 1650000000.0,
+     "housing_supply": 186000.0,
+@@ -102,6 +110,12 @@ var policy = {
+     "tourism_tax": 4.0,
+     "business_license_tax": 1.0,
+     "transaction_tax": 0.1,
++    "payroll_tax": 1.5,
++    "fuel_tax": 6.0,
++    "hotel_tax": 7.0,
++    "utility_tax": 3.0,
++    "vacant_property_tax": 0.5,
++    "land_value_tax": 0.3,
+     "mortgage_max_ltv": 85.0,
+     "mortgage_min_score": 650.0,
+     "mortgage_max_dti": 42.0,
+@@ -135,15 +149,33 @@ var active_signature_modal: Control
+ var active_document_application_id = -1
+ var activ
