@@ -55,6 +55,8 @@ jobs:
           git apply -p5 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v08.patch"
           echo "b51945e6ed46365b942dd6886d9468af4e117b23c007b18bf725600e38d02bd8  city-bank-v08-patch/wheel-hotfix.patch" | sha256sum -c -
           git apply -p1 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v08-patch/wheel-hotfix.patch"
+          echo "a1149029d9d0e36d808d8c05ffddf821a816fda11a9d177edf3f6a02860ff682  city-bank-v08-patch/streetlight-hotfix.patch" | sha256sum -c -
+          git apply -p1 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v08-patch/streetlight-hotfix.patch"
           grep -q 'config/version="0.8.0"' city_bank_tycoon/project.godot
           grep -q 'v0.8 City Visual Overhaul' city_bank_tycoon/scripts/main.gd
           grep -q 'facade_materials' city_bank_tycoon/scripts/city_map.gd
