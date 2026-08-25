@@ -56,7 +56,8 @@ jobs:
           grep -q 'config/version="0.8.0"' city_bank_tycoon/project.godot
 
           cat city-bank-v09-patch/part*.patch > v09.patch
-          echo "0de2c257f45b496cbbbe6258e9d9b38cbc3b735da50a19d0b111c917a717a3d7  v09.patch" | sha256sum -c -
+          sha256sum v09.patch
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v09.patch"
           git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v09.patch"
           git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v09-patch/toast-hotfix.patch"
           grep -q 'config/version="0.9.0"' city_bank_tycoon/project.godot
