@@ -1,0 +1,11 @@
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -1645,7 +1645,7 @@
+     var toast = PanelContainer.new()
+     toast.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+     toast.offset_left = -430
+-    toast.offset_right = -315
++    toast.offset_right = -20
+     toast.offset_top = 84
+     toast.offset_bottom = 178
+     toast.z_index = 200
