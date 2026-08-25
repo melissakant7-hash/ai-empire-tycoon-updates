@@ -8,6 +8,7 @@ on:
       - "city-bank-v04-source/**"
       - "city-bank-v05-patch/**"
       - "city-bank-v06-patch/**"
+      - "city-bank-v07-patch/**"
       - ".github/workflows/city-bank-tycoon-windows.yml"
   workflow_dispatch:
 
@@ -25,7 +26,7 @@ jobs:
       - name: Checkout build branch
         uses: actions/checkout@v4
 
-      - name: Reassemble v0.4 base, v0.5 and exact v0.6 patch
+      - name: Reassemble v0.4 base through exact v0.7 source
         shell: bash
         run: |
           cat city-bank-v04-source/part*.b64 | base64 -d > city-bank-tycoon-v04-source.zip
@@ -46,6 +47,12 @@ jobs:
           echo "7cb54e496b29c2aedf6740441a243489e1a37d6aa128fa0cb326f533f924caf6  v06.patch" | sha256sum -c -
           git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v06.patch"
           grep -q 'config/version="0.6.0"' city_bank_tycoon/project.godot
+
+          cat city-bank-v07-patch/part*.patch > v07.patch
+          echo "d894e70bc11784769c41028ae57d56c45d71fc8f6284c753acb874c14e004902  v07.patch" | sha256sum -c -
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v07.patch"
+          grep -q 'config/version="0.7.0"' city_bank_tycoon/project.godot
+          grep -q 'extends SubViewportContainer' city_bank_tycoon/scripts/city_map.gd
           if grep -R -qE 'city_reference_world|res://assets' city_bank_tycoon; then
             echo 'Photographic city reference returned unexpectedly.'
             exit 1
@@ -73,7 +80,7 @@ jobs:
             exit 1
           fi
 
-      - name: Run v0.5 regression smoke test
+      - name: Run v0.5 banking regression smoke test
         shell: bash
         run: |
           cp city-bank-v05-patch/ci_smoke.gd city_bank_tycoon/ci_smoke.gd
@@ -84,12 +91,12 @@ jobs:
           test "$status" -eq 0
           grep -q 'CI_V05_UI_AUTO_CITY_DOCUMENT_SMOKE_OK' smoke-v05.log
           if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke-v05.log; then
-            echo 'v0.5 regression smoke test found a script/runtime error.'
+            echo 'v0.5 banking regression smoke test found a script/runtime error.'
             exit 1
           fi
           rm -f city_bank_tycoon/ci_smoke.gd
 
-      - name: Run v0.6 responsive underwriting and city-world smoke test
+      - name: Run v0.6 responsive underwriting regression smoke test
         shell: bash
         run: |
           cp city-bank-v06-patch/ci_smoke.gd city_bank_tycoon/ci_smoke.gd
@@ -100,7 +107,23 @@ jobs:
           test "$status" -eq 0
           grep -q 'CI_V06_RESPONSIVE_LOAN_AND_CITY_WORLD_OK' smoke-v06.log
           if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke-v06.log; then
-            echo 'v0.6 smoke test found a script/runtime error.'
+            echo 'v0.6 regression smoke test found a script/runtime error.'
+            exit 1
+          fi
+          rm -f city_bank_tycoon/ci_smoke.gd
+
+      - name: Run v0.7 native 3D city smoke test
+        shell: bash
+        run: |
+          cp city-bank-v07-patch/ci_smoke.gd city_bank_tycoon/ci_smoke.gd
+          set +e
+          godot --headless --path city_bank_tycoon -s res://ci_smoke.gd 2>&1 | tee smoke-v07.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          grep -q 'CI_V07_NATIVE_3D_CITY_WORLD_OK' smoke-v07.log
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call' smoke-v07.log; then
+            echo 'v0.7 native 3D smoke test found a script/runtime error.'
             exit 1
           fi
           rm -f city_bank_tycoon/ci_smoke.gd
@@ -109,14 +132,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$GITHUB_WORKSPACE/build/windows"
-          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.6.exe" 2>&1 | tee export.log
-          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.6.exe"
-          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.6.exe"
+          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.7.exe" 2>&1 | tee export.log
+          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.7.exe"
+          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v0.7.exe"
 
       - name: Upload playable Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: CityBankTycoon-v0.6-Windows-x64
-          path: build/windows/CityBankTycoon-v0.6.exe
+          name: CityBankTycoon-v0.7-Windows-x64
+          path: build/windows/CityBankTycoon-v0.7.exe
           if-no-files-found: error
           retention-days: 30
