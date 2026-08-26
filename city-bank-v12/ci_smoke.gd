@@ -27,8 +27,8 @@ func _run() -> void:
         fail("Could not read project.godot")
         return
     var project_text = project_file.get_as_text()
-    if 'config/version="1.2.0"' not in project_text:
-        fail("v1.2 version marker missing")
+    if 'config/version="1.3.0"' not in project_text:
+        fail("v1.3 compatibility version marker missing")
         return
     if 'window/stretch/aspect="expand"' not in project_text:
         fail("16:10 expand stretch setting missing")
