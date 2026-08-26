@@ -1,0 +1,229 @@
+name: Build City Bank Tycoon v1.4 Windows
+
+on:
+  push:
+    branches:
+      - city-bank-v14-build
+    paths:
+      - "city-bank-v14/**"
+      - ".github/workflows/city-bank-v14-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-windows:
+    name: Export v1.4 Windows x64
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.7.2
+
+    steps:
+      - name: Checkout v1.4 branch
+        uses: actions/checkout@v4
+
+      - name: Reconstruct tested v1.1 base
+        shell: bash
+        run: |
+          cat city-bank-v04-source/part*.b64 | base64 -d > city-bank-tycoon-v04-source.zip
+          echo "c1ccfbac76568deb1ca5a6be2982a10d7b825597fd2fcc71957379d1b859da3a  city-bank-tycoon-v04-source.zip" | sha256sum -c -
+          unzip -q city-bank-tycoon-v04-source.zip
+
+          cat city-bank-v05-patch/part*.patch > v05.patch
+          echo "15b130b9ff2bb5e707b27b15321a8eb43f76530c12570635c25bda2275a3f452  v05.patch" | sha256sum -c -
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v05.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v05-patch/layout-hotfix.patch"
+          rm -f city_bank_tycoon/assets/city_reference_world.jpg
+          rmdir city_bank_tycoon/assets 2>/dev/null || true
+
+          cat city-bank-v06-patch/part*.patch > v06.patch
+          git apply "$GITHUB_WORKSPACE/city-bank-v06-patch/transport-fix.patch"
+          echo "7cb54e496b29c2aedf6740441a243489e1a37d6aa128fa0cb326f533f924caf6  v06.patch" | sha256sum -c -
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v06.patch"
+
+          cat city-bank-v07-patch/part*.patch > v07.patch
+          git apply "$GITHUB_WORKSPACE/city-bank-v07-patch/transport-fix.patch"
+          echo "d894e70bc11784769c41028ae57d56c45d71fc8f6284c753acb874c14e004902  v07.patch" | sha256sum -c -
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v07.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v07-patch/runtime-hotfix.patch"
+
+          cat city-bank-v08-patch/part00.patch city-bank-v08-patch/part01.patch city-bank-v08-patch/fix02_0.patch city-bank-v08-patch/fix02_1.patch city-bank-v08-patch/fix02_2.patch city-bank-v08-patch/fix02_3.patch city-bank-v08-patch/fix03_0.patch city-bank-v08-patch/fix03_1.patch city-bank-v08-patch/fix03_2.patch city-bank-v08-patch/fix03_3.patch city-bank-v08-patch/part04.patch city-bank-v08-patch/fix05_0.patch city-bank-v08-patch/fix05_1.patch city-bank-v08-patch/fix05_2.patch city-bank-v08-patch/fix05_3.patch city-bank-v08-patch/part06.patch > v08.patch
+          echo "bbf45e643793ca3662d41429c31b2d20a98495715545b52f812efe073fcf34ce  v08.patch" | sha256sum -c -
+          git apply -p5 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v08.patch"
+          git apply -p1 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v08-patch/wheel-hotfix.patch"
+          git apply -p1 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v08-patch/streetlight-hotfix.patch"
+
+          cat city-bank-v09-patch/part*.patch > v09.patch
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v09.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v09.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v09-patch/toast-hotfix.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v09-patch/mail-link-hotfix.patch"
+
+          cat city-bank-v10-patch/fix00_00.patch city-bank-v10-patch/fix00_01.patch city-bank-v10-patch/fix00_02.patch city-bank-v10-patch/fix00_03.patch city-bank-v10-patch/fix00_04.patch city-bank-v10-patch/fix00_05.patch city-bank-v10-patch/part01.patch city-bank-v10-patch/fix02_00.patch city-bank-v10-patch/fix02_01.patch city-bank-v10-patch/fix02_02.patch city-bank-v10-patch/fix02_03.patch city-bank-v10-patch/fix02_04.patch city-bank-v10-patch/fix02_05.patch city-bank-v10-patch/part03.patch city-bank-v10-patch/part04.patch city-bank-v10-patch/fix05_00.patch city-bank-v10-patch/fix05_01.patch city-bank-v10-patch/fix05_02.patch city-bank-v10-patch/fix05_03.patch city-bank-v10-patch/fix05_04.patch city-bank-v10-patch/fix05_05.patch city-bank-v10-patch/part06.patch > v10.patch
+          echo "d2ba27ab2b32715cee95fbd097a86cbf80fbcfcb7b5a4476b9ea3263eb28ca57  v10.patch" | sha256sum -c -
+          git apply --check "$GITHUB_WORKSPACE/v10.patch"
+          git apply "$GITHUB_WORKSPACE/v10.patch"
+
+          echo "772211eb4acbe85e74d34829c9e6050fab6a401804dfcac9cadf16784cc1a27d  city-bank-v11/v11.patch.gz.b64" | sha256sum -c -
+          base64 -d city-bank-v11/v11.patch.gz.b64 | gzip -dc > v11.patch
+          echo "8395e3b83e06d9aa4387a9f14e6dab67b9d8a4db7c5bb30235c277c7908edf8b  v11.patch" | sha256sum -c -
+          git apply --check -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v11.patch"
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v11.patch"
+          echo "15c81d64b2d0794bbec8a09a3aea878cf9731d693d58daf5863766788653d888  city-bank-v11/city-services-hotfix.patch" | sha256sum -c -
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v11/city-services-hotfix.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v11/city-services-hotfix.patch"
+          grep -q 'config/version="1.1.0"' city_bank_tycoon/project.godot
+
+      - name: Apply exact v1.2 changes
+        shell: bash
+        run: |
+          echo "6d34a0eb49d700e86ea67bd2d6ad67aafeba021b03403875bfb79a1c320c46e4  city-bank-v12/plain-patch/part00.patch" | sha256sum -c -
+          echo "1ebbb201e96f6f80444a0c3ec928abf61a0a4b9d1f28382c2dcf19a6df06abfb  city-bank-v12/plain-patch/part01.patch" | sha256sum -c -
+          echo "a57a59c00249989a47ab816acc01aa2d64f24684eae8b6967cc6fd14c2840523  city-bank-v12/plain-patch/part02.patch" | sha256sum -c -
+          echo "d6dfa2be29b660fc94eea0f8729ebb477dc340cac0f9b5dcac69b790225b06df  city-bank-v12/plain-patch/part03.patch" | sha256sum -c -
+          echo "697b22ece25b7afcac43ab977223f64b8d633c0e2e328403ab00af7f6d93aac9  city-bank-v12/plain-patch/part04.patch" | sha256sum -c -
+          echo "b49948b34052c53c928d0bcdab1c43e96d3868de6b08afd171ebfcdc8626c14a  city-bank-v12/plain-patch/part05.patch" | sha256sum -c -
+          echo "919aae99055f7cd6601e2c025f5b6081b3507d91ad8600ec84608a33a6feda95  city-bank-v12/plain-patch/part06.patch" | sha256sum -c -
+          cat city-bank-v12/plain-patch/part00.patch city-bank-v12/plain-patch/part01.patch city-bank-v12/plain-patch/part02.patch city-bank-v12/plain-patch/part03.patch city-bank-v12/plain-patch/part04.patch city-bank-v12/plain-patch/part05.patch city-bank-v12/plain-patch/part06.patch > v12.patch
+          echo "5214cc24eb54e923ae09e401bf445dcd3a6596afcd0b8c56621dd03b4c9570a0  v12.patch" | sha256sum -c -
+          git apply --check -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v12.patch"
+          git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v12.patch"
+          echo "1232c6d63e0c13d0e95532a0db7e3d4ce417fb9f546944ce445de7459cadfd7c  city-bank-v12/healthcare-hotfix.patch" | sha256sum -c -
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v12/healthcare-hotfix.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v12/healthcare-hotfix.patch"
+          grep -q 'config/version="1.2.0"' city_bank_tycoon/project.godot
+          grep -q 'window/stretch/aspect="expand"' city_bank_tycoon/project.godot
+          grep -q 'Create acceleration notice' city_bank_tycoon/scripts/main.gd
+          grep -q 'Loan servicing actions' city_bank_tycoon/scripts/main.gd
+
+      - name: Apply v1.3 bank and city finance HUD
+        shell: bash
+        run: |
+          echo "f13a26f1040b59ca0246e14aaa2e07db94a85c95d70d96f5af4188aff97a37d5  city-bank-v13/v13.patch" | sha256sum -c -
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v13/v13.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v13/v13.patch"
+          grep -q 'config/version="1.3.0"' city_bank_tycoon/project.godot
+          grep -q 'BANK PROFIT (LAST MO.)' city_bank_tycoon/scripts/main.gd
+          grep -q 'CITY BALANCE (LAST MO.)' city_bank_tycoon/scripts/main.gd
+
+      - name: Apply v1.4 population autosave and slider behavior
+        shell: bash
+        run: |
+          echo "1ae39947eb65673a065d4959eba1a7d02dd45387ca207e2f6c913596dcf12363  city-bank-v14/v14.patch.gz.b64" | sha256sum -c -
+          base64 -d city-bank-v14/v14.patch.gz.b64 | gzip -dc > v14.patch
+          echo "b95d6434ffce0463e86ab21a11543cbfce184857649ef220c534fdbfdf2ac0b9  v14.patch" | sha256sum -c -
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v14.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v14.patch"
+          grep -q 'config/version="1.4.0"' city_bank_tycoon/project.godot
+          grep -q 'slider.scrollable = false' city_bank_tycoon/scripts/main.gd
+          grep -q 'AUTOSAVE_INTERVAL_SECONDS = 3.0' city_bank_tycoon/scripts/main.gd
+
+      - name: Prepare Godot export templates
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates"
+          if [ -d /root/.local/share/godot/export_templates/4.7.2.stable ]; then
+            cp -a /root/.local/share/godot/export_templates/4.7.2.stable "$HOME/.local/share/godot/export_templates/"
+          fi
+          godot --version
+
+      - name: Parse v1.4 scripts
+        shell: bash
+        run: |
+          set +e
+          godot --headless --path city_bank_tycoon --check-only --script res://scripts/document_paper.gd 2>&1 | tee parser-doc.log
+          doc_status=${PIPESTATUS[0]}
+          godot --headless --path city_bank_tycoon --check-only --script res://scripts/city_map.gd 2>&1 | tee parser-city.log
+          city_status=${PIPESTATUS[0]}
+          godot --headless --path city_bank_tycoon --check-only --script res://scripts/main.gd 2>&1 | tee parser-main.log
+          main_status=${PIPESTATUS[0]}
+          set -e
+          test "$doc_status" -eq 0
+          test "$city_status" -eq 0
+          test "$main_status" -eq 0
+          if grep -qE 'SCRIPT ERROR|Parse Error|Failed to load script' parser-doc.log parser-city.log parser-main.log; then exit 1; fi
+
+      - name: Import complete game
+        shell: bash
+        run: |
+          set +e
+          godot --headless --path city_bank_tycoon --editor --quit 2>&1 | tee import.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          if grep -qE 'SCRIPT ERROR: Parse Error|Failed to load script.*Parse error|String formatting error' import.log; then exit 1; fi
+
+      - name: Run v1.1 document regression
+        shell: bash
+        run: |
+          cp city-bank-v11/ci_smoke.gd city_bank_tycoon/ci_smoke.gd
+          set +e
+          godot --headless --path city_bank_tycoon -s res://ci_smoke.gd 2>&1 | tee smoke-v11.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          grep -q 'CI_V11_GMAIL_DARK_PDF_VERIFICATION_OK' smoke-v11.log
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call|String formatting error' smoke-v11.log; then exit 1; fi
+          rm -f city_bank_tycoon/ci_smoke.gd
+
+      - name: Run v1.2 responsive servicing test
+        shell: bash
+        run: |
+          sed 's/config\/version="1.2.0"/config\/version="1.4.0"/' city-bank-v12/ci_smoke.gd > city_bank_tycoon/ci_smoke.gd
+          set +e
+          godot --headless --path city_bank_tycoon -s res://ci_smoke.gd 2>&1 | tee smoke-v12.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          grep -q 'CI_V12_RESPONSIVE_SERVICING_OK' smoke-v12.log
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call|String formatting error' smoke-v12.log; then exit 1; fi
+          rm -f city_bank_tycoon/ci_smoke.gd
+
+      - name: Run v1.3 bank and city finance HUD test
+        shell: bash
+        run: |
+          sed 's/config\/version="1.3.0"/config\/version="1.4.0"/' city-bank-v13/ci_smoke.gd > city_bank_tycoon/ci_smoke.gd
+          set +e
+          godot --headless --path city_bank_tycoon -s res://ci_smoke.gd 2>&1 | tee smoke-v13.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          grep -q 'CI_V13_BANK_CITY_FINANCE_HUD_OK' smoke-v13.log
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call|String formatting error' smoke-v13.log; then exit 1; fi
+          rm -f city_bank_tycoon/ci_smoke.gd
+
+      - name: Run v1.4 population autosave and slider test
+        shell: bash
+        run: |
+          cp city-bank-v14/ci_smoke.gd city_bank_tycoon/ci_smoke.gd
+          set +e
+          godot --headless --path city_bank_tycoon -s res://ci_smoke.gd 2>&1 | tee smoke-v14.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          grep -q 'CI_V14_POPULATION_AUTOSAVE_SLIDER_OK' smoke-v14.log
+          if grep -qE 'SCRIPT ERROR|Invalid call|Invalid access|Parse Error|Attempt to call|String formatting error' smoke-v14.log; then exit 1; fi
+          rm -f city_bank_tycoon/ci_smoke.gd
+
+      - name: Export native Windows executable
+        shell: bash
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/build/windows"
+          set +e
+          godot --headless --path city_bank_tycoon --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v1.4.exe" 2>&1 | tee export.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -eq 0
+          test -f "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v1.4.exe"
+          if grep -qE 'SCRIPT ERROR: Parse Error|Failed to load script.*Parse error|String formatting error' export.log; then exit 1; fi
+          sha256sum "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v1.4.exe"
+          ls -lah "$GITHUB_WORKSPACE/build/windows/CityBankTycoon-v1.4.exe"
+
+      - name: Upload playable Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: CityBankTycoon-v1.4-Windows-x64
+          path: build/windows/CityBankTycoon-v1.4.exe
+          if-no-files-found: error
+          retention-days: 30
