@@ -1,0 +1,12 @@
+diff --git a/scripts/main.gd b/scripts/main.gd
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -2683,7 +2683,7 @@ func _refresh_city_services_labels() -> void:
+     var oop = _estimated_healthcare_out_of_pocket()
+     if is_instance_valid(city_services_health_label):
+         if subsidy >= 99.5:
+-            city_services_health_label.text = "At 100%, public healthcare is effectively FREE at the point of use. Estimated resident out-of-pocket cost: %s/month." % _money(oop)
++            city_services_health_label.text = "At 100%%, public healthcare is effectively FREE at the point of use. Estimated resident out-of-pocket cost: %s/month." % _money(oop)
+             city_services_health_label.add_theme_color_override("font_color", C_GREEN)
+         elif subsidy >= 75.0:
+             city_services_health_label.text = "High healthcare subsidy: the city covers %.0f%% of the standard resident cost. Estimated resident out-of-pocket cost: %s/month." % [subsidy, _money(oop)]
