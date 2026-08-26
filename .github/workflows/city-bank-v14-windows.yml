@@ -110,7 +110,6 @@ jobs:
       - name: Apply v1.4 population autosave and slider behavior
         shell: bash
         run: |
-          echo "d60838f033eb36dd5bcdcda6d1240e7f487768d76d2dc0e1c7d52c7ae98e941f  city-bank-v14/v14.patch.gz.b64" | sha256sum -c -
           base64 -d city-bank-v14/v14.patch.gz.b64 | gzip -dc > v14.patch
           echo "8ec7d1f854b9bca9107fbc9279a65ba80012b9383c81d1aa67216f74823d79b8  v14.patch" | sha256sum -c -
           git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v14.patch"
