@@ -1,0 +1,64 @@
+diff --git a/README.md b/README.md
+index f612ed8..c2a20b1 100644
+--- a/README.md
++++ b/README.md
+@@ -48,3 +48,10 @@ Godot 4.7.x, Windows Desktop export.
+ - Upgraded 3D citizens with limbs, clothing/height variation and walking animation.
+ - Expanded city activity to 184 vehicles and 680 citizens with the existing banking UI preserved as an overlay.
+ - Improved sky, filmic tone mapping and day/night lighting response.
++
++
++## v1.3 Bank vs City Finance HUD
++- Renamed the top-bar profit KPI to BANK PROFIT (LAST MO.) so it is clearly separated from government finances.
++- Renamed tax income to CITY TAX REVENUE (EST.) to make clear that it is gross city tax revenue.
++- Added CITY BALANCE (LAST MO.) showing the city government operating balance after public-service spending.
++- City balance turns green for a surplus and red for a deficit and refreshes with the live HUD.
+diff --git a/project.godot b/project.godot
+index 30cb17c..d8bd6cb 100644
+--- a/project.godot
++++ b/project.godot
+@@ -1,6 +1,6 @@
+ [application]
+ config/name="City Bank Tycoon"
+-config/version="1.2.0"
++config/version="1.3.0"
+ run/main_scene="res://main.tscn"
+ config/features=PackedStringArray("4.7")
+ 
+diff --git a/scripts/main.gd b/scripts/main.gd
+index 887e3f6..f5a951b 100644
+--- a/scripts/main.gd
++++ b/scripts/main.gd
+@@ -131,6 +131,7 @@ var deposits_label: Label
+ var active_loans_label: Label
+ var profit_label: Label
+ var tax_income_label: Label
++var city_balance_label: Label
+ var district_title_label: Label
+ var district_stats_label: Label
+ var district_panel: Control
+@@ -314,10 +315,12 @@ func _build_topbar() -> Control:
+     row.add_child(deposits_label.get_parent())
+     active_loans_label = _top_kpi("ACTIVE LOANS", _money(bank.loan_book), C_BLUE)
+     row.add_child(active_loans_label.get_parent())
+-    profit_label = _top_kpi("PROFIT (LAST MO.)", _money(last_month_profit), C_GREEN if last_month_profit >= 0 else C_RED)
++    profit_label = _top_kpi("BANK PROFIT (LAST MO.)", _money(last_month_profit), C_GREEN if last_month_profit >= 0 else C_RED)
+     row.add_child(profit_label.get_parent())
+-    tax_income_label = _top_kpi("TAX INCOME (EST.)", _money(_monthly_tax_revenue_estimate()), C_ACCENT)
++    tax_income_label = _top_kpi("CITY TAX REVENUE (EST.)", _money(_monthly_tax_revenue_estimate()), C_ACCENT)
+     row.add_child(tax_income_label.get_parent())
++    city_balance_label = _top_kpi("CITY BALANCE (LAST MO.)", _money(float(government.monthly_balance)), C_GREEN if float(government.monthly_balance) >= 0.0 else C_RED)
++    row.add_child(city_balance_label.get_parent())
+ 
+     notifications_label = Button.new()
+     notifications_label.text = "🔔"
+@@ -3924,6 +3927,9 @@ func _refresh_topbar() -> void:
+         profit_label.add_theme_color_override("font_color", C_GREEN if last_month_profit >= 0 else C_RED)
+     if is_instance_valid(tax_income_label):
+         tax_income_label.text = _money(_monthly_tax_revenue_estimate())
++    if is_instance_valid(city_balance_label):
++        city_balance_label.text = _money(float(government.monthly_balance))
++        city_balance_label.add_theme_color_override("font_color", C_GREEN if float(government.monthly_balance) >= 0.0 else C_RED)
+     if is_instance_valid(notifications_label):
+         var unread_notifications = _unread_notification_count()
+         notifications_label.text = "🔔 %d" % unread_notifications if unread_notifications > 0 else "🔔"
