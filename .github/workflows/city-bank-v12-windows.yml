@@ -89,6 +89,9 @@ jobs:
           echo "5214cc24eb54e923ae09e401bf445dcd3a6596afcd0b8c56621dd03b4c9570a0  v12.patch" | sha256sum -c -
           git apply --check -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v12.patch"
           git apply -p2 --directory=city_bank_tycoon "$GITHUB_WORKSPACE/v12.patch"
+          echo "1232c6d63e0c13d0e95532a0db7e3d4ce417fb9f546944ce445de7459cadfd7c  city-bank-v12/healthcare-hotfix.patch" | sha256sum -c -
+          git apply --check --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v12/healthcare-hotfix.patch"
+          git apply --directory=city_bank_tycoon "$GITHUB_WORKSPACE/city-bank-v12/healthcare-hotfix.patch"
           grep -q 'config/version="1.2.0"' city_bank_tycoon/project.godot
           grep -q 'window/stretch/aspect="expand"' city_bank_tycoon/project.godot
           grep -q 'Create acceleration notice' city_bank_tycoon/scripts/main.gd
