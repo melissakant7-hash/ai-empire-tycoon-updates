@@ -28,6 +28,24 @@ func _run() -> void:
     for i in range(8):
         await process_frame
 
+    if not game.loans.is_empty():
+        fail("Fresh game unexpectedly starts with active loans")
+        return
+    game._sync_loan_book_to_portfolio()
+    game._refresh_topbar()
+    if abs(float(game.bank.loan_book)) > 0.01 or String(game.active_loans_label.text) != game._money(0.0):
+        fail("Active Loans KPI is not zero with an empty loan portfolio")
+        return
+    game.loans.append({"balance": 1250000.0, "status": "Current"})
+    game._sync_loan_book_to_portfolio()
+    game._refresh_topbar()
+    if abs(float(game.bank.loan_book) - 1250000.0) > 0.01 or String(game.active_loans_label.text) != game._money(1250000.0):
+        fail("Active Loans KPI does not reflect the real outstanding portfolio")
+        return
+    game.loans.clear()
+    game._sync_loan_book_to_portfolio()
+
+    # Population must be a real tax and service base, not a decorative number.
     var original_population = float(game.city.population)
     var original_gdp = float(game.city.gdp)
     var tax_before = game._monthly_tax_revenue_estimate()
@@ -45,6 +63,7 @@ func _run() -> void:
     game.city.population = original_population
     game.city.gdp = original_gdp
 
+    # Every management slider must ignore mouse-wheel value changes.
     for view_name in ["Taxes & Budget", "City Services", "Bank Policies", "Housing"]:
         game._show_view(view_name)
         for i in range(4):
@@ -59,6 +78,7 @@ func _run() -> void:
                 fail("Mouse wheel can still modify a slider in %s" % view_name)
                 return
 
+    # Taxes is long enough to validate that a policy refresh no longer jumps to top.
     game._show_view("Taxes & Budget")
     for i in range(5):
         await process_frame
@@ -84,6 +104,7 @@ func _run() -> void:
         fail("Slider refresh did not preserve vertical scroll position")
         return
 
+    # Full-state autosave must include core simulation + UI state and be readable.
     game.current_view = "Taxes & Budget"
     game.selected_district = "Financial District"
     game.selected_mail_folder = "Starred"
