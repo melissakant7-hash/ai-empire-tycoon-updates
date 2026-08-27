@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.9",
+  "latestVersion": "10.7.10",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.9 fixes Sandbox manual datacenter serving so infinite training compute no longer inflates the physical serving fleet when unlimited serving is disabled. Existing serving economics, capacity controls, optimization, licensing and human-voice tutorial features remain included.",
+  "message": "v10.7.10 hard-caps datacenter utilization at 100%, pauses excess subscription/API demand and reduces model revenue to the actually served share. It also fixes the Cybersecurity AI model-type selector lock and global missed-click/hover-flicker issues caused by automatic UI rerenders. Existing Sandbox physical-serving, optimization, licensing and human-voice tutorial features remain included.",
   "patches": []
 }
