@@ -1,14 +1,15 @@
 # AI Training Licensing & Release Endpoint
 
-Current Full Game version: **v10.7.5**.
+Current Full Game version: **v10.7.6**.
 
-## v10.7.5
+## v10.7.6
 
-- Fixes replacement-license activation on the same PC after an older license was deleted.
-- A deleted old license no longer causes an unrelated newly issued valid license for that PC to be rejected.
-- Explicit device-wide blocking remains separate from normal per-license deletion.
-- Keeps the human-voice tutorial narration from v10.7.4, including Natural/Neural voice preference and Edge-first launch behavior.
-- Keeps the hardware-bound AITL2 license gate, Windows DPAPI-protected activation, signed live validation, shared browser profile, German localization and no-blur tutorial.
+- Replaces the Sandbox **Reset Research Progress** cheat with **Unlock All Research**.
+- Unlock All Research immediately marks every currently registered research technology as completed, including later-added Graphics and Cyber research.
+- Graphics AI research is now fully self-contained: Graphics technologies no longer require Language/Core AI technologies such as Synthetic Data, 70B Scaling, Distributed Inference, MoE, Custom Chips or language-serving memory research.
+- Graphics AI still keeps its own internal prerequisite chains so progression remains structured.
+- Keeps the v10.7.5 replacement-license fix, hardware-bound AITL2 licensing, Windows-protected activation and live validation.
+- Keeps the human-voice tutorial narration, Edge-first Natural/Neural voice preference, shared browser profile, German localization and no-blur tutorial.
 
 This public repository provides AI Training release metadata and live license revocation data. The paid Full Game package is **not distributed from this public repository**.
 
