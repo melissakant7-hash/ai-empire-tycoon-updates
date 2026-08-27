@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.8",
+  "latestVersion": "10.7.9",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.8 adds a Sandbox rule for Unlimited Datacenter Serving Capacity. Sandbox training compute can remain infinite while serving capacity can either be unlimited or come only from the datacenters, accelerator generation, custom silicon and leased compute actually built by the player. Manual serving mode uses the full serving-capacity limits from v10.7.7, including subscription blocking and overload pressure, while unlimited mode now displays clean infinity values instead of artificial trillion-PF/token numbers. The Datacenters page also shows the real physical Sandbox fleet separately from infinite training compute. Existing v10.7.7 serving economics, optimization, rival cyber damage, difficulty rebalance, licensing and human-voice tutorial remain included.",
+  "message": "v10.7.9 fixes Sandbox manual serving capacity. The Sandbox-only infinite training-compute value no longer leaks into the physical serving fleet when Unlimited Datacenter Serving Capacity is turned off. Manual serving now starts from the real lab baseline and adds only actual datacenters, accelerator generation, custom silicon and leased compute. Existing v10.7.8 serving controls and all v10.7.7 systems remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "38c0401a3409af52fc1d31e353da1c38688f81b948a6e8653cd16e19732e665c",
-  "sha256": "38c0401a3409af52fc1d31e353da1c38688f81b948a6e8653cd16e19732e665c",
+  "gameSha256": "2690af6c4633b6e7f5962419b123d659f18e79f9865abd4a8f63a954b3651c32",
+  "sha256": "2690af6c4633b6e7f5962419b123d659f18e79f9865abd4a8f63a954b3651c32",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "5e5c8110553a8acbca850930806b8c444a39d723c065c6709d1e88db42d689f6",
+  "launcherSha256": "784262b8c4a8756be3876a68333b3e55d6b6f20f1545616f66d2b1909b4c2cbd",
   "downloadUrl": ""
 }
