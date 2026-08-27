@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.5",
+  "latestVersion": "10.7.6",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.5 fixes replacement licenses on the same PC after an older license was deleted. Existing human-voice tutorial narration and v10.7.4 features remain included.",
+  "message": "v10.7.6 changes the Sandbox research cheat to Unlock All Research and removes Language/Core AI prerequisites from Graphics AI research. Existing v10.7.5 licensing and human-voice tutorial features remain included.",
   "patches": []
 }
