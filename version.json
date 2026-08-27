@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.6",
+  "latestVersion": "10.7.7",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.6 improves research flow: the Sandbox research cheat now unlocks all research instead of resetting progress, and Graphics AI research is fully self-contained so Language/Core AI technologies no longer block Graphics AI progression. Existing licensing, replacement-license fix, human-voice tutorial narration, localization and shared-profile features remain included.",
+  "message": "v10.7.7 adds a full serving-economy and datacenter-capacity system. Model optimization is now limited to a small number of meaningful generations with sharply rising RP cost and substantial reductions in serving compute/cost. Language models now expose simulated run cost per 1M input/output tokens, daily token traffic and fleet-load share. Subscription usage/context/priority consume serving capacity, capacity limits commercial growth, retiring models frees load, and Compute Operations shows a live capacity graph. Rival cyber damage is now visible and persistent on the Rivals tab, repeated severe disruption can force a market exit, Custom AI Silicon is substantially stronger, and all four difficulties are rebalanced. Existing v10.7.6 research-flow changes, licensing and human-voice tutorial remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "f50a5702fe23357ee8e4cec57e1e02c9c9aac893703056e6ac75cd789a42cdab",
-  "sha256": "f50a5702fe23357ee8e4cec57e1e02c9c9aac893703056e6ac75cd789a42cdab",
+  "gameSha256": "c06501eeb75a04c8683e4e930898cfd5444c2b3b25f85a7ffb7181ed334d15d0",
+  "sha256": "c06501eeb75a04c8683e4e930898cfd5444c2b3b25f85a7ffb7181ed334d15d0",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "9d87dc983f255ec56bda5557fab1e066e66cd461bd8dfa45728f3cb248e1cc91",
+  "launcherSha256": "99246876a394a19226b6aa243938834454595f2b730c419efc2a167fe269ff58",
   "downloadUrl": ""
 }
