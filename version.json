@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.9",
+  "latestVersion": "10.7.10",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.9 fixes Sandbox manual serving capacity. The Sandbox-only infinite training-compute value no longer leaks into the physical serving fleet when Unlimited Datacenter Serving Capacity is turned off. Manual serving now starts from the real lab baseline and adds only actual datacenters, accelerator generation, custom silicon and leased compute. Existing v10.7.8 serving controls and all v10.7.7 systems remain included.",
+  "message": "v10.7.10 makes datacenter serving a hard 100% ceiling: excess subscription/API demand becomes unserved traffic and paused customers, while language-model revenue and serving cost follow the share the fleet can actually serve. The capacity graph never exceeds 100% and shows traffic served, unserved demand and paused customers separately. It also fixes the Model Type selector getting stuck on Cybersecurity AI and adds a global interaction-stability guard so automatic simulation renders no longer replace buttons, sliders or selects underneath the mouse and cause hover flicker or missed clicks. Existing v10.7.9 Sandbox physical-serving fix, optimization, licensing and human-voice tutorial remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "2690af6c4633b6e7f5962419b123d659f18e79f9865abd4a8f63a954b3651c32",
-  "sha256": "2690af6c4633b6e7f5962419b123d659f18e79f9865abd4a8f63a954b3651c32",
+  "gameSha256": "4ec842999444f6421973196daeee3360c5f4838adacfea1b158cabf65e24cfdb",
+  "sha256": "4ec842999444f6421973196daeee3360c5f4838adacfea1b158cabf65e24cfdb",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "784262b8c4a8756be3876a68333b3e55d6b6f20f1545616f66d2b1909b4c2cbd",
+  "launcherSha256": "8e5ffc3aa31584d44cf118a8a9569187f83f1719860a70b028f51e8cff478e6d",
   "downloadUrl": ""
 }
