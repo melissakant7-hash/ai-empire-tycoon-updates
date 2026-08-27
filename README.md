@@ -1,15 +1,20 @@
 # AI Training Licensing & Release Endpoint
 
-Current Full Game version: **v10.7.6**.
+Current Full Game version: **v10.7.7**.
 
-## v10.7.6
+## v10.7.7
 
-- Replaces the Sandbox **Reset Research Progress** cheat with **Unlock All Research**.
-- Unlock All Research immediately marks every currently registered research technology as completed, including later-added Graphics and Cyber research.
-- Graphics AI research is now fully self-contained: Graphics technologies no longer require Language/Core AI technologies such as Synthetic Data, 70B Scaling, Distributed Inference, MoE, Custom Chips or language-serving memory research.
-- Graphics AI still keeps its own internal prerequisite chains so progression remains structured.
-- Keeps the v10.7.5 replacement-license fix, hardware-bound AITL2 licensing, Windows-protected activation and live validation.
-- Keeps the human-voice tutorial narration, Edge-first Natural/Neural voice preference, shared browser profile, German localization and no-blur tutorial.
+- Reworks post-training optimization into a small number of meaningful engineering generations. Every upgrade materially improves serving efficiency and token throughput while RP and cash costs rise sharply.
+- Adds simulated **input-token and output-token run costs** for every released Language AI, including daily input/output traffic, daily serving cost and each model's share of total fleet load.
+- Adds a real **datacenter serving-capacity system**. Subscription usage limits, context size, response priority, active users and API traffic consume capacity; optimization and newer hardware reduce demand.
+- Increasing a subscription configuration beyond available serving capacity is blocked. Lowering limits, retiring an older model, optimizing a model or expanding datacenters immediately frees capacity.
+- Compute Operations now includes a live serving-capacity percentage, headroom readout and recent utilization graph with upgrade warnings.
+- Commercial growth is capped by available serving capacity instead of allowing unlimited customers with insufficient infrastructure.
+- Rival cyber damage is recorded and shown directly on the Rivals tab, including capability, market-share and cash damage. Repeated severe disruption can cause a simulated rival market exit.
+- Makes Custom AI Silicon a much stronger late-game infrastructure upgrade, with substantially higher compute and lower operating cost.
+- Rebalances difficulty targets: Relaxed research progression is about 20% faster than Normal, Hard takes about 25% longer for research-limited progress, and Brutal about 50% longer, with matching economy/rival-pressure adjustments.
+- Keeps the v10.7.6 Unlock All Research change and independent Graphics AI research tree.
+- Keeps the replacement-license fix, hardware-bound AITL2 licensing, live validation, human-voice tutorial narration, shared browser profile, German localization and no-blur tutorial.
 
 This public repository provides AI Training release metadata and live license revocation data. The paid Full Game package is **not distributed from this public repository**.
 
