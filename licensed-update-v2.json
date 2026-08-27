@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.7",
+  "latestVersion": "10.7.8",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.7 adds model serving economics, input/output token run costs, hard datacenter serving capacity, a live capacity graph, meaningful high-cost model optimization generations, visible persistent rival cyber damage, stronger Custom AI Silicon and rebalanced difficulties. Existing research-flow, licensing and human-voice tutorial features remain included.",
+  "message": "v10.7.8 lets Sandbox choose between unlimited serving capacity and realistic manual datacenter serving while keeping infinite training compute. Manual mode uses the real physical fleet and all v10.7.7 capacity limits; unlimited mode displays clean infinity values. Existing serving economics, optimization, licensing and human-voice tutorial features remain included.",
   "patches": []
 }
