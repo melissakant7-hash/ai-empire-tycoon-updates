@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.7",
+  "latestVersion": "10.7.8",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.7 adds a full serving-economy and datacenter-capacity system. Model optimization is now limited to a small number of meaningful generations with sharply rising RP cost and substantial reductions in serving compute/cost. Language models now expose simulated run cost per 1M input/output tokens, daily token traffic and fleet-load share. Subscription usage/context/priority consume serving capacity, capacity limits commercial growth, retiring models frees load, and Compute Operations shows a live capacity graph. Rival cyber damage is now visible and persistent on the Rivals tab, repeated severe disruption can force a market exit, Custom AI Silicon is substantially stronger, and all four difficulties are rebalanced. Existing v10.7.6 research-flow changes, licensing and human-voice tutorial remain included.",
+  "message": "v10.7.8 adds a Sandbox rule for Unlimited Datacenter Serving Capacity. Sandbox training compute can remain infinite while serving capacity can either be unlimited or come only from the datacenters, accelerator generation, custom silicon and leased compute actually built by the player. Manual serving mode uses the full serving-capacity limits from v10.7.7, including subscription blocking and overload pressure, while unlimited mode now displays clean infinity values instead of artificial trillion-PF/token numbers. The Datacenters page also shows the real physical Sandbox fleet separately from infinite training compute. Existing v10.7.7 serving economics, optimization, rival cyber damage, difficulty rebalance, licensing and human-voice tutorial remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "c06501eeb75a04c8683e4e930898cfd5444c2b3b25f85a7ffb7181ed334d15d0",
-  "sha256": "c06501eeb75a04c8683e4e930898cfd5444c2b3b25f85a7ffb7181ed334d15d0",
+  "gameSha256": "38c0401a3409af52fc1d31e353da1c38688f81b948a6e8653cd16e19732e665c",
+  "sha256": "38c0401a3409af52fc1d31e353da1c38688f81b948a6e8653cd16e19732e665c",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "99246876a394a19226b6aa243938834454595f2b730c419efc2a167fe269ff58",
+  "launcherSha256": "5e5c8110553a8acbca850930806b8c444a39d723c065c6709d1e88db42d689f6",
   "downloadUrl": ""
 }
