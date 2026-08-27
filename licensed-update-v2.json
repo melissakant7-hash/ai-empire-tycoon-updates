@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.8",
+  "latestVersion": "10.7.9",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.8 lets Sandbox choose between unlimited serving capacity and realistic manual datacenter serving while keeping infinite training compute. Manual mode uses the real physical fleet and all v10.7.7 capacity limits; unlimited mode displays clean infinity values. Existing serving economics, optimization, licensing and human-voice tutorial features remain included.",
+  "message": "v10.7.9 fixes Sandbox manual datacenter serving so infinite training compute no longer inflates the physical serving fleet when unlimited serving is disabled. Existing serving economics, capacity controls, optimization, licensing and human-voice tutorial features remain included.",
   "patches": []
 }
