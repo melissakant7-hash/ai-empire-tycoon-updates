@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.5",
+  "latestVersion": "10.7.6",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.5 fixes license replacement behavior after an older license is deleted. A newly issued valid license for the same PC is now recognized correctly. Existing tutorial voice, localization, shared-profile and licensing features remain included.",
+  "message": "v10.7.6 improves research flow: the Sandbox research cheat now unlocks all research instead of resetting progress, and Graphics AI research is fully self-contained so Language/Core AI technologies no longer block Graphics AI progression. Existing licensing, replacement-license fix, human-voice tutorial narration, localization and shared-profile features remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "6e311a5c5ddb4b90ec34980e72608dd2df2edf51b2939e754ce348b6f7a4ae31",
-  "sha256": "6e311a5c5ddb4b90ec34980e72608dd2df2edf51b2939e754ce348b6f7a4ae31",
+  "gameSha256": "f50a5702fe23357ee8e4cec57e1e02c9c9aac893703056e6ac75cd789a42cdab",
+  "sha256": "f50a5702fe23357ee8e4cec57e1e02c9c9aac893703056e6ac75cd789a42cdab",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "e81663403418645f4e923a2dec6bf7cde55a1b22873dee344ba8bd42735ab64d",
+  "launcherSha256": "9d87dc983f255ec56bda5557fab1e066e66cd461bd8dfa45728f3cb248e1cc91",
   "downloadUrl": ""
 }
