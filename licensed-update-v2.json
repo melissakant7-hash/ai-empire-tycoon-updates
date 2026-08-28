@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.12",
+  "latestVersion": "10.7.13",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.12 adds a shared physical compute fleet for customer AI serving, model training, cloud gaming, cloud rendering and infrastructure workloads; adds independent Graphics research for cloud graphics and AI gaming silicon; and extends difficulty balancing to compute pressure and hardware/cloud projects. Existing adoption, capacity, interaction, licensing and human-voice tutorial fixes remain included.",
+  "message": "v10.7.13 removes the one-frame legacy Serving Capacity UI flash when returning to Datacenters. The obsolete compatibility panel is prevented from painting, so only Shared Physical Compute is visible. Existing v10.7.12 shared compute, cloud graphics, AI gaming silicon, difficulty, interaction, licensing and human-voice tutorial features remain included.",
   "patches": []
 }
