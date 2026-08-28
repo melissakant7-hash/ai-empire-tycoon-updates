@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.10",
+  "latestVersion": "10.7.11",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.10 hard-caps datacenter utilization at 100%, pauses excess subscription/API demand and reduces model revenue to the actually served share. It also fixes the Cybersecurity AI model-type selector lock and global missed-click/hover-flicker issues caused by automatic UI rerenders. Existing Sandbox physical-serving, optimization, licensing and human-voice tutorial features remain included.",
+  "message": "v10.7.11 gives new Language AI releases a longer customer-adoption curve and separates potential demand from physical server capacity. Demand can continue growing at 100% utilization, with excess customers paused or waitlisted until more capacity is available. Existing v10.7.10 serving, UI interaction, selector, licensing and human-voice tutorial fixes remain included.",
   "patches": []
 }
