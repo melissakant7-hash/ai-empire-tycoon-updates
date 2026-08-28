@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.11",
+  "latestVersion": "10.7.12",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.11 gives new Language AI releases a longer customer-adoption curve and separates potential demand from physical server capacity. Demand can continue growing at 100% utilization, with excess customers paused or waitlisted until more capacity is available. Existing v10.7.10 serving, UI interaction, selector, licensing and human-voice tutorial fixes remain included.",
+  "message": "v10.7.12 adds a shared physical compute fleet for customer AI serving, model training, cloud gaming, cloud rendering and infrastructure workloads; adds independent Graphics research for cloud graphics and AI gaming silicon; and extends difficulty balancing to compute pressure and hardware/cloud projects. Existing adoption, capacity, interaction, licensing and human-voice tutorial fixes remain included.",
   "patches": []
 }
