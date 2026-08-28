@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.12",
+  "latestVersion": "10.7.13",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.12 unifies physical datacenter capacity across Language/API serving, active model training, cloud gaming, AI cloud rendering, platform/update overhead and hardware-development workloads. Training now reserves real fleet capacity and can reduce the share of customer traffic that can be served until infrastructure is expanded. Local Graphics AI products such as Super Resolution, Frame Generation and Ray Reconstruction remain customer-device workloads and do not consume datacenter serving capacity. The Graphics research tree adds independent Cloud Graphics & Streaming and AI Gaming Silicon lanes, including cloud rendering, cloud gaming, Neural Gaming CPU/GPU designs and a unified AI gaming processor. Difficulty now also changes effective fleet headroom, per-customer compute pressure and hardware/cloud project cost/time. Existing v10.7.11 adoption, v10.7.10 interaction/capacity fixes, replacement-license behavior, licensing and human-voice tutorial remain included.",
+  "message": "v10.7.13 fixes the Datacenters tab legacy Serving Capacity flash. The older compatibility renderer can still update internally, but its obsolete panel is hidden before first paint so switching away from and back to Datacenters shows only the Shared Physical Compute UI. All v10.7.12 shared-compute, cloud gaming, cloud rendering, AI gaming silicon, difficulty, adoption, interaction, licensing and human-voice tutorial systems remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "5395cad9761e364b73b6c51dc3f5bbd161a81d19eae8ede361b91d40c002f62c",
-  "sha256": "5395cad9761e364b73b6c51dc3f5bbd161a81d19eae8ede361b91d40c002f62c",
+  "gameSha256": "82df1604f8482df7f970f1399cc4de658be357f0236cd9152f37c583f5fb5e55",
+  "sha256": "82df1604f8482df7f970f1399cc4de658be357f0236cd9152f37c583f5fb5e55",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "ef2b0408e7aa3c14e39c204123ada07f6ed7c5567436faab707f0d95b983d4bb",
+  "launcherSha256": "c152660f68ac14918d0f18031b3222d1182abe54247f41a775caebf86a095551",
   "downloadUrl": ""
 }
