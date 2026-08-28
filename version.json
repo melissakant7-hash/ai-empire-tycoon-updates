@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.10",
+  "latestVersion": "10.7.11",
   "required": false,
   "autoUpdate": false,
-  "message": "v10.7.10 makes datacenter serving a hard 100% ceiling: excess subscription/API demand becomes unserved traffic and paused customers, while language-model revenue and serving cost follow the share the fleet can actually serve. The capacity graph never exceeds 100% and shows traffic served, unserved demand and paused customers separately. It also fixes the Model Type selector getting stuck on Cybersecurity AI and adds a global interaction-stability guard so automatic simulation renders no longer replace buttons, sliders or selects underneath the mouse and cause hover flicker or missed clicks. Existing v10.7.9 Sandbox physical-serving fix, optimization, licensing and human-voice tutorial remain included.",
+  "message": "v10.7.11 separates customer acquisition from physical serving capacity. Strong new Language AI releases now create a longer multi-week/month adoption wave instead of snapping toward a fixed user target in a few days. A better model can continue attracting potential customers even while datacenter utilization is at the hard 100% ceiling; excess demand becomes paused/waitlisted customers until capacity is expanded. Launch momentum scales with improvement over the player's previous models, rival frontier, brand, reputation and launch strategy. The model serving panel now shows potential customers, new demand per day and paused/waitlisted customers separately. Existing v10.7.10 hard-cap economics, Cybersecurity model-type selector fix, interaction-stability fix, Sandbox serving controls, licensing and human-voice tutorial remain included.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "4ec842999444f6421973196daeee3360c5f4838adacfea1b158cabf65e24cfdb",
-  "sha256": "4ec842999444f6421973196daeee3360c5f4838adacfea1b158cabf65e24cfdb",
+  "gameSha256": "58dd49ff10cb722ad5877ba7f5e9b42a062e2f0a8e25e970bb5080f26ba6772b",
+  "sha256": "58dd49ff10cb722ad5877ba7f5e9b42a062e2f0a8e25e970bb5080f26ba6772b",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "8e5ffc3aa31584d44cf118a8a9569187f83f1719860a70b028f51e8cff478e6d",
+  "launcherSha256": "18212770edd5cfdc4a57480b0ddd56d6b733dd65da721c975ec76e830861670a",
   "downloadUrl": ""
 }
