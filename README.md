@@ -1,21 +1,17 @@
 # AI Training Licensing & Release Endpoint
 
-Current Full Game version: **v10.7.12**.
+Current Full Game version: **v10.7.13**.
 
-## v10.7.12
+## v10.7.13
 
-- Introduces one **shared physical datacenter fleet**. Language/API serving, active Language/Graphics model training, cloud gaming, AI cloud rendering, platform/update overhead and hardware-development simulation now compete for the same physical capacity.
-- Active training is a hard fleet reservation. Starting a large training run can push customer workloads into reduced service until more datacenter capacity is built, leased or made more efficient.
-- The shared capacity panel breaks usage down in PF for Language/API traffic, active training, cloud gaming, cloud rendering and platform/R&D overhead, while keeping the physical utilization ceiling at 100%.
-- Local Graphics AI products remain realistic: Super Resolution, Frame Generation and Ray Reconstruction run on the customer's GPU after distribution and do **not** consume the company's datacenter serving capacity during local gameplay.
-- Adds **AI Cloud Gaming** as a server-side subscription product. Potential subscribers, served subscribers, waitlisted users, fleet demand, pricing and daily revenue are simulated.
-- Adds **AI Render Cloud** for studio/creator rendering, neural reconstruction and denoising jobs. Excess work forms a visible render queue when fleet capacity is unavailable.
-- Adds two independent Graphics research lanes: **Cloud Graphics & Streaming** and **AI Gaming Silicon**. They do not require Language/Core research.
-- Cloud Graphics research unlocks AI Render Cloud, neural render scheduling, AI Cloud Gaming, predictive streaming and unified cloud-graphics orchestration.
-- AI Gaming Silicon research unlocks a **Neural Gaming CPU**, **Neural Gaming GPU**, local neural gaming runtime, **Unified AI Gaming Processor**, and later datacenter-optimized gaming silicon.
-- Gaming CPU/GPU products are local consumer hardware with dedicated neural acceleration. Their normal customer usage does not consume company datacenter capacity, while their development simulation/verification temporarily reserves shared fleet capacity.
-- Difficulty now affects the new infrastructure economy as well as the existing systems: Relaxed has more effective fleet headroom and cheaper/faster hardware projects; Hard and Brutal have less effective fleet capacity, heavier usage pressure, and more expensive/slower cloud/hardware projects.
-- Keeps v10.7.11's longer model-adoption curves and waitlisted customer demand, v10.7.10's hard 100% physical ceiling and interaction-stability fix, the Sandbox serving controls, independent Graphics research, replacement-license fix, hardware-bound AITL2 licensing, signed live validation, human-voice tutorial narration and shared browser profile.
+- Fixes the Datacenters tab briefly flashing the obsolete **Serving Capacity** UI before the newer **Shared Physical Compute** panel appears.
+- The older v10.7.7/v10.7.10 capacity renderer remains available internally for compatibility with existing serving-economy code, but its legacy `.v1077Cap` panel is now hidden in the document head before any render can paint it.
+- Switching away from Datacenters and returning now keeps the new shared-compute presentation stable instead of showing the old graph/UI for a frame.
+- Keeps all v10.7.12 systems: one shared physical datacenter fleet for Language/API serving, model training, cloud gaming, AI cloud rendering, platform/R&D overhead and hardware-development simulation.
+- Keeps local Super Resolution, Frame Generation and Ray Reconstruction as customer-device workloads that do not consume company datacenter capacity during gameplay.
+- Keeps AI Cloud Gaming, AI Render Cloud, the independent Cloud Graphics & Streaming and AI Gaming Silicon research lanes, Neural Gaming CPU/GPU and Unified AI Gaming Processor systems.
+- Keeps the expanded difficulty modifiers for fleet efficiency, compute pressure and hardware/cloud project cost/time.
+- Keeps v10.7.11 model-adoption/waitlist behavior, v10.7.10 hard 100% capacity ceiling and global interaction-stability fix, Sandbox serving controls, replacement-license fix, hardware-bound AITL2 licensing, signed live validation, human-voice tutorial narration and shared browser profile.
 
 This public repository provides AI Training release metadata and live license revocation data. The paid Full Game package is **not distributed from this public repository**.
 
