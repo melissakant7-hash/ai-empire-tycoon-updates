@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "latestVersion": "10.7.13",
+  "latestVersion": "10.10.13",
   "required": false,
-  "autoUpdate": false,
-  "message": "v10.7.13 removes the one-frame legacy Serving Capacity UI flash when returning to Datacenters. The obsolete compatibility panel is prevented from painting, so only Shared Physical Compute is visible. Existing v10.7.12 shared compute, cloud graphics, AI gaming silicon, difficulty, interaction, licensing and human-voice tutorial features remain included.",
+  "autoUpdate": true,
+  "message": "v10.10.13 moves Update Center to Settings, fixes locale handling and stale release/version labels, and preserves the latest Model Lab interaction and scrolling fixes.",
   "patches": []
 }
