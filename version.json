@@ -1,15 +1,15 @@
 {
-  "latestVersion": "10.7.13",
+  "latestVersion": "10.10.13",
   "required": false,
-  "autoUpdate": false,
-  "message": "v10.7.13 fixes the Datacenters tab legacy Serving Capacity flash. The older compatibility renderer can still update internally, but its obsolete panel is hidden before first paint so switching away from and back to Datacenters shows only the Shared Physical Compute UI. All v10.7.12 shared-compute, cloud gaming, cloud rendering, AI gaming silicon, difficulty, adoption, interaction, licensing and human-voice tutorial systems remain included.",
+  "autoUpdate": true,
+  "message": "v10.10.13 moves Update Center from Finance to Settings, fixes English/German localization in update and game-health UI, removes stale v10.0.2 release information, and keeps the v10.10.11-v10.10.12 Model Lab interaction, immediate-model-refresh and smooth-scroll fixes. The Windows bootstrap now checks this GitHub manifest before launch and falls back to its last known-good local build if the update check or download fails.",
   "gameUrl": "",
   "gameParts": [],
-  "gameSha256": "82df1604f8482df7f970f1399cc4de658be357f0236cd9152f37c583f5fb5e55",
-  "sha256": "82df1604f8482df7f970f1399cc4de658be357f0236cd9152f37c583f5fb5e55",
+  "gameSha256": "3bf652e67118a2be7e66c048816cfb7e21f720b53ede36a7eff675956e1c9652",
+  "sha256": "bff57ca052c1c17a1fc32fa73a50cab3cf2633db774b53b8d281ec3e5b10afac",
   "encoding": "",
   "patches": [],
   "launcherUrl": "",
-  "launcherSha256": "c152660f68ac14918d0f18031b3222d1182abe54247f41a775caebf86a095551",
+  "launcherSha256": "bff57ca052c1c17a1fc32fa73a50cab3cf2633db774b53b8d281ec3e5b10afac",
   "downloadUrl": ""
 }
