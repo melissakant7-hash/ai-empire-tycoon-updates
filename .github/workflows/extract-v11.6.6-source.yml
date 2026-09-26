@@ -1,44 +1,145 @@
-name: Extract AI Training v11.6.6 source
+name: Import and verify AI Training v11.6.6 source
 
+# A workflow edit or a partial bootstrap upload must NOT start an import.
+# Upload this complete ZIP to the root of source-v11.6.6 to start the job.
 on:
   push:
-    branches:
-      - source-v11.6.6
+    branches: [source-v11.6.6]
     paths:
-      - ".bootstrap/v11.6.6/**"
-      - ".github/workflows/extract-v11.6.6-source.yml"
+      - 'AI_Training_v11.6.6_Source_NoBinaries.zip'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: ai-training-v11.6.6-source-import
+  cancel-in-progress: false
+
 jobs:
-  extract:
+  import-and-verify:
+    if: github.ref == 'refs/heads/source-v11.6.6'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: '1'
+      GOTOOLCHAIN: local
+      GOPROXY: 'off'
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the exact triggering commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: source-v11.6.6
-      - name: Reconstruct archive
+          ref: ${{ github.sha }}
+
+      - name: Verify complete archive and extract safely
         shell: bash
         run: |
           set -euo pipefail
-          test -f .bootstrap/v11.6.6/COMPLETE
-          cat .bootstrap/v11.6.6/parts/part-* > /tmp/AI_Training_v11.6.6_SourceAndLauncher.tar.xz
-          echo "932963875f2385290388ec4d90d19676287faec91f7e501d1c0b5b7ce54ffca1  /tmp/AI_Training_v11.6.6_SourceAndLauncher.tar.xz" | sha256sum -c -
-      - name: Extract source tree
+          python3 - <<'PY'
+          import hashlib, json, os, shutil, stat, tempfile, zipfile
+          from pathlib import Path, PurePosixPath
+
+          archive = Path('AI_Training_v11.6.6_Source_NoBinaries.zip')
+          expected = 'e741d0e88752b617efd6d2b629b10a604086d3bf7545a5379929e0653e4856de'
+          if not archive.is_file():
+              raise SystemExit('Source upload is incomplete: upload the complete AI_Training_v11.6.6_Source_NoBinaries.zip to this branch. No source has been imported.')
+          actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'Archive SHA-256 mismatch: expected {expected}, got {actual}. Nothing was extracted.')
+
+          destination = Path('source/v11.6.6')
+          with tempfile.TemporaryDirectory(dir=os.environ['RUNNER_TEMP']) as temporary:
+              staging = Path(temporary) / 'source'
+              staging.mkdir()
+              paths = set()
+              total = 0
+              with zipfile.ZipFile(archive) as z:
+                  files = [entry for entry in z.infolist() if not entry.is_dir()]
+                  if len(files) != 256:
+                      raise SystemExit(f'Unexpected source file count: {len(files)} instead of 256.')
+                  for entry in files:
+                      name = entry.filename
+                      relative = PurePosixPath(name)
+                      mode = entry.external_attr >> 16
+                      if relative.is_absolute() or '..' in relative.parts or '\\' in name or ':' in name:
+                          raise SystemExit(f'Unsafe archive path: {name!r}')
+                      if stat.S_ISLNK(mode) or name in paths:
+                          raise SystemExit(f'Symlink or duplicate archive path: {name!r}')
+                      if relative.parts[0] in {'.git', '.github'}:
+                          raise SystemExit(f'Unexpected repository control path: {name!r}')
+                      total += entry.file_size
+                      if total > 50 * 1024 * 1024:
+                          raise SystemExit('Uncompressed source exceeds the import size limit.')
+                      paths.add(name)
+                      target = staging / name
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(z.read(entry))
+
+              required = [
+                  'release.json', 'src/game/code-lab.js', 'src/ui/shell/template.html',
+                  'build/assemble.py', 'build/launcher/go.mod',
+                  'build/launcher/core.go', 'build/launcher/main_windows.go',
+                  'tests/v11_6_6_review_usage.py',
+              ]
+              if any(not (staging / name).is_file() for name in required):
+                  raise SystemExit('The archive is missing required game, test, or launcher source.')
+              if json.loads((staging / 'release.json').read_text())['version'] != '11.6.6':
+                  raise SystemExit('The source release version is not 11.6.6.')
+              if len(list((staging / 'src/game').glob('script_*.js'))) != 24:
+                  raise SystemExit('Expected all 24 game simulation modules.')
+
+              if destination.exists():
+                  existing = {p.relative_to(destination).as_posix() for p in destination.rglob('*') if p.is_file()}
+                  if existing != paths or any((destination / name).read_bytes() != (staging / name).read_bytes() for name in paths):
+                      raise SystemExit('Existing source differs from this archive. Refusing to overwrite later development.')
+                  print('Identical source is already present; validating it again.')
+              else:
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copytree(staging, destination)
+              print(f'Verified SHA-256 {actual}; imported {len(paths)} source files.')
+          PY
+          # Stage the original source before builds create local output files.
+          git add -- source/v11.6.6
+
+      - name: Check JavaScript syntax and assemble developer HTML
+        working-directory: source/v11.6.6
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf source/v11.6.6
-          mkdir -p source/v11.6.6
-          tar -xJf /tmp/AI_Training_v11.6.6_SourceAndLauncher.tar.xz -C source/v11.6.6
-      - name: Commit extracted source
+          mkdir -p dist evidence
+          find src -type f -name '*.js' -print0 | xargs -0 -n 1 node --check
+          python3 build/assemble.py
+          test -s dist/AI_Training_v11.6.6_Remake_Source.html
+
+      - name: Run launcher and backend tests with race detector
+        working-directory: source/v11.6.6/build/launcher
+        run: go test -race -count=1 ./...
+
+      - name: Install isolated browser test dependencies
+        run: |
+          python3 -m pip install 'playwright==1.57.0'
+          python3 -m playwright install --with-deps chromium
+
+      - name: Run v11.6.6 source regression
+        working-directory: source/v11.6.6
+        run: python3 tests/v11_6_6_review_usage.py
+
+      - name: Commit verified source without changing live metadata
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .bootstrap/v11.6.6
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add source/v11.6.6 .bootstrap/v11.6.6
-          git commit -m "Add AI Training v11.6.6 source and Windows launcher"
-          git push origin HEAD:source-v11.6.6
+          if git diff --cached --quiet; then
+            echo 'The exact source is already committed; no duplicate commit is needed.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Import verified AI Training v11.6.6 game, tests and launcher source'
+            git push origin HEAD:source-v11.6.6
+          fi
+          {
+            echo '## AI Training v11.6.6 source import'
+            echo 'Archive integrity, JavaScript syntax, HTML assembly, launcher/backend race tests and the v11.6.6 browser source regression passed.'
+            echo 'The browsable source is in source/v11.6.6 on source-v11.6.6.'
+            echo 'The main branch, live updater metadata and licensing data were not changed.'
+            echo 'Native Windows startup and the licensed inner executable were NOT tested or published by this source-only job.'
+          } >> "$GITHUB_STEP_SUMMARY"
