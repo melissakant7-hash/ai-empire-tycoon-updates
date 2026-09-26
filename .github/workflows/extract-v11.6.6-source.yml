@@ -1,0 +1,44 @@
+name: Extract AI Training v11.6.6 source
+
+on:
+  push:
+    branches:
+      - source-v11.6.6
+    paths:
+      - ".bootstrap/v11.6.6/**"
+      - ".github/workflows/extract-v11.6.6-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: source-v11.6.6
+      - name: Reconstruct archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .bootstrap/v11.6.6/COMPLETE
+          cat .bootstrap/v11.6.6/parts/part-* > /tmp/AI_Training_v11.6.6_SourceAndLauncher.tar.xz
+          echo "932963875f2385290388ec4d90d19676287faec91f7e501d1c0b5b7ce54ffca1  /tmp/AI_Training_v11.6.6_SourceAndLauncher.tar.xz" | sha256sum -c -
+      - name: Extract source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf source/v11.6.6
+          mkdir -p source/v11.6.6
+          tar -xJf /tmp/AI_Training_v11.6.6_SourceAndLauncher.tar.xz -C source/v11.6.6
+      - name: Commit extracted source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .bootstrap/v11.6.6
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source/v11.6.6 .bootstrap/v11.6.6
+          git commit -m "Add AI Training v11.6.6 source and Windows launcher"
+          git push origin HEAD:source-v11.6.6
